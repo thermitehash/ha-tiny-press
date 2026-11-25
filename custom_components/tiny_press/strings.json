@@ -1,0 +1,229 @@
+{
+  "config": {
+    "flow_title": "Tiny Press ({host})",
+    "step": {
+      "user": {
+        "title": "Connect your receipt printer",
+        "description": "Enter the printer's IP address. Give it a static IP or a DHCP reservation so it doesn't move. Tiny Press talks raw ESC/POS on port 9100.",
+        "data": {
+          "host": "[%key:common::config_flow::data::host%]",
+          "port": "[%key:common::config_flow::data::port%]"
+        },
+        "data_description": {
+          "host": "IP address or hostname of the Epson TM printer.",
+          "port": "Raw printing port. Epson TM printers use 9100."
+        }
+      },
+      "discovery_confirm": {
+        "title": "Epson receipt printer found",
+        "description": "Set up the receipt printer at {host} as Tiny Press?"
+      },
+      "paper": {
+        "title": "Paper",
+        "description": "Pick the paper roll width loaded in the printer. On the TM-m30III, 58 mm paper also needs the 58 mm roll guide fitted and the width changed in the printer's settings.",
+        "data": {
+          "paper_width": "Paper width",
+          "print_test_page": "Print a test page now"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "no_status": "Connected, but the device didn't answer ESC/POS status requests. Is it an Epson TM receipt printer?",
+      "test_page_failed": "The test page couldn't be sent. Untick it to continue, or check the printer."
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
+      "not_receipt_printer": "The discovered Epson device doesn't answer receipt-printer status requests."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Tiny Press options",
+        "data": {
+          "max_length_mm": "Longest single print",
+          "poll_interval": "Status check interval"
+        },
+        "data_description": {
+          "max_length_mm": "Any print longer than this is trimmed, so a runaway print can't empty the roll.",
+          "poll_interval": "How often to read paper and cover status. Status is never read while printing."
+        }
+      }
+    }
+  },
+  "selector": {
+    "paper_width": {
+      "options": {
+        "80": "80 mm (576 dots)",
+        "58": "58 mm (420 dots)"
+      }
+    },
+    "print_type": {
+      "options": {
+        "maze": "Maze",
+        "test_page": "Test page"
+      }
+    },
+    "text_size": {
+      "options": {
+        "small": "Small",
+        "normal": "Normal",
+        "large": "Large"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "online": {
+        "name": "Online"
+      }
+    },
+    "sensor": {
+      "paper": {
+        "name": "Paper",
+        "state": {
+          "ok": "OK",
+          "near_end": "Running low",
+          "out": "Out of paper",
+          "cover_open": "Cover open",
+          "offline": "Offline"
+        }
+      },
+      "paper_used": {
+        "name": "Paper used"
+      },
+      "last_print": {
+        "name": "Last print",
+        "state_attributes": {
+          "print_id": {
+            "name": "Print ID"
+          },
+          "printed_at": {
+            "name": "Printed at"
+          },
+          "length_mm": {
+            "name": "Length"
+          },
+          "profile": {
+            "name": "Profile"
+          },
+          "difficulty": {
+            "name": "Difficulty"
+          }
+        }
+      }
+    },
+    "button": {
+      "maze": {
+        "name": "Maze"
+      },
+      "test_page": {
+        "name": "Test page"
+      }
+    },
+    "select": {
+      "maze_difficulty": {
+        "name": "Maze difficulty",
+        "state": {
+          "easy": "Easy",
+          "medium": "Medium",
+          "hard": "Hard"
+        }
+      }
+    }
+  },
+  "issues": {
+    "printer_offline": {
+      "title": "{name} has been offline for a day",
+      "description": "Home Assistant hasn't reached the receipt printer since {since}. Check that it's switched on and connected, and that its IP address hasn't changed. This message clears itself once the printer answers again."
+    }
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "No Tiny Press printer is set up and loaded."
+    },
+    "entry_not_found": {
+      "message": "That Tiny Press printer isn't set up or isn't loaded."
+    },
+    "choose_printer": {
+      "message": "More than one Tiny Press printer is set up. Choose one with config_entry_id."
+    },
+    "print_failed": {
+      "message": "The printer didn't take the job: {error}"
+    },
+    "render_failed": {
+      "message": "Couldn't draw the printout: {error}"
+    },
+    "path_not_allowed": {
+      "message": "{path} isn't allowed. Use a file under /media or /config/www."
+    },
+    "image_not_found": {
+      "message": "{path} isn't an image file Tiny Press can read."
+    }
+  },
+  "services": {
+    "print": {
+      "name": "Print",
+      "description": "Prints a puzzle or page. Every button and voice phrase uses this action.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Printer",
+          "description": "Only needed when more than one Tiny Press printer is set up."
+        },
+        "type": {
+          "name": "Type",
+          "description": "What to print."
+        },
+        "profile": {
+          "name": "Profile",
+          "description": "Who it's for. Profiles arrive in a later version; the name is recorded with the print."
+        },
+        "difficulty": {
+          "name": "Difficulty",
+          "description": "Loose words work: easy, medium, hard, harder, tricky. Leave empty to use the difficulty select."
+        },
+        "seed": {
+          "name": "Seed",
+          "description": "Prints the same puzzle again for the same seed."
+        }
+      }
+    },
+    "print_text": {
+      "name": "Print text",
+      "description": "Prints a note.",
+      "fields": {
+        "config_entry_id": {
+          "name": "[%key:component::tiny_press::services::print::fields::config_entry_id::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::config_entry_id::description%]"
+        },
+        "text": {
+          "name": "Text",
+          "description": "The text to print. Line breaks are kept."
+        },
+        "title": {
+          "name": "Title",
+          "description": "Optional heading above the text."
+        },
+        "size": {
+          "name": "Size",
+          "description": "Text size."
+        }
+      }
+    },
+    "print_image": {
+      "name": "Print image",
+      "description": "Prints a picture, dithered to black and white.",
+      "fields": {
+        "config_entry_id": {
+          "name": "[%key:component::tiny_press::services::print::fields::config_entry_id::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::config_entry_id::description%]"
+        },
+        "path": {
+          "name": "Path",
+          "description": "An image under /media or /config/www, for example /config/www/drawing.png."
+        }
+      }
+    }
+  }
+}

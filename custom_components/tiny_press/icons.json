@@ -1,0 +1,53 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "online": {
+        "default": "mdi:printer-pos-off-outline",
+        "state": {
+          "on": "mdi:printer-pos-check-outline"
+        }
+      }
+    },
+    "sensor": {
+      "paper": {
+        "default": "mdi:paper-roll-outline",
+        "state": {
+          "near_end": "mdi:paper-roll",
+          "out": "mdi:paper-roll-outline",
+          "cover_open": "mdi:printer-pos-alert-outline",
+          "offline": "mdi:printer-pos-off-outline"
+        }
+      },
+      "paper_used": {
+        "default": "mdi:ruler"
+      },
+      "last_print": {
+        "default": "mdi:receipt-text-outline"
+      }
+    },
+    "button": {
+      "maze": {
+        "default": "mdi:map-marker-path"
+      },
+      "test_page": {
+        "default": "mdi:printer-pos-cog-outline"
+      }
+    },
+    "select": {
+      "maze_difficulty": {
+        "default": "mdi:speedometer"
+      }
+    }
+  },
+  "services": {
+    "print": {
+      "service": "mdi:printer-pos"
+    },
+    "print_text": {
+      "service": "mdi:text-box-outline"
+    },
+    "print_image": {
+      "service": "mdi:image-outline"
+    }
+  }
+}

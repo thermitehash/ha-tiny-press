@@ -1,0 +1,60 @@
+name: Release
+
+# Publishes a GitHub release (and tag) for the version in manifest.json,
+# after the Validate workflow passes on main. Does nothing if that version
+# was already released. Notes come from docs/releases/v<version>.md when it
+# exists, otherwise GitHub generates them.
+
+on:
+  workflow_run:
+    workflows: [Validate]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish release
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'main' }}
+
+      - name: Read version
+        id: version
+        run: |
+          version=$(python3 -c "import json; print(json.load(open('custom_components/tiny_press/manifest.json'))['version'])")
+          echo "tag=v${version}" >> "$GITHUB_OUTPUT"
+          echo "Version: v${version}"
+
+      - name: Create release if missing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "$TAG already released; nothing to do."
+            exit 0
+          fi
+          notes="docs/releases/${TAG}.md"
+          if [ -f "$notes" ]; then
+            title=$(head -n 1 "$notes" | sed 's/^# *//')
+            tail -n +2 "$notes" > "$RUNNER_TEMP/notes.md"
+            gh release create "$TAG" --target "$SHA" --title "$title" --notes-file "$RUNNER_TEMP/notes.md"
+          else
+            gh release create "$TAG" --target "$SHA" --title "$TAG" --generate-notes
+          fi
+          echo "Published $TAG"
