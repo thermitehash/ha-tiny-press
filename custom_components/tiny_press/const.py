@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Final
+from typing import Any, Final
 
 DOMAIN: Final = "tiny_press"
 MANUFACTURER: Final = "Epson"
@@ -19,8 +19,27 @@ CONF_CALENDARS: Final = "calendar_entities"
 CONF_TODOS: Final = "todo_entities"
 CONF_MORNING_BOTTOM: Final = "morning_bottom"
 CONF_FEEDS: Final = "feeds"
-CONF_LIVE_QUOTE: Final = "live_quote"  # morning slip quote from Wikiquote first
+# Where the morning slip's bottom comes from: "online" uses live sources where
+# one exists (today: Wikiquote for the quote), with bundled content as the
+# fallback; "local" uses bundled content only.
+CONF_BOTTOM_SOURCE: Final = "bottom_source"
+BOTTOM_SOURCES: Final = ("online", "local")
+CONF_LIVE_QUOTE: Final = "live_quote"  # v0.9.0 toggle, read when bottom_source is unset
+
+
+def bottom_source(options: Any) -> str:
+    """Return the morning slip bottom's source, honoring v0.9.0's Live quote toggle."""
+    source = options.get(CONF_BOTTOM_SOURCE)
+    if source in BOTTOM_SOURCES:
+        return source
+    return "online" if options.get(CONF_LIVE_QUOTE, True) else "local"
+
+
 CONF_MORNING_FEED: Final = "morning_feed"
+# Quiet hours for feed auto-print (one setting for all feeds).
+CONF_QUIET_START: Final = "quiet_start"
+CONF_QUIET_END: Final = "quiet_end"
+CONF_QUIET_MODE: Final = "quiet_mode"
 CONF_AI_JOKES: Final = "ai_jokes"  # off: bundled, human-written jokes and facts
 
 DEFAULT_PORT: Final = 9100

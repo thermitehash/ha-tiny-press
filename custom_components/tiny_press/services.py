@@ -38,7 +38,6 @@ from .const import (
     ATTR_TITLE,
     ATTR_TYPE,
     CONF_CALENDARS,
-    CONF_LIVE_QUOTE,
     CONF_MORNING_BOTTOM,
     CONF_MORNING_FEED,
     CONF_PAPER_WIDTH,
@@ -55,6 +54,7 @@ from .const import (
     TEXT_SIZES,
     Difficulty,
     PrintType,
+    bottom_source,
 )
 from .coordinator import PrintJob, TinyPressConfigEntry, TinyPressCoordinator
 from .fetch import (
@@ -607,8 +607,8 @@ async def async_print_feed(
 async def _morning_quote(
     hass: HomeAssistant, coordinator: TinyPressCoordinator
 ) -> morning.Quote:
-    """Wikiquote's quote of the day when switched on, else (or on failure) bundled."""
-    if coordinator.config_entry.options.get(CONF_LIVE_QUOTE, True):
+    """Wikiquote's quote of the day when the source is online, else bundled."""
+    if bottom_source(coordinator.config_entry.options) == "online":
         live = await async_live_quote(hass, coordinator.store)
         if live is not None:
             return morning.Quote(live[0], live[1], None, WIKIQUOTE_CREDIT)
@@ -626,7 +626,8 @@ async def _morning_headlines(
     """Fetch the morning feed's newest headlines, or None if it can't be read."""
     options = coordinator.config_entry.options
     feeds = feeds_from_options(options)
-    chosen = find_feed(feeds, options.get(CONF_MORNING_FEED)) or find_feed(feeds, None)
+    wanted = options.get(CONF_MORNING_FEED)
+    chosen = find_feed(feeds, wanted) if wanted else None  # none picked: no feed
     if chosen is None:
         return None
     try:
@@ -702,11 +703,14 @@ async def async_morning_slip(
         )
 
     bottom = options.get(CONF_MORNING_BOTTOM, "joke")
+    if bottom == "feed":  # v0.9.0's headlines bottom: headlines are their own part now
+        bottom = "quote"
     joke = None
     puzzle = None
     quote = None
     word = None
-    headlines = None
+    # Headlines from the picked feed are their own part of the slip.
+    headlines = await _morning_headlines(hass, coordinator)
     if bottom in ("joke", "fact"):
         kind = PrintType.JOKE if bottom == "joke" else PrintType.FACT
         kid = coordinator.kid_profile()
@@ -720,10 +724,6 @@ async def async_morning_slip(
             )
             if joke.index is not None:
                 coordinator.store.remember(kind, joke.index)
-    elif bottom == "feed":
-        headlines = await _morning_headlines(hass, coordinator)
-        if headlines is None:  # no feed, or it can't be read: a quote instead
-            quote = await _morning_quote(hass, coordinator)
     elif bottom == "quote":
         quote = await _morning_quote(hass, coordinator)
     elif bottom == "word":

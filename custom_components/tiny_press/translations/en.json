@@ -49,6 +49,7 @@
           "edit_profile": "Edit a profile",
           "remove_profile": "Remove profiles",
           "add_feed": "Add a feed",
+          "edit_feed": "Edit a feed (auto-print)",
           "remove_feed": "Remove feeds"
         }
       },
@@ -63,8 +64,11 @@
           "calendar_entities": "Morning slip calendars",
           "todo_entities": "Morning slip to-do lists",
           "morning_bottom": "Bottom of the morning slip",
-          "live_quote": "Live quote of the day",
-          "morning_feed": "Morning slip feed"
+          "morning_feed": "Morning slip headlines",
+          "quiet_start": "Auto-print quiet hours start",
+          "quiet_end": "Auto-print quiet hours end",
+          "quiet_mode": "During quiet hours",
+          "bottom_source": "Bottom of the slip: content source"
         },
         "data_description": {
           "max_length_mm": "Any print longer than this is trimmed, so a runaway print can't empty the roll.",
@@ -75,8 +79,11 @@
           "calendar_entities": "Today's events from these calendars print on the morning slip, all-day events first.",
           "todo_entities": "Optional. Unchecked items from these lists print as checkboxes. Leave empty for no to-dos.",
           "morning_bottom": "What prints at the end of the morning slip.",
-          "live_quote": "For the Quote bottom: try Wikiquote's quote of the day first (credited on the print), and use the bundled public-domain quotes if it can't be read.",
-          "morning_feed": "For the Feed bottom: whose headlines print. Empty uses the first feed."
+          "morning_feed": "The 3 newest headlines from this feed print on the morning slip, above its bottom. Leave empty for no headlines.",
+          "quiet_start": "No feed auto-prints during quiet hours. Clear both times to allow printing at any hour.",
+          "quiet_end": "Quiet hours can span midnight, such as 9 PM to 7 AM.",
+          "quiet_mode": "Skip new feed items, or print up to 3 per feed when quiet hours end.",
+          "bottom_source": "Online uses live sources where one exists (today: Wikiquote's quote of the day for the Quote bottom, credited on the print), and falls back to the bundled content. Local uses only the bundled content, with no internet. Joke and fact AI is a separate setting above."
         }
       },
       "add_kid": {
@@ -177,6 +184,28 @@
         "data": {
           "feeds": "Feeds to remove"
         }
+      },
+      "edit_feed": {
+        "title": "Edit a feed",
+        "data": {
+          "feed": "Feed"
+        }
+      },
+      "feed_settings": {
+        "title": "{name}",
+        "description": "Auto-print prints a short slip each time this feed adds an item. The first check only notes what's already there, so no backlog prints. At most 3 slips print per check, and items older than 12 hours are skipped. Quiet hours are set for all feeds under Settings. Auto slips never count toward kid-mode limits.",
+        "data": {
+          "items": "Items per print",
+          "auto_print": "Auto-print new items",
+          "check_minutes": "Check every",
+          "auto_qr": "QR code on auto slips"
+        },
+        "data_description": {
+          "items": "For the Print feed action and buttons (1–10).",
+          "auto_print": "Off by default.",
+          "check_minutes": "How often to look for new items (5–1440 minutes).",
+          "auto_qr": "A small QR code that opens the item on a phone."
+        }
       }
     },
     "error": {
@@ -256,9 +285,8 @@
       "options": {
         "joke": "A joke",
         "fact": "A fun fact",
-        "quote": "A quote of the day (Wikiquote when Live quote is on, else public domain)",
+        "quote": "A quote of the day (Wikiquote when the source is Online, else public domain)",
         "word": "A hard vocabulary word with its definition",
-        "feed": "Headlines from a feed (Configure → Add a feed)",
         "puzzle": "A small sudoku (adult profile's difficulty)",
         "none": "Nothing"
       }
@@ -290,6 +318,18 @@
         "weather": "Weather",
         "note": "Note",
         "feed": "Feed headlines"
+      }
+    },
+    "quiet_mode": {
+      "options": {
+        "skip": "Skip them",
+        "morning": "Print them when quiet hours end (up to 3)"
+      }
+    },
+    "bottom_source": {
+      "options": {
+        "online": "Online, with bundled content as the fallback",
+        "local": "Local: bundled content only"
       }
     }
   },

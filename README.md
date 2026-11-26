@@ -4,7 +4,7 @@
 
 # Tiny Press
 
-A Home Assistant integration that turns an Epson receipt printer into a household fun-printer. It prints mazes, word searches, math strips, jokes, fun facts, puzzles, bedtime stories, a morning slip, weather, sensor history, notes and pictures. Everything is printed on demand: from buttons, the dashboard card, actions or Assist voice phrases.
+A Home Assistant integration that turns an Epson receipt printer into a household fun-printer. It prints mazes, word searches, math strips, jokes, fun facts, puzzles, bedtime stories, a morning slip, weather, sensor history, notes and pictures. Everything is printed on demand, from buttons, the dashboard card, actions or Assist voice phrases. The one exception is feed auto-print, which you switch on per feed.
 
 - **Printer:** Epson TM-m30III (other ESC/POS printers that answer `DLE EOT` on port 9100 should work)
 - **Paper:** 80 mm (576 dots, the default) or 58 mm (420 dots)
@@ -44,14 +44,24 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 | Weather entity | none | Used by the Weather print and the morning slip. Not needed if you only have one weather entity. |
 | Morning slip calendars | none | Today's events from these calendars print on the morning slip |
 | Morning slip to-do lists | none | Optional: unchecked items print as checkboxes |
-| Bottom of the morning slip | joke | Joke, fun fact, quote of the day, vocabulary word, headlines from a feed, small sudoku or nothing |
-| Live quote of the day | on | For the Quote bottom: Wikiquote's quote of the day first (credited), bundled public-domain quotes if it can't be read |
-| Morning slip feed | first feed | For the Headlines bottom: which feed |
+| Morning slip headlines | none | A feed whose 3 newest headlines print on the morning slip, above its bottom. Leave empty for none |
+| Bottom of the morning slip | joke | Joke, fun fact, quote of the day, vocabulary word, small sudoku or nothing |
+| Bottom of the slip: content source | Online | **Online** uses live sources where one exists, falling back to the bundled content. Today that's Wikiquote's quote of the day for the Quote bottom, credited. **Local** uses bundled content only, with no internet |
+| Auto-print quiet hours | 9 PM–7 AM, skip | No feed auto-prints during these hours. Items that arrive then are skipped, or printed when quiet hours end (up to 3 per feed) |
 | Use AI for jokes and fun facts | off | Off: jokes and facts come from bundled, human-written lists (facts from NOAA, NASA and the National Park Service, with credits). On: the AI is asked first. |
 
 ### Feeds
 
 Configure → **Add a feed**: a name (used on the print and by voice), the feed's URL and how many items to print (1–10). Any RSS or Atom feed works, such as news sites, blogs or podcasts. Tiny Press reads the feed once to check it, then fetches it only when you print it, with a 15-second timeout and a 2 MB cap. Prints carry headlines, dates and short text summaries, never pictures. Remove feeds with Configure → **Remove feeds**.
+
+**Auto-print (off by default):** Configure → **Edit a feed** → **Auto-print new items** prints a short slip each time that feed adds an item.
+- **Check every:** 15 minutes by default (5–1440).
+- **First check:** only notes what's already in the feed, so turning auto-print on never prints a backlog.
+- **Bursts:** at most 3 slips print per check (the newest, oldest first). Items older than 12 hours never auto-print, so a printer that was off overnight doesn't wake up to old news.
+- **Quiet hours:** one setting for all feeds, under Configure → Settings, 9 PM–7 AM by default. Choose **Skip them** to drop items that arrive during quiet hours, or **Print them when quiet hours end** for up to 3 per feed. Clear both times to print at any hour.
+- **QR code on auto slips:** optional.
+- **Printer off:** if a slip can't print, it waits for the next check (up to 3).
+- **Limits:** auto slips never count toward kid-mode limits.
 
 ### Profiles
 
@@ -364,7 +374,7 @@ Versioning is SemVer. `manifest.json` is the single source of truth: bump the mi
 
 ## Content sources
 
-Bundled content comes from sources that allow redistribution: fun facts from NOAA, NASA and the National Park Service (U.S. government works, public domain), K–3 words from the Dolch sight-word lists, and cryptogram quotes from public-domain works (Roosevelt, Muir, Lincoln, Shakespeare) as collected by the National Park Service, and vocabulary definitions from Open English WordNet (CC BY 4.0). Jokes and the NYT-style crossword clues were written for Tiny Press. With Live quote of the day on, the morning slip fetches Wikiquote's quote of the day (CC BY-SA 4.0) and prints its credit. Feed prints show each feed's own content and name. See [`data/LICENSE.md`](custom_components/tiny_press/data/LICENSE.md) for every source.
+Bundled content comes from sources that allow redistribution: fun facts from NOAA, NASA and the National Park Service (U.S. government works, public domain), K–3 words from the Dolch sight-word lists, and cryptogram quotes from public-domain works (Roosevelt, Muir, Lincoln, Shakespeare) as collected by the National Park Service, and vocabulary definitions from Open English WordNet (CC BY 4.0). Jokes and the NYT-style crossword clues were written for Tiny Press. With the bottom's content source set to Online, the morning slip fetches Wikiquote's quote of the day (CC BY-SA 4.0) and prints its credit. Feed prints show each feed's own content and name. See [`data/LICENSE.md`](custom_components/tiny_press/data/LICENSE.md) for every source.
 
 ## License
 

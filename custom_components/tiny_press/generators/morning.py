@@ -20,7 +20,7 @@ from .weather import WeatherReport
 
 MAX_EVENTS = 10
 MAX_TODOS_PER_LIST = 8
-BOTTOM_OPTIONS = ("joke", "fact", "quote", "word", "feed", "puzzle", "none")
+BOTTOM_OPTIONS = ("joke", "fact", "quote", "word", "puzzle", "none")
 MORNING_HEADLINES = 3
 
 

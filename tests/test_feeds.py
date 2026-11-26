@@ -13,7 +13,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
-from custom_components.tiny_press.const import DOMAIN, PAPER_DOTS
+from custom_components.tiny_press.const import DOMAIN, PAPER_DOTS, bottom_source
 from custom_components.tiny_press.coordinator import render_job
 from custom_components.tiny_press.fetch import FeedConfig, find_feed
 from custom_components.tiny_press.generators.feeds import (
@@ -93,6 +93,24 @@ def test_parse_rss() -> None:
     assert parse_feed(RSS, limit=1).items == (first,)
 
 
+def test_parse_sorts_newest_first() -> None:
+    def item(title: str, when: str | None) -> str:
+        date_tag = f"<pubDate>{when}</pubDate>" if when else ""
+        return f"<item><title>{title}</title>{date_tag}</item>"
+
+    data = (
+        "<rss><channel><title>T</title>"
+        + item("old", "Mon, 23 Nov 2026 21:46:34 +0000")
+        + item("undated", None)
+        + item("newest", "Thu, 26 Nov 2026 12:08:50 +0000")
+        + item("middle", "Thu, 26 Nov 2026 10:04:12 +0000")
+        + "</channel></rss>"
+    ).encode()
+    titles = [i.title for i in parse_feed(data).items]
+    assert titles == ["newest", "middle", "old", "undated"]
+    assert [i.title for i in parse_feed(data, limit=2).items] == ["newest", "middle"]
+
+
 def test_parse_atom_and_rdf() -> None:
     atom = parse_feed(ATOM)
     assert atom.title == "Example Blog" and atom.link == "https://blog.example.com/"
@@ -159,6 +177,26 @@ async def test_live_quote_falls_back_to_page(
     assert store.get_setting("live_quote_cache")["text"] == (
         "Whatever you are, be a good one."
     )
+
+
+def test_bottom_source() -> None:
+    assert bottom_source({}) == "online"
+    assert bottom_source({"live_quote": False}) == "local"  # v0.9.0 toggle
+    assert bottom_source({"live_quote": False, "bottom_source": "online"}) == "online"
+    assert bottom_source({"bottom_source": "local"}) == "local"
+    assert bottom_source({"bottom_source": "nonsense"}) == "online"
+
+
+async def test_local_source_skips_wikiquote(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    printer: FakePrinter,
+    aioclient_mock: AiohttpClientMocker,
+) -> None:
+    await _setup(hass, config_entry, morning_bottom="quote", bottom_source="local")
+    await _call(hass, "print_morning_slip")
+    assert aioclient_mock.call_count == 0  # local: no internet
+    assert len(config_entry.runtime_data.store.recent("quote")) == 1
 
 
 def test_find_feed() -> None:
@@ -306,7 +344,15 @@ async def test_feed_options(
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
     assert loaded_entry.options["feeds"] == [
-        {"id": "news", "name": "News", "url": FEED_URL, "items": 3}
+        {
+            "id": "news",
+            "name": "News",
+            "url": FEED_URL,
+            "items": 3,
+            "auto_print": False,  # off by default
+            "check_minutes": 15,
+            "auto_qr": False,
+        }
     ]
     result = await add(name="news", url=FEED_URL)
     assert result["errors"] == {"name": "feed_exists"}
@@ -349,36 +395,53 @@ async def test_morning_live_quote_and_headlines(
 
     hass.config_entries.async_update_entry(
         config_entry,
-        options={
-            **config_entry.options,
-            "morning_bottom": "feed",
-            "morning_feed": "news",
-        },
+        options={**config_entry.options, "morning_feed": "news"},
     )
     await hass.async_block_till_done()
-    await _call(hass, "print_morning_slip")
+    await _call(hass, "print_morning_slip")  # cached quote plus headlines
     assert aioclient_mock.call_count == 2
 
 
-async def test_morning_fallbacks(
+async def test_morning_headlines_are_their_own_part(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
     printer: FakePrinter,
     aioclient_mock: AiohttpClientMocker,
 ) -> None:
     aioclient_mock.get(FEED_URL, status=500)
+    # v0.9.0's "feed" bottom now means a quote; no headlines feed picked.
     await _setup(
         hass, config_entry, morning_bottom="feed", feeds=FEEDS, live_quote=False
     )
     store = config_entry.runtime_data.store
-    await _call(hass, "print_morning_slip")  # feed fails: a bundled quote instead
+    await _call(hass, "print_morning_slip")
     assert len(store.recent("quote")) == 1
+    assert aioclient_mock.call_count == 0  # no headlines feed picked: no fetch
+
     hass.config_entries.async_update_entry(
-        config_entry, options={"morning_bottom": "feed", "live_quote": False}
+        config_entry,
+        options={"morning_bottom": "none", "feeds": FEEDS, "morning_feed": "news"},
     )
     await hass.async_block_till_done()
-    await _call(hass, "print_morning_slip")  # no feeds at all: quote again
-    assert len(store.recent("quote")) == 2
+    await _call(hass, "print_morning_slip")  # picked feed fails: slip still prints
+    assert aioclient_mock.call_count == 1
+    assert len(store.recent("quote")) == 1  # bottom is "none": no quote added
+
+    hass.config_entries.async_update_entry(
+        config_entry, options={**config_entry.options, "morning_bottom": "feed"}
+    )
+    await hass.async_block_till_done()
+    result = await hass.config_entries.options.async_init(config_entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "settings"}
+    )
+    keys = [str(key) for key in result["data_schema"].schema]
+    assert keys.index("morning_feed") == keys.index("morning_bottom") - 1
+    bottom = next(k for k in result["data_schema"].schema if str(k) == "morning_bottom")
+    assert bottom.default() == "quote"  # the old "feed" bottom shows as Quote
+    assert "feed" not in [
+        o for o in result["data_schema"].schema[bottom].config["options"]
+    ]
 
 
 async def test_voice_and_llm_feed(

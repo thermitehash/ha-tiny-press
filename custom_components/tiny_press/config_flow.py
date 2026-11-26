@@ -27,22 +27,27 @@ from homeassistant.helpers.selector import (
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
+    TimeSelector,
 )
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 import voluptuous as vol
 
 from .const import (
+    BOTTOM_SOURCES,
     CONF_AI_JOKES,
     CONF_AI_TASK,
+    CONF_BOTTOM_SOURCE,
     CONF_CALENDARS,
     CONF_FEEDS,
-    CONF_LIVE_QUOTE,
     CONF_MAX_LENGTH_MM,
     CONF_MORNING_BOTTOM,
     CONF_MORNING_FEED,
     CONF_PAPER_WIDTH,
     CONF_POLL_INTERVAL,
     CONF_PRINT_TEST_PAGE,
+    CONF_QUIET_END,
+    CONF_QUIET_MODE,
+    CONF_QUIET_START,
     CONF_TODOS,
     CONF_WEATHER,
     DEFAULT_MAX_LENGTH_MM,
@@ -55,9 +60,18 @@ from .const import (
     PAPER_80MM,
     PAPER_DOTS,
     Difficulty,
+    bottom_source,
 )
 from .coordinator import TinyPressConfigEntry
-from .fetch import FetchError, async_fetch_feed, feeds_from_options
+from .fetch import (
+    DEFAULT_QUIET_END,
+    DEFAULT_QUIET_START,
+    QUIET_MODES,
+    FeedConfig,
+    FetchError,
+    async_fetch_feed,
+    feeds_from_options,
+)
 from .generators.feeds import DEFAULT_ITEMS, MAX_ITEMS
 from .generators.morning import BOTTOM_OPTIONS
 from .jobs import test_page_job
@@ -279,6 +293,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
     def __init__(self) -> None:
         """Start with nothing selected."""
         self._editing: Profile | None = None
+        self._feed_id: str | None = None
 
     @property
     def _profiles(self) -> list[Profile]:
@@ -287,8 +302,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
     @property
     def _feeds(self) -> list[dict[str, Any]]:
         return [
-            {"id": f.id, "name": f.name, "url": f.url, "items": f.items}
-            for f in feeds_from_options(dict(self.config_entry.options))
+            f.as_dict() for f in feeds_from_options(dict(self.config_entry.options))
         ]
 
     def _save(
@@ -309,7 +323,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
             menu += ["edit_profile", "remove_profile"]
         menu.append("add_feed")
         if self._feeds:
-            menu.append("remove_feed")
+            menu += ["edit_feed", "remove_feed"]
         return self.async_show_menu(step_id="init", menu_options=menu)
 
     async def async_step_settings(
@@ -327,8 +341,11 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                     CONF_CALENDARS: list(user_input.get(CONF_CALENDARS) or []),
                     CONF_TODOS: list(user_input.get(CONF_TODOS) or []),
                     CONF_MORNING_BOTTOM: user_input.get(CONF_MORNING_BOTTOM, "joke"),
-                    CONF_LIVE_QUOTE: bool(user_input.get(CONF_LIVE_QUOTE, True)),
+                    CONF_BOTTOM_SOURCE: user_input.get(CONF_BOTTOM_SOURCE, "online"),
                     CONF_MORNING_FEED: user_input.get(CONF_MORNING_FEED) or None,
+                    CONF_QUIET_START: user_input.get(CONF_QUIET_START) or None,
+                    CONF_QUIET_END: user_input.get(CONF_QUIET_END) or None,
+                    CONF_QUIET_MODE: user_input.get(CONF_QUIET_MODE, "skip"),
                 }
             )
         options = self.config_entry.options
@@ -379,9 +396,10 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                     CONF_TODOS,
                     description={"suggested_value": options.get(CONF_TODOS)},
                 ): EntitySelector(EntitySelectorConfig(domain="todo", multiple=True)),
+                **self._morning_feed_field(options),
                 vol.Required(
                     CONF_MORNING_BOTTOM,
-                    default=options.get(CONF_MORNING_BOTTOM, "joke"),
+                    default=self._bottom_default(options),
                 ): SelectSelector(
                     SelectSelectorConfig(
                         options=list(BOTTOM_OPTIONS),
@@ -390,19 +408,41 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                     )
                 ),
                 vol.Required(
-                    CONF_LIVE_QUOTE, default=bool(options.get(CONF_LIVE_QUOTE, True))
-                ): BooleanSelector(),
+                    CONF_BOTTOM_SOURCE, default=bottom_source(options)
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=list(BOTTOM_SOURCES),
+                        translation_key=CONF_BOTTOM_SOURCE,
+                        mode=SelectSelectorMode.LIST,
+                    )
+                ),
+                vol.Optional(
+                    CONF_QUIET_START,
+                    description={
+                        "suggested_value": options.get(
+                            CONF_QUIET_START, DEFAULT_QUIET_START
+                        )
+                    },
+                ): TimeSelector(),
+                vol.Optional(
+                    CONF_QUIET_END,
+                    description={
+                        "suggested_value": options.get(
+                            CONF_QUIET_END, DEFAULT_QUIET_END
+                        )
+                    },
+                ): TimeSelector(),
+                vol.Required(
+                    CONF_QUIET_MODE, default=options.get(CONF_QUIET_MODE, "skip")
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=list(QUIET_MODES),
+                        translation_key=CONF_QUIET_MODE,
+                        mode=SelectSelectorMode.LIST,
+                    )
+                ),
             }
         )
-        if self._feeds:
-            schema = schema.extend(
-                {
-                    vol.Optional(
-                        CONF_MORNING_FEED,
-                        description={"suggested_value": options.get(CONF_MORNING_FEED)},
-                    ): self._feed_selector()
-                }
-            )
         return self.async_show_form(step_id="settings", data_schema=schema)
 
     async def async_step_kid_limits(
@@ -612,6 +652,23 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
             ),
         )
 
+    def _morning_feed_field(self, options: Any) -> dict[Any, Any]:
+        """Offer the morning slip headlines feed, when any feed is set up."""
+        if not self._feeds:
+            return {}
+        return {
+            vol.Optional(
+                CONF_MORNING_FEED,
+                description={"suggested_value": options.get(CONF_MORNING_FEED)},
+            ): self._feed_selector()
+        }
+
+    @staticmethod
+    def _bottom_default(options: Any) -> str:
+        bottom = options.get(CONF_MORNING_BOTTOM, "joke")
+        # v0.9.0's "feed" bottom is gone; headlines are their own setting.
+        return "quote" if bottom == "feed" else bottom
+
     def _feed_selector(self, multiple: bool = False) -> SelectSelector:
         return SelectSelector(
             SelectSelectorConfig(
@@ -654,12 +711,9 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                     while feed_id in taken:
                         feed_id, n = f"{base}_{n}", n + 1
                     feeds.append(
-                        {
-                            "id": feed_id,
-                            "name": name,
-                            "url": url,
-                            "items": int(user_input["items"]),
-                        }
+                        FeedConfig(
+                            feed_id, name, url, int(user_input["items"])
+                        ).as_dict()
                     )
                     return self._save(**{CONF_FEEDS: feeds})
         defaults = user_input or {}
@@ -681,6 +735,71 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                 }
             ),
             errors=errors,
+        )
+
+    async def async_step_edit_feed(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Pick a feed to change."""
+        if user_input is not None:
+            self._feed_id = user_input["feed"]
+            return await self.async_step_feed_settings()
+        return self.async_show_form(
+            step_id="edit_feed",
+            data_schema=vol.Schema({vol.Required("feed"): self._feed_selector()}),
+        )
+
+    async def async_step_feed_settings(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Items per print, and auto-print."""
+        feeds = self._feeds
+        current = next(f for f in feeds if f["id"] == self._feed_id)
+        if user_input is not None:
+            updated = FeedConfig.from_dict(
+                {
+                    **current,
+                    "items": int(user_input["items"]),
+                    "auto_print": bool(user_input["auto_print"]),
+                    "check_minutes": int(user_input["check_minutes"]),
+                    "auto_qr": bool(user_input["auto_qr"]),
+                }
+            ).as_dict()
+            return self._save(
+                **{
+                    CONF_FEEDS: [
+                        updated if f["id"] == self._feed_id else f for f in feeds
+                    ]
+                }
+            )
+        schema = vol.Schema(
+            {
+                vol.Required("items", default=current["items"]): NumberSelector(
+                    NumberSelectorConfig(
+                        min=1, max=MAX_ITEMS, step=1, mode=NumberSelectorMode.BOX
+                    )
+                ),
+                vol.Required(
+                    "auto_print", default=current["auto_print"]
+                ): BooleanSelector(),
+                vol.Required(
+                    "check_minutes", default=current["check_minutes"]
+                ): NumberSelector(
+                    NumberSelectorConfig(
+                        min=5,
+                        max=1440,
+                        step=5,
+                        unit_of_measurement="min",
+                        mode=NumberSelectorMode.BOX,
+                    )
+                ),
+                vol.Required("auto_qr", default=current["auto_qr"]): BooleanSelector(),
+            }
+        )
+        return self.async_show_form(
+            step_id="feed_settings",
+            data_schema=schema,
+            description_placeholders={"name": current["name"]},
         )
 
     async def async_step_remove_feed(

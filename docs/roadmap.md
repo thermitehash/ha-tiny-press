@@ -11,8 +11,32 @@
 | — | 0.7.0 ✅ | Sensor history prints (graph, table, timeline) |
 | 6 | 0.8.0 ✅ | Assist voice phrases (blueprint) and print tools for AI agents |
 | — | 0.9.0 ✅ | RSS/Atom feed prints and live quote of the day from Wikiquote |
+| — | 0.10.0 | Holiday-aware morning slip (day of only), seasonal and holiday puzzle themes, quote source setting (planned, below) |
 | 7 | — | Skylight (planning only, below) |
 | later | — | Selfie prints and AI-generated kid-safe pictures (planning only, below) |
+
+## v0.10.0: holidays and themes (planned)
+
+Design questions get asked one at a time when this is built.
+
+### Holiday-aware morning slip
+- **Banner under the date** on a holiday: "Today is Diwali, the festival of lights". The one-line description is neutral and factual (what the day is), sourced and credited (for example Library of Congress or Smithsonian educational pages), never devotional.
+- **Day of only:** a holiday is recognized only on the day itself, with no countdowns or reminders beforehand.
+- **Themed fun:** on a holiday, the slip's bottom and that day's puzzles use its theme.
+- **Dates:** Home Assistant's Holidays integration calendars (country and region), plus a bundled, sourced table of moving lunar and lunisolar dates for about ten years.
+
+### Not centered on any one tradition
+- Nothing religious is on by default. The defaults are secular and natural: seasons, solstices and equinoxes, Earth Day, Pi Day, the first day of school, and your country's public holidays if that calendar is added.
+- Faith and cultural observances are an opt-in checklist, all treated the same way. Examples: Lunar New Year, Holi, Nowruz, Passover, Easter, Ramadan, Eid al-Fitr, Eid al-Adha, Vesak, Rosh Hashanah, Yom Kippur, Diwali, Hanukkah, Christmas, Kwanzaa, Juneteenth, Indigenous Peoples' Day.
+
+### Puzzle themes
+- **Seasonal themes:** word lists for autumn, winter, spring and summer that follow the hemisphere, using Home Assistant's latitude.
+- **Holiday themes:** word-search words, themed crossword clues and a themed joke or fact pool, only for observances the household ticked.
+- **A Theme select:** Auto (season or today's holiday), Off, or a fixed theme. Kid interests still mix in.
+- **Themed mazes:** borders or start/finish icons, such as a lantern, a snowflake or a leaf.
+
+### Quote source setting
+- Wikiquote (default), a feed from the Feeds list (its newest item becomes the quote, credited with the feed's name), or bundled only. This would extend v0.9.1's Online/Local content source for the slip's bottom.
 
 ## Phase 7: Skylight family calendar (planning only)
 

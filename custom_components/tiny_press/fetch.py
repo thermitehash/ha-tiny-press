@@ -41,6 +41,12 @@ class FetchError(Exception):
     """The download failed or wasn't a feed."""
 
 
+DEFAULT_CHECK_MINUTES = 15
+DEFAULT_QUIET_START = "21:00"
+DEFAULT_QUIET_END = "07:00"
+QUIET_MODES = ("skip", "morning")  # skip: drop quiet-hours items; morning: print after
+
+
 @dataclass(frozen=True, slots=True)
 class FeedConfig:
     """One feed from Configure → Feeds."""
@@ -49,17 +55,37 @@ class FeedConfig:
     name: str
     url: str
     items: int = DEFAULT_ITEMS
+    # Auto-print a slip for each new item (off by default).
+    auto_print: bool = False
+    check_minutes: int = DEFAULT_CHECK_MINUTES
+    auto_qr: bool = False
 
     @classmethod
     def from_dict(cls, data: dict) -> FeedConfig:
         """Build from stored options."""
         items = int(data.get("items") or DEFAULT_ITEMS)
+        minutes = int(data.get("check_minutes") or DEFAULT_CHECK_MINUTES)
         return cls(
             str(data["id"]),
             str(data["name"]),
             str(data["url"]),
             max(1, min(MAX_ITEMS, items)),
+            bool(data.get("auto_print", False)),
+            max(5, min(1440, minutes)),
+            bool(data.get("auto_qr", False)),
         )
+
+    def as_dict(self) -> dict:
+        """Return the stored form."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "url": self.url,
+            "items": self.items,
+            "auto_print": self.auto_print,
+            "check_minutes": self.check_minutes,
+            "auto_qr": self.auto_qr,
+        }
 
 
 def feeds_from_options(options: dict) -> list[FeedConfig]:

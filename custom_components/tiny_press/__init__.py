@@ -10,6 +10,7 @@ from homeassistant.helpers.typing import ConfigType
 from .card import async_register_card, async_unregister_card
 from .const import DOMAIN
 from .coordinator import TinyPressConfigEntry, TinyPressCoordinator
+from .feed_watch import FeedWatcher
 from .generators.data import preload
 from .repairs import async_clear_offline_issue
 from .services import async_setup_services
@@ -46,6 +47,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: TinyPressConfigEntry) ->
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    # Auto-print for feeds that have it on (does nothing otherwise).
+    entry.async_on_unload(FeedWatcher(hass, coordinator).async_start())
     return True
 
 
