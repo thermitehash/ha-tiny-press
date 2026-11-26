@@ -84,10 +84,12 @@ def test_page(width: int, info: dict[str, str], footer: Footer) -> Canvas:
     canvas.text("Bold 1Il 0Oo 5S 8B", px=28, bold=True)
     canvas.text("JetBrains Mono: 0123456789 ABC", px=24, family="mono")
     canvas.space(8)
-    ramp = Image.new("L", (canvas.inner, 48))
+    # A light-to-white ramp shows the dithering. It stops short of solid black:
+    # dense black rows make a thermal printer slow down noticeably.
+    ramp = Image.new("L", (canvas.inner, 28))
     draw = ImageDraw.Draw(ramp)
     for x in range(canvas.inner):
-        draw.line((x, 0, x, 47), fill=round(255 * x / (canvas.inner - 1)))
+        draw.line((x, 0, x, 27), fill=round(96 + 159 * x / (canvas.inner - 1)))
     canvas.image(ramp)
     canvas.space(8)
     canvas.rule(dashed=True)
