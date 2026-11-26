@@ -14,6 +14,7 @@ CONF_MAX_LENGTH_MM: Final = "max_length_mm"
 CONF_POLL_INTERVAL: Final = "poll_interval"
 CONF_PRINT_TEST_PAGE: Final = "print_test_page"
 CONF_AI_TASK: Final = "ai_task_entity"
+CONF_WEATHER: Final = "weather_entity"
 CONF_AI_JOKES: Final = "ai_jokes"  # off: bundled, human-written jokes and facts
 
 DEFAULT_PORT: Final = 9100
@@ -56,6 +57,7 @@ class PrintType(StrEnum):
     JOKE = "joke"
     FACT = "fact"
     KID_PACK = "kid_pack"
+    WEATHER = "weather"
     TEST_PAGE = "test_page"
 
 

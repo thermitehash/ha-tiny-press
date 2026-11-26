@@ -41,6 +41,7 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 | Longest single print | 600 mm | Any print longer than this is trimmed and ends with a "trimmed" note, so a runaway print can't empty the roll. |
 | Status check interval | 60 s | How often paper and cover status are read. Status is never read while a job is printing. |
 | AI task entity | none | Optional. Any `ai_task` entity (for example the Anthropic integration's). Used for bedtime stories in a later version. |
+| Weather entity | none | Used by the Weather print. Not needed if you only have one weather entity. |
 | Use AI for jokes and fun facts | off | Off: jokes and facts come from bundled, human-written lists (facts from NOAA, NASA and the National Park Service, with credits). On: the AI is asked first. |
 
 ### Profiles
@@ -80,6 +81,7 @@ Every math strip ends with a harder ★ bonus problem.
 | `button.tiny_press_math` | Prints a math strip for the selected kid |
 | `button.tiny_press_joke` | Prints a joke (punchline upside down below a fold line) |
 | `button.tiny_press_kid_pack` | Prints a maze, word search and math strip in one go |
+| `button.tiny_press_weather` | Prints current weather and a forecast of up to 10 days |
 | `button.tiny_press_answers` | Prints the answer key for the newest puzzle |
 | `button.tiny_press_test_page` | Prints the test page |
 | `sensor.tiny_press_kid_prints_left_today` | Kid prints left today when kid-mode limits are on. Attributes: `next_print_at`, `paper_left_mm`, `blocked_reason` |
@@ -114,7 +116,7 @@ This is the general entry point that every button and voice phrase uses.
 
 | Field | Notes |
 |---|---|
-| `type` | `maze`, `word_search`, `math`, `joke`, `fact`, `kid_pack` or `test_page` |
+| `type` | `maze`, `word_search`, `math`, `joke`, `fact`, `kid_pack`, `weather` or `test_page` |
 | `profile` | Kid profile name for word searches, math, jokes and kid packs. Empty uses the Kid profile select. |
 | `difficulty` | For mazes (and the maze in a kid pack). Loose words work: `easy`, `medium`, `hard`, `harder`, `tricky`, `a little harder`. Empty uses the Maze difficulty select. |
 | `seed` | The same seed prints the same puzzle again (and the same bundled joke) |
@@ -174,7 +176,7 @@ type: custom:tiny-press-card
 title: Rosie's printer
 kid_mode: true          # hold-to-print, no settings or answers, shows limits
 show_preview: false     # true: see the print first, then Shuffle or Print
-buttons: [maze, word_search, math, joke, kid_pack]
+buttons: [maze, word_search, math, joke, kid_pack, weather]
 # ignore_limits: true   # for a parents' dashboard
 ```
 

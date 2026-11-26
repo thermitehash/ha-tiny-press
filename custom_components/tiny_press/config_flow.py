@@ -36,6 +36,7 @@ from .const import (
     CONF_PAPER_WIDTH,
     CONF_POLL_INTERVAL,
     CONF_PRINT_TEST_PAGE,
+    CONF_WEATHER,
     DEFAULT_MAX_LENGTH_MM,
     DEFAULT_POLL_INTERVAL,
     DEFAULT_PORT,
@@ -294,6 +295,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                     CONF_POLL_INTERVAL: int(user_input[CONF_POLL_INTERVAL]),
                     CONF_AI_TASK: user_input.get(CONF_AI_TASK) or None,
                     CONF_AI_JOKES: bool(user_input.get(CONF_AI_JOKES)),
+                    CONF_WEATHER: user_input.get(CONF_WEATHER) or None,
                 }
             )
         options = self.config_entry.options
@@ -330,6 +332,10 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                 vol.Required(
                     CONF_AI_JOKES, default=bool(options.get(CONF_AI_JOKES, False))
                 ): BooleanSelector(),
+                vol.Optional(
+                    CONF_WEATHER,
+                    description={"suggested_value": options.get(CONF_WEATHER)},
+                ): EntitySelector(EntitySelectorConfig(domain="weather")),
             }
         )
         return self.async_show_form(step_id="settings", data_schema=schema)

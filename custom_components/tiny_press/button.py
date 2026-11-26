@@ -33,6 +33,7 @@ BUTTONS: tuple[TinyPressButtonDescription, ...] = (
     TinyPressButtonDescription(key="math", print_type=PrintType.MATH),
     TinyPressButtonDescription(key="joke", print_type=PrintType.JOKE),
     TinyPressButtonDescription(key="kid_pack", print_type=PrintType.KID_PACK),
+    TinyPressButtonDescription(key="weather", print_type=PrintType.WEATHER),
     TinyPressButtonDescription(key="answers", print_type=None),
     TinyPressButtonDescription(
         key="test_page",

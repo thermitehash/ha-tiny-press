@@ -16,6 +16,7 @@ from .const import PAPER_80MM, Difficulty, PrintType
 from .coordinator import PrintJob
 from .generators import jokes, math_strip, maze, word_search
 from .generators.jokes import Joke
+from .generators.weather import WeatherReport
 from .printer import escpos
 from .profiles import Profile
 from .render import layout
@@ -259,4 +260,21 @@ def answer_job(entry: dict) -> PrintJob:
         profile=None,
         response={"answers_for": kind},
         build=build,
+    )
+
+
+def weather_job(report: WeatherReport) -> PrintJob:
+    """Build a weather print (current conditions + forecast)."""
+    print_id = layout.make_print_id()
+    footer = layout.Footer("Weather", print_id, _today())
+    return PrintJob(
+        type=PrintType.WEATHER,
+        label="Weather",
+        print_id=print_id,
+        response={
+            "condition": report.condition,
+            "temperature": report.temperature,
+            "forecast_days": len(report.days),
+        },
+        build=lambda width: layout.weather_page(width, report, footer),
     )

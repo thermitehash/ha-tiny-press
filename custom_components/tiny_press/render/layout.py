@@ -16,6 +16,7 @@ from PIL import Image, ImageDraw
 from ..generators.jokes import Joke
 from ..generators.math_strip import MathStrip, Problem
 from ..generators.maze import Maze
+from ..generators.weather import WeatherReport, condition_label
 from ..generators.word_search import WordSearch
 from .canvas import MARGIN, Canvas, font
 
@@ -405,5 +406,225 @@ def joke_answer_page(
         canvas.space(10)
         canvas.text(punchline, px=34, bold=True, align="center")
     canvas.space(12)
+    canvas.footer(*footer.fields())
+    return canvas
+
+
+def _cloud(
+    draw: ImageDraw.ImageDraw, x: float, y: float, s: float, fill: int = 255
+) -> None:
+    """Draw a cloud in a box of size ``s`` at (x, y), outlined in black."""
+    w = max(2, int(s * 0.07))
+    parts = [
+        (x + s * 0.05, y + s * 0.45, x + s * 0.45, y + s * 0.85),
+        (x + s * 0.25, y + s * 0.25, x + s * 0.7, y + s * 0.7),
+        (x + s * 0.5, y + s * 0.4, x + s * 0.95, y + s * 0.85),
+    ]
+    for box in parts:
+        draw.ellipse(box, fill=0)
+    inset = [(a + w, b + w, c - w, d - w) for a, b, c, d in parts]
+    for box in inset:
+        draw.ellipse(box, fill=fill)
+    draw.rectangle(
+        (x + s * 0.25, y + s * 0.62, x + s * 0.75, y + s * 0.85 - w), fill=fill
+    )
+    draw.line(
+        (x + s * 0.25, y + s * 0.85 - w / 2, x + s * 0.75, y + s * 0.85 - w / 2),
+        fill=0,
+        width=w,
+    )
+
+
+def _sun(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float) -> None:
+    w = max(2, int(r * 0.22))
+    draw.ellipse((cx - r, cy - r, cx + r, cy + r), outline=0, width=w)
+    for i in range(8):
+        ang = i * math.pi / 4
+        draw.line(
+            (
+                cx + math.cos(ang) * r * 1.4,
+                cy + math.sin(ang) * r * 1.4,
+                cx + math.cos(ang) * r * 1.9,
+                cy + math.sin(ang) * r * 1.9,
+            ),
+            fill=0,
+            width=w,
+        )
+
+
+def weather_icon(condition: str | None, size: int) -> Image.Image:
+    """Draw a simple black-and-white pictogram for a weather condition."""
+    img = Image.new("L", (size, size), 255)
+    d = ImageDraw.Draw(img)
+    s = size
+    w = max(2, int(s * 0.07))
+    c = condition or ""
+    if c in ("sunny", "exceptional"):
+        _sun(d, s / 2, s / 2, s * 0.22)
+    elif c == "clear-night":
+        d.ellipse((s * 0.2, s * 0.15, s * 0.8, s * 0.75), fill=0)
+        d.ellipse((s * 0.38, s * 0.05, s * 0.95, s * 0.62), fill=255)
+    elif c == "partlycloudy":
+        _sun(d, s * 0.62, s * 0.36, s * 0.15)
+        _cloud(d, s * 0.0, s * 0.18, s * 0.82)
+    elif c in ("fog",):
+        for i in range(4):
+            y = s * (0.3 + i * 0.14)
+            d.line(
+                (s * 0.12 + (i % 2) * s * 0.08, y, s * 0.88 - (i % 2) * s * 0.08, y),
+                fill=0,
+                width=w,
+            )
+    elif c in ("windy", "windy-variant"):
+        for i, length in enumerate((0.7, 0.55, 0.65)):
+            y = s * (0.32 + i * 0.18)
+            d.line((s * 0.1, y, s * (0.1 + length), y), fill=0, width=w)
+            d.arc(
+                (
+                    s * (0.1 + length) - s * 0.08,
+                    y - s * 0.16,
+                    s * (0.1 + length) + s * 0.08,
+                    y,
+                ),
+                270,
+                90,
+                fill=0,
+                width=w,
+            )
+    else:
+        _cloud(d, s * 0.05, s * 0.0, s * 0.9)
+        if c in ("rainy", "pouring", "lightning-rainy", "snowy-rainy"):
+            drops = 4 if c == "pouring" else 3
+            for i in range(drops):
+                x = s * (0.28 + i * (0.44 / max(1, drops - 1)))
+                d.line((x, s * 0.8, x - s * 0.06, s * 0.95), fill=0, width=w)
+        if c in ("snowy", "snowy-rainy", "hail"):
+            for i in range(3):
+                x, y = s * (0.3 + i * 0.2), s * 0.88
+                r = s * 0.05
+                if c == "hail":
+                    d.ellipse((x - r, y - r, x + r, y + r), fill=0)
+                else:
+                    d.line((x - r, y, x + r, y), fill=0, width=max(1, w // 2))
+                    d.line((x, y - r, x, y + r), fill=0, width=max(1, w // 2))
+                    d.line(
+                        (x - r * 0.7, y - r * 0.7, x + r * 0.7, y + r * 0.7),
+                        fill=0,
+                        width=max(1, w // 2),
+                    )
+                    d.line(
+                        (x - r * 0.7, y + r * 0.7, x + r * 0.7, y - r * 0.7),
+                        fill=0,
+                        width=max(1, w // 2),
+                    )
+        if c in ("lightning", "lightning-rainy"):
+            d.polygon(
+                [
+                    (s * 0.52, s * 0.62),
+                    (s * 0.4, s * 0.82),
+                    (s * 0.5, s * 0.82),
+                    (s * 0.44, s * 0.99),
+                    (s * 0.62, s * 0.74),
+                    (s * 0.52, s * 0.74),
+                ],
+                fill=0,
+            )
+    return img
+
+
+def _deg(value: float | None, unit: str) -> str:
+    if value is None:
+        return "--"
+    return f"{round(value)}°"
+
+
+def weather_page(width: int, report: WeatherReport, footer: Footer) -> Canvas:
+    """Lay out current conditions and a day-by-day forecast."""
+    canvas = Canvas(width)
+    canvas.title("Weather")
+    canvas.text(report.place, px=22, align="center")
+    canvas.space(8)
+
+    # Current conditions: icon on the left, big temperature and details right.
+    icon_size = 120 if width >= 500 else 96
+    block = Image.new("L", (width, icon_size + 160), 255)
+    block.paste(weather_icon(report.condition, icon_size), (MARGIN + 4, 4))
+    draw = ImageDraw.Draw(block)
+    x = MARGIN + icon_size + 24
+    big = font("sans", 72 if width >= 500 else 56, True)
+    big_text = _deg(report.temperature, report.temp_unit)
+    if report.temperature is not None:
+        big_text = f"{round(report.temperature)}{report.temp_unit}"
+    draw.text((x, 0), big_text, font=big, fill=0)
+    small = font("sans", 24 if width >= 500 else 20, False)
+    details = [condition_label(report.condition)]
+    extras = []
+    if report.feels_like is not None:
+        extras.append(f"Feels {_deg(report.feels_like, report.temp_unit)}")
+    if report.humidity is not None:
+        extras.append(f"{round(report.humidity)}% humid")
+    if report.wind_speed is not None:
+        extras.append(f"Wind {round(report.wind_speed)} {report.wind_unit}".strip())
+    if extras:
+        details.append("  ".join(extras[:2]))
+        if len(extras) > 2:
+            details.append(extras[2])
+    y = big.getmetrics()[0] + 6
+    for line in details:
+        draw.text((x, y), line, font=small, fill=0)
+        y += int(small.size * 1.25)
+    canvas.drawing(block.crop((0, 0, width, max(icon_size + 8, y + 4))))
+    canvas.space(6)
+
+    if report.days:
+        canvas.rule()
+        canvas.text(
+            f"{len(report.days)}-day forecast", px=24, bold=True, align="center"
+        )
+        canvas.space(4)
+        row_h = 56 if width >= 500 else 50
+        icon = row_h - 12
+        name_f = font("sans", 24 if width >= 500 else 20, True)
+        text_f = font("sans", 22 if width >= 500 else 18, False)
+        temp_f = font("mono", 24 if width >= 500 else 20, True)
+        rows = Image.new("L", (width, row_h * len(report.days)), 255)
+        draw = ImageDraw.Draw(rows)
+        today = report.days[0].day
+        for i, day in enumerate(report.days):
+            top = i * row_h
+            if i:
+                for xx in range(MARGIN, width - MARGIN, 6):
+                    draw.point((xx, top), fill=0)
+            label = "Today" if day.day == today else day.day.strftime("%a %-m/%-d")
+            mid = top + row_h / 2
+            draw.text((MARGIN + 2, mid), label, font=name_f, fill=0, anchor="lm")
+            ix = MARGIN + int(width * 0.27)
+            rows.paste(weather_icon(day.condition, icon), (ix, top + 6))
+            temps = (
+                f"{_deg(day.high, report.temp_unit)}/{_deg(day.low, report.temp_unit)}"
+            )
+            draw.text(
+                (width - MARGIN - 2, mid), temps, font=temp_f, fill=0, anchor="rm"
+            )
+            if day.precip_chance is not None and day.precip_chance >= 10:
+                rain = f"{round(day.precip_chance)}%"
+                draw.text(
+                    (width - MARGIN - temp_f.getlength(temps) - 18, mid),
+                    rain,
+                    font=text_f,
+                    fill=0,
+                    anchor="rm",
+                )
+            if width >= 500:
+                draw.text(
+                    (ix + icon + 10, mid),
+                    condition_label(day.condition),
+                    font=text_f,
+                    fill=0,
+                    anchor="lm",
+                )
+        canvas.drawing(rows)
+        canvas.text("% = chance of rain or snow", px=16, align="right")
+    canvas.space(8)
     canvas.footer(*footer.fields())
     return canvas

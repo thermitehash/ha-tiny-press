@@ -168,6 +168,7 @@ async def test_options_settings(
         "poll_interval": 120,
         "ai_task_entity": "ai_task.claude",
         "ai_jokes": True,
+        "weather_entity": None,
     }
     coordinator = loaded_entry.runtime_data
     assert coordinator.max_length_mm == 450

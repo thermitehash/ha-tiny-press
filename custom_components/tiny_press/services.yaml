@@ -17,6 +17,7 @@ print:
             - joke
             - fact
             - kid_pack
+            - weather
             - test_page
     profile:
       example: Kid
@@ -95,6 +96,7 @@ preview:
             - joke
             - fact
             - kid_pack
+            - weather
             - test_page
     profile:
       example: Kid

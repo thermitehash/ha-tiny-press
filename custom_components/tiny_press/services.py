@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import partial
+import logging
 from pathlib import Path
 import re
 from typing import Any
@@ -17,7 +18,7 @@ from homeassistant.core import (
     SupportsResponse,
     callback,
 )
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 import voluptuous as vol
@@ -35,6 +36,7 @@ from .const import (
     ATTR_TITLE,
     ATTR_TYPE,
     CONF_PAPER_WIDTH,
+    CONF_WEATHER,
     DOMAIN,
     EVENT_RATE_LIMITED,
     PAPER_80MM,
@@ -45,7 +47,10 @@ from .const import (
     PrintType,
 )
 from .coordinator import PrintJob, TinyPressConfigEntry, TinyPressCoordinator
+from .generators.weather import WeatherReport, build_report
 from .limits import KID_TYPES
+
+_LOGGER = logging.getLogger(__name__)
 
 SERVICE_PRINT = "print"
 SERVICE_PREVIEW = "preview"
@@ -194,9 +199,56 @@ async def async_build_job(
             kid = coordinator.kid_profile(profile)
             level = maze_difficulty(coordinator, difficulty)
             return partial(jobs.kid_pack_job, kid, level, seed)
+        case PrintType.WEATHER:
+            return jobs.weather_job(await async_weather_report(hass, coordinator))
         case _:
             paper, info = test_page_info(coordinator)
             return jobs.test_page_job(paper, info)
+
+
+def weather_entity(hass: HomeAssistant, coordinator: TinyPressCoordinator) -> str:
+    """Return the weather entity from the options, or the only one there is."""
+    chosen = coordinator.config_entry.options.get(CONF_WEATHER)
+    if chosen and hass.states.get(chosen):
+        return chosen
+    found = hass.states.async_entity_ids("weather")
+    if not chosen and len(found) == 1:
+        return found[0]
+    raise ServiceValidationError(
+        translation_domain=DOMAIN, translation_key="weather_not_set"
+    )
+
+
+async def async_weather_report(
+    hass: HomeAssistant, coordinator: TinyPressCoordinator
+) -> WeatherReport:
+    """Read the weather entity and ask it for a daily (or twice-daily) forecast."""
+    entity_id = weather_entity(hass, coordinator)
+    state = hass.states.get(entity_id)
+    assert state is not None
+    forecast: list[dict[str, Any]] = []
+    for kind in ("daily", "twice_daily"):
+        try:
+            response = await hass.services.async_call(
+                "weather",
+                "get_forecasts",
+                {"entity_id": entity_id, "type": kind},
+                blocking=True,
+                return_response=True,
+            )
+        except HomeAssistantError as err:
+            _LOGGER.debug("No %s forecast from %s: %s", kind, entity_id, err)
+            continue
+        forecast = ((response or {}).get(entity_id) or {}).get("forecast") or []
+        if forecast:
+            break
+    return build_report(
+        str(state.attributes.get("friendly_name") or entity_id),
+        dict(state.attributes),
+        state.state if state.state not in ("unknown", "unavailable") else None,
+        forecast,
+        to_local=dt_util.as_local,
+    )
 
 
 def check_limits(

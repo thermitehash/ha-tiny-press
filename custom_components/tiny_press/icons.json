@@ -49,6 +49,9 @@
       },
       "answers": {
         "default": "mdi:check-decagram-outline"
+      },
+      "weather": {
+        "default": "mdi:weather-partly-cloudy"
       }
     },
     "select": {
