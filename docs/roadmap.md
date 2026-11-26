@@ -20,7 +20,7 @@
 
 Design decisions (asked one at a time, answered 2026-11-26):
 1. **On by default:** seasons and solstices, fun science days (Pi Day, Earth Day, World Ocean Day, Space Day and similar), public holidays from a Holidays calendar if one is added, and a first day of school you set.
-2. **Opt-in holiday groups** instead of single holidays (like Gemstone Lights' Autopilot). Pick whole groups, all off by default, plus **custom family days** (birthdays, name days, local festivals) with your own banner text.
+2. **Opt-in holiday groups** instead of single holidays (like Gemstone Lights' Autopilot). Pick whole groups, all off by default, then optionally untick single days inside a group. Plus **custom family days** (birthdays, name days, local festivals) with your own banner text.
 3. **ASCII art:** centered above the banner text, on recognized days only. Ordinary days look as they do now.
 4. **Themed prints:** word search, crossword, maze, and jokes and facts.
 5. **Theme control:** under Configure → Settings only (Auto, Off, or a fixed theme).
