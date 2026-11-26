@@ -1006,6 +1006,24 @@ def morning_page(width: int, slip: MorningSlip, footer: Footer) -> Canvas:
             canvas.text(slip.joke.setup, px=24, align="center")
             if slip.joke.credit:
                 canvas.text(f"Source: {slip.joke.credit}", px=16, align="center")
+    if slip.quote is not None:
+        canvas.rule(dashed=True)
+        canvas.text("Quote of the day", px=24, bold=True, align="center")
+        canvas.text(f"\u201c{slip.quote.text}\u201d", px=26, align="center")
+        canvas.text(f"\u2014 {slip.quote.author}", px=22, align="right")
+    if slip.word is not None:
+        canvas.rule(dashed=True)
+        canvas.text("Word of the day", px=24, bold=True, align="center")
+        canvas.text(slip.word.word, px=36, bold=True, align="center")
+        canvas.text(slip.word.pos, px=20, align="center")
+        canvas.text(
+            slip.word.definition[:1].upper() + slip.word.definition[1:] + ".", px=24
+        )
+        if slip.word.example:
+            canvas.text(f"\u201c{slip.word.example}\u201d", px=22)
+        canvas.text(
+            "Definition: Open English WordNet (CC BY 4.0)", px=14, align="center"
+        )
     if slip.puzzle is not None:
         canvas.rule(dashed=True)
         canvas.text("Puzzle of the day", px=24, bold=True, align="center")

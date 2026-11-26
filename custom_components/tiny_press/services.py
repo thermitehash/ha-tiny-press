@@ -601,6 +601,8 @@ async def async_morning_slip(
     bottom = options.get(CONF_MORNING_BOTTOM, "joke")
     joke = None
     puzzle = None
+    quote = None
+    word = None
     if bottom in ("joke", "fact"):
         kind = PrintType.JOKE if bottom == "joke" else PrintType.FACT
         kid = coordinator.kid_profile()
@@ -614,6 +616,17 @@ async def async_morning_slip(
             )
             if joke.index is not None:
                 coordinator.store.remember(kind, joke.index)
+    elif bottom in ("quote", "word"):
+        pick = morning.pick_quote if bottom == "quote" else morning.pick_word
+        picked = await hass.async_add_executor_job(
+            pick, jobs.new_seed(), coordinator.store.recent(bottom)
+        )
+        if picked.index is not None:
+            coordinator.store.remember(bottom, picked.index)
+        if bottom == "quote":
+            quote = picked
+        else:
+            word = picked
     elif bottom == "puzzle":
         level = coordinator.adult_profile().difficulty
         puzzle = await hass.async_add_executor_job(
@@ -627,6 +640,8 @@ async def async_morning_slip(
         todos=morning.build_todos(raw_todos),
         joke=joke,
         puzzle=puzzle,
+        quote=quote,
+        word=word,
         calendars_set=bool(calendars),
     )
     response = await coordinator.async_print(jobs.morning_job(slip))
@@ -641,7 +656,9 @@ STATS_AFTER = timedelta(days=3)  # longer periods use hourly long-term statistic
 def _fetch_states(
     hass: HomeAssistant, start: datetime, end: datetime, entity_ids: list[str]
 ) -> dict[str, list[Any]]:
-    from homeassistant.components.recorder import history as rec_history  # noqa: PLC0415
+    from homeassistant.components.recorder import (  # noqa: PLC0415
+        history as rec_history,
+    )
 
     return rec_history.get_significant_states(
         hass,

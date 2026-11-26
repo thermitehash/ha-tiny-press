@@ -44,7 +44,7 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 | Weather entity | none | Used by the Weather print and the morning slip. Not needed if you only have one weather entity. |
 | Morning slip calendars | none | Today's events from these calendars print on the morning slip |
 | Morning slip to-do lists | none | Optional: unchecked items print as checkboxes |
-| Bottom of the morning slip | joke | Joke, fun fact, small sudoku or nothing |
+| Bottom of the morning slip | joke | Joke, fun fact, quote of the day, vocabulary word, small sudoku or nothing |
 | Use AI for jokes and fun facts | off | Off: jokes and facts come from bundled, human-written lists (facts from NOAA, NASA and the National Park Service, with credits). On: the AI is asked first. |
 
 ### Profiles
@@ -95,7 +95,7 @@ Every math strip ends with a harder ★ bonus problem. Kid sudoku (numbers) is 4
 | `button.tiny_press_puzzle_pack` | Prints sudoku, crossword and cryptogram in one go |
 | `button.tiny_press_bedtime_story` | Prints a bedtime story (Story length select) |
 | `button.tiny_press_next_chapter` | Prints the next chapter of the kid's adventure (gentler choice) |
-| `button.tiny_press_morning_slip` | Prints today's date, weather, events, to-dos and a joke, fact or puzzle |
+| `button.tiny_press_morning_slip` | Prints today's date, weather, events, to-dos and a joke, fact, quote, vocabulary word or puzzle |
 | `button.tiny_press_weather` | Prints current weather and a forecast of up to 10 days |
 | `button.tiny_press_answers` | Prints the answer key for the newest puzzle |
 | `button.tiny_press_test_page` | Prints the test page |
@@ -296,7 +296,7 @@ Versioning is SemVer. `manifest.json` is the single source of truth: bump the mi
 
 ## Content sources
 
-Bundled content comes from sources that allow redistribution: fun facts from NOAA, NASA and the National Park Service (U.S. government works, public domain), K–3 words from the Dolch sight-word lists, and cryptogram quotes from public-domain works (Roosevelt, Muir, Lincoln, Shakespeare) as collected by the National Park Service. Jokes and the NYT-style crossword clues were written for Tiny Press. See [`data/LICENSE.md`](custom_components/tiny_press/data/LICENSE.md) for every source.
+Bundled content comes from sources that allow redistribution: fun facts from NOAA, NASA and the National Park Service (U.S. government works, public domain), K–3 words from the Dolch sight-word lists, and cryptogram quotes from public-domain works (Roosevelt, Muir, Lincoln, Shakespeare) as collected by the National Park Service, and vocabulary definitions from Open English WordNet (CC BY 4.0). Jokes and the NYT-style crossword clues were written for Tiny Press. See [`data/LICENSE.md`](custom_components/tiny_press/data/LICENSE.md) for every source.
 
 ## License
 

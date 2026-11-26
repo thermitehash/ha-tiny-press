@@ -227,6 +227,8 @@
       "options": {
         "joke": "A joke",
         "fact": "A fun fact",
+        "quote": "A quote of the day (public domain)",
+        "word": "A hard vocabulary word with its definition",
         "puzzle": "A small sudoku (adult profile's difficulty)",
         "none": "Nothing"
       }

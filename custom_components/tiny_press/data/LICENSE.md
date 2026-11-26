@@ -52,7 +52,21 @@ public-domain children's riddle books on Project Gutenberg (published in the
 U.S. before 1930), each credited to its book. Project Gutenberg was down for
 maintenance when this version was made.
 
-## `quotes.json`: cryptogram quotes (27)
+## `vocab.json`: morning slip vocabulary words (200)
+
+Hard, SAT-style words picked for Tiny Press. Each word's part of speech,
+definition and example sentence (where there is one) come unchanged from
+**Open English WordNet** (https://github.com/globalwordnet/english-wordnet),
+choosing the sense the word is usually tested for.
+
+Open English WordNet is derived from Princeton WordNet under the WordNet
+License and further developed under the Creative Commons Attribution 4.0
+International License (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/).
+Attribution: Princeton WordNet (WordNet 3.0, © 2006 Princeton University)
+and the Open English WordNet team. Every printed definition is credited
+"Open English WordNet (CC BY 4.0)".
+
+## `quotes.json`: cryptogram and morning slip quotes (27)
 
 Short quotes from public-domain works, each with its author (and work, where
 known) and the National Park Service page it was taken from (`url`). The NPS

@@ -20,6 +20,7 @@ FILES = (
     "crossword.json",
     "quotes.json",
     "stories.json",
+    "vocab.json",
 )
 
 
