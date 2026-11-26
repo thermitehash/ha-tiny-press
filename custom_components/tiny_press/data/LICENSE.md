@@ -51,3 +51,23 @@ Currently compiled for Tiny Press (MIT). Planned replacement: riddles from
 public-domain children's riddle books on Project Gutenberg (published in the
 U.S. before 1930), each credited to its book. Project Gutenberg was down for
 maintenance when this version was made.
+
+## `quotes.json`: cryptogram quotes (27)
+
+Short quotes from public-domain works, each with its author (and work, where
+known) and the National Park Service page it was taken from (`url`). The NPS
+pages are U.S. federal works. The quotes themselves are from:
+
+- Theodore Roosevelt (1858–1919): his books and speeches, all published before 1931.
+- John Muir (1838–1914): only works published before 1931 (*Our National Parks* 1901, *My First Summer in the Sierra* 1911, *The Yosemite* 1912, *The Story of My Boyhood and Youth* 1913, *A Thousand-Mile Walk to the Gulf* 1916, *Steep Trails* 1918) and his letters of 1868 and 1873. Quotes the NPS marks as of uncertain origin are left out. So are quotes from books first published after 1930 (*John of the Mountains* 1938, *Son of the Wilderness* 1945).
+- Abraham Lincoln (1859 speech) and William Shakespeare (*Troilus and Cressida*).
+
+Planned additions, once the sources are reachable: Benjamin Franklin's
+*Poor Richard* sayings and Aesop's morals from Project Gutenberg or Wikisource.
+
+## `crossword.json`: crossword words and clues (213)
+
+Written for Tiny Press (MIT). Each word has a straight clue and a wordplay
+("NYT-style") clue. There is no openly licensed collection of NYT-style clues
+to draw on, so these clues are original. Words are everyday vocabulary, with
+no obscure "crosswordese". No clue contains its own answer.

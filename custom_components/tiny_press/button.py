@@ -38,6 +38,10 @@ BUTTONS: tuple[TinyPressButtonDescription, ...] = (
     TinyPressButtonDescription(
         key="spelling_search", print_type=PrintType.SPELLING_SEARCH
     ),
+    TinyPressButtonDescription(key="sudoku", print_type=PrintType.SUDOKU),
+    TinyPressButtonDescription(key="crossword", print_type=PrintType.CROSSWORD),
+    TinyPressButtonDescription(key="cryptogram", print_type=PrintType.CRYPTOGRAM),
+    TinyPressButtonDescription(key="puzzle_pack", print_type=PrintType.PUZZLE_PACK),
     TinyPressButtonDescription(key="weather", print_type=PrintType.WEATHER),
     TinyPressButtonDescription(key="answers", print_type=None),
     TinyPressButtonDescription(

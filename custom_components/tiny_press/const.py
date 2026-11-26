@@ -46,6 +46,8 @@ RECENT_JOKES: Final = 40  # bundled jokes/facts not repeated within this many
 
 SETTING_MAZE_DIFFICULTY: Final = "maze_difficulty"
 SETTING_KID_PROFILE: Final = "kid_profile"
+SETTING_ADULT_PROFILE: Final = "adult_profile"
+SETTING_SUDOKU_DIFFICULTY: Final = "sudoku_difficulty"
 
 
 class PrintType(StrEnum):
@@ -58,6 +60,10 @@ class PrintType(StrEnum):
     FACT = "fact"
     KID_PACK = "kid_pack"
     WEATHER = "weather"
+    SUDOKU = "sudoku"
+    CROSSWORD = "crossword"
+    CRYPTOGRAM = "cryptogram"
+    PUZZLE_PACK = "puzzle_pack"
     KID_SUDOKU = "kid_sudoku"
     SPELLING = "spelling"
     SPELLING_SEARCH = "spelling_search"

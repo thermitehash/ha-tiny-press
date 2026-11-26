@@ -11,7 +11,7 @@ A Home Assistant integration that turns an Epson receipt printer into a househol
 - **Home Assistant:** 2026.11.0 or newer
 - **Nothing prints automatically.** Tiny Press ships no schedules or time-based automations.
 
-> **Status: v0.3.0.** Kid pack (profiles, maze, word search, math strip, jokes and fun facts), a dashboard card with kid mode, kid-mode print limits, previews and answer keys. See the [roadmap](docs/roadmap.md) for what's next.
+> **Status: v0.4.0.** Adult puzzles (sudoku, crossword, cryptogram, puzzle pack) on top of v0.3.0. **v0.3.0:** Kid pack (profiles, maze, word search, math strip, jokes and fun facts), a dashboard card with kid mode, kid-mode print limits, previews and answer keys. See the [roadmap](docs/roadmap.md) for what's next.
 
 <!-- Screenshot placeholders -->
 <!-- ![Device page](docs/images/device.png) -->
@@ -56,7 +56,7 @@ Open **Settings → Devices & services → Tiny Press → Configure** to add, ed
 | Stretch | Makes puzzles one grade harder (reading stays at their grade) |
 | Spelling words | Optional: this week's school list (commas or new lines). Used by the spelling prints. |
 
-An adult profile has a name and a default puzzle difficulty (used by the adult puzzles in v0.4.0). Add as many profiles as you like, for example a younger sibling later.
+An adult profile has a name and a default puzzle difficulty (used by the adult puzzles). Add as many profiles as you like, for example a younger sibling later.
 
 What each grade gets:
 
@@ -85,12 +85,18 @@ Every math strip ends with a harder ★ bonus problem. Kid sudoku (numbers) is 4
 | `button.tiny_press_kid_sudoku` | Prints a 4×4 or 6×6 number sudoku |
 | `button.tiny_press_spelling` | Prints unscramble and missing-letter practice from the kid's spelling list |
 | `button.tiny_press_spelling_search` | Prints a word search of the kid's spelling list |
+| `button.tiny_press_sudoku` | Prints a 9×9 sudoku (difficulty from the Sudoku difficulty select) |
+| `button.tiny_press_crossword` | Prints a criss-cross crossword for the selected adult |
+| `button.tiny_press_cryptogram` | Prints a cryptogram from a public-domain quote |
+| `button.tiny_press_puzzle_pack` | Prints sudoku, crossword and cryptogram in one go |
 | `button.tiny_press_weather` | Prints current weather and a forecast of up to 10 days |
 | `button.tiny_press_answers` | Prints the answer key for the newest puzzle |
 | `button.tiny_press_test_page` | Prints the test page |
 | `sensor.tiny_press_kid_prints_left_today` | Kid prints left today when kid-mode limits are on. Attributes: `next_print_at`, `paper_left_mm`, `blocked_reason` |
 | `select.tiny_press_kid_profile` | Who the buttons print for |
+| `select.tiny_press_adult_profile` | Who the adult puzzles are for |
 | `select.tiny_press_maze_difficulty` | Easy, medium or hard |
+| `select.tiny_press_sudoku_difficulty` | Easy, medium or hard (defaults to the adult's difficulty) |
 
 If the printer is unreachable for more than 24 hours, a **Repairs** issue appears. It clears itself once the printer answers again.
 
@@ -120,7 +126,7 @@ This is the general entry point that every button and voice phrase uses.
 
 | Field | Notes |
 |---|---|
-| `type` | `maze`, `word_search`, `math`, `joke`, `fact`, `kid_pack`, `kid_sudoku`, `spelling`, `spelling_search`, `weather` or `test_page` |
+| `type` | `maze`, `word_search`, `math`, `joke`, `fact`, `kid_pack`, `kid_sudoku`, `spelling`, `spelling_search`, `sudoku`, `crossword`, `cryptogram`, `puzzle_pack`, `weather` or `test_page` |
 | `words` | For `spelling` and `spelling_search`: words to practice. Empty uses the kid profile's spelling list. |
 | `profile` | Kid profile name for word searches, math, jokes and kid packs. Empty uses the Kid profile select. |
 | `difficulty` | For mazes (and the maze in a kid pack). Loose words work: `easy`, `medium`, `hard`, `harder`, `tricky`, `a little harder`. Empty uses the Maze difficulty select. |
@@ -181,7 +187,7 @@ type: custom:tiny-press-card
 title: Rosie's printer
 kid_mode: true          # hold-to-print, no settings or answers, shows limits
 show_preview: false     # true: see the print first, then Shuffle or Print
-buttons: [maze, word_search, math, kid_sudoku, spelling, joke, kid_pack, weather]
+buttons: [maze, word_search, math, kid_sudoku, spelling, joke, kid_pack, sudoku, crossword, cryptogram, puzzle_pack, weather]
 # ignore_limits: true   # for a parents' dashboard
 ```
 
@@ -235,7 +241,7 @@ Versioning is SemVer. `manifest.json` is the single source of truth: bump the mi
 
 ## Content sources
 
-Bundled content is human-written and comes from sources that allow redistribution: fun facts from NOAA, NASA and the National Park Service (U.S. government works, public domain), and K–3 words from the Dolch sight-word lists. See [`data/LICENSE.md`](custom_components/tiny_press/data/LICENSE.md) for every source.
+Bundled content comes from sources that allow redistribution: fun facts from NOAA, NASA and the National Park Service (U.S. government works, public domain), K–3 words from the Dolch sight-word lists, and cryptogram quotes from public-domain works (Roosevelt, Muir, Lincoln, Shakespeare) as collected by the National Park Service. Jokes and the NYT-style crossword clues were written for Tiny Press. See [`data/LICENSE.md`](custom_components/tiny_press/data/LICENSE.md) for every source.
 
 ## License
 

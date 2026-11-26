@@ -167,7 +167,11 @@
         "weather": "Weather and forecast",
         "kid_sudoku": "Kid sudoku (4x4 or 6x6)",
         "spelling": "Spelling practice",
-        "spelling_search": "Spelling word search"
+        "spelling_search": "Spelling word search",
+        "sudoku": "Sudoku (9x9)",
+        "crossword": "Crossword",
+        "cryptogram": "Cryptogram",
+        "puzzle_pack": "Puzzle pack (sudoku, crossword and cryptogram)"
       }
     },
     "text_size": {
@@ -289,6 +293,18 @@
       },
       "spelling_search": {
         "name": "Spelling word search"
+      },
+      "sudoku": {
+        "name": "Sudoku"
+      },
+      "crossword": {
+        "name": "Crossword"
+      },
+      "cryptogram": {
+        "name": "Cryptogram"
+      },
+      "puzzle_pack": {
+        "name": "Puzzle pack"
       }
     },
     "select": {
@@ -302,6 +318,17 @@
       },
       "kid_profile": {
         "name": "Kid profile"
+      },
+      "adult_profile": {
+        "name": "Adult profile"
+      },
+      "sudoku_difficulty": {
+        "name": "Sudoku difficulty",
+        "state": {
+          "easy": "Easy",
+          "medium": "Medium",
+          "hard": "Hard"
+        }
       }
     }
   },
@@ -370,11 +397,11 @@
         },
         "profile": {
           "name": "Profile",
-          "description": "Kid profile name for word searches, math, jokes and kid packs. Leave empty to use the Kid profile select."
+          "description": "Kid profile for kid prints, adult profile for sudoku, crossword, cryptogram and puzzle pack. Empty uses the profile selects."
         },
         "difficulty": {
           "name": "Difficulty",
-          "description": "For mazes and kid sudoku. Loose words work: easy, medium, hard, harder, tricky. Kid sudoku: easy is 4x4, medium and hard are 6x6. Empty uses the select (mazes) or the kid's grade (sudoku)."
+          "description": "Loose words work: easy, medium, hard, harder, tricky. Empty uses the difficulty selects or the adult profile's default (kid sudoku: the kid's grade)."
         },
         "seed": {
           "name": "Seed",

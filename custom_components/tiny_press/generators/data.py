@@ -12,7 +12,14 @@ from pathlib import Path
 from typing import Any
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-FILES = ("words.json", "themes.json", "jokes.json", "facts.json")
+FILES = (
+    "words.json",
+    "themes.json",
+    "jokes.json",
+    "facts.json",
+    "crossword.json",
+    "quotes.json",
+)
 
 
 @cache

@@ -42,6 +42,7 @@ from .const import (
     PAPER_80MM,
     PAPER_DOTS,
     SETTING_MAZE_DIFFICULTY,
+    SETTING_SUDOKU_DIFFICULTY,
     TEXT_SIZES,
     Difficulty,
     PrintType,
@@ -227,6 +228,39 @@ async def async_build_job(
                 else jobs.spelling_search_job
             )
             return partial(build, kid, found, seed)
+        case (
+            PrintType.SUDOKU
+            | PrintType.CROSSWORD
+            | PrintType.CRYPTOGRAM
+            | PrintType.PUZZLE_PACK
+        ):
+            adult = coordinator.adult_profile(profile)
+            base = Difficulty(adult.difficulty)
+            level = normalize_difficulty(difficulty, base)
+            sudoku_level = (
+                level
+                if difficulty
+                else Difficulty(
+                    coordinator.store.get_setting(SETTING_SUDOKU_DIFFICULTY, base)
+                )
+            )
+            recent = [] if seed is not None else coordinator.store.recent("cryptogram")
+            match kind:
+                case PrintType.SUDOKU:
+                    return partial(jobs.sudoku_job, sudoku_level, seed, adult.name)
+                case PrintType.CROSSWORD:
+                    return partial(jobs.crossword_job, level, seed, adult.name)
+                case PrintType.CRYPTOGRAM:
+                    return partial(jobs.cryptogram_job, level, seed, adult.name, recent)
+                case _:
+                    return partial(
+                        jobs.puzzle_pack_job,
+                        level,
+                        sudoku_level,
+                        seed,
+                        adult.name,
+                        recent,
+                    )
         case PrintType.WEATHER:
             return jobs.weather_job(await async_weather_report(hass, coordinator))
         case _:
@@ -331,6 +365,8 @@ async def async_print_type(
         words=words,
     )
     response = await coordinator.async_print(job)
+    if seed is None and response.get("quote_index") is not None:
+        coordinator.store.remember("cryptogram", response["quote_index"])
     if limited:
         coordinator.limiter.record(response["length_mm"])
         coordinator.async_update_listeners()

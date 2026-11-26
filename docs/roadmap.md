@@ -5,7 +5,7 @@
 | 1 | 0.1.0 ✅ | Printer transport, queue and status; rendering; `print_text`, `print_image`; test page; maze; status entities |
 | 2 | 0.2.0 ✅ | Kid pack: word search, math strip, joke/fun fact, kid profiles, combined Kid pack |
 | — | 0.3.0 ✅ | Dashboard card, kid-mode rate limiter, print preview, answer keys for kid puzzles |
-| 3 | 0.4.0 | Adult puzzles: sudoku, criss-cross crossword, cryptogram, puzzle pack |
+| 3 | 0.4.0 ✅ | Adult puzzles: sudoku, criss-cross crossword, cryptogram, puzzle pack |
 | 4 | 0.5.0 | Bedtime story (short/medium/long) and serial choose-your-own-adventure via `ai_task`, with offline fallback |
 | 5 | 0.6.0 | Morning slip (manual only) |
 | 6 | 0.7.0 | Voice blueprint and Siri docs |

@@ -14,7 +14,16 @@ from homeassistant.util import dt as dt_util
 
 from .const import PAPER_80MM, Difficulty, PrintType
 from .coordinator import PrintJob
-from .generators import jokes, math_strip, maze, spelling, sudoku, word_search
+from .generators import (
+    crossword,
+    cryptogram,
+    jokes,
+    math_strip,
+    maze,
+    spelling,
+    sudoku,
+    word_search,
+)
 from .generators.jokes import Joke
 from .generators.weather import WeatherReport
 from .printer import escpos
@@ -216,6 +225,9 @@ def answer_job(entry: dict) -> PrintJob:
         PrintType.WORD_SEARCH: "Word search answers",
         PrintType.MATH: "Math answers",
         PrintType.KID_SUDOKU: "Sudoku answers",
+        PrintType.SUDOKU: "Sudoku answers",
+        PrintType.CROSSWORD: "Crossword answers",
+        PrintType.CRYPTOGRAM: "Cryptogram answer",
         PrintType.SPELLING: "Spelling answers",
         PrintType.SPELLING_SEARCH: "Word search answers",
         PrintType.JOKE: "Joke answer",
@@ -248,7 +260,30 @@ def answer_job(entry: dict) -> PrintJob:
         def build(width: int) -> Canvas:
             return layout.math_page(width, sheet, footer, answer=True)
 
-    elif kind == PrintType.KID_SUDOKU:
+    elif kind == PrintType.CROSSWORD:
+        cw = crossword.Crossword(
+            data["rows"],
+            data["cols"],
+            tuple(crossword.Entry(*e) for e in data["entries"]),
+        )
+
+        def build(width: int) -> Canvas:
+            return layout.crossword_page(width, cw, footer, answer=True)
+
+    elif kind == PrintType.CRYPTOGRAM:
+        cg = cryptogram.Cryptogram(
+            data["plain"],
+            data["author"],
+            data["cipher"],
+            dict(data["key"]),
+            tuple(data["hints"]),
+            -1,
+        )
+
+        def build(width: int) -> Canvas:
+            return layout.cryptogram_page(width, cg, footer, answer=True)
+
+    elif kind in (PrintType.KID_SUDOKU, PrintType.SUDOKU):
         grid_puzzle = sudoku.Sudoku(
             data["size"],
             tuple(tuple(r) for r in data["puzzle"]),
@@ -408,4 +443,116 @@ def spelling_search_job(
             },
         ),
         build=lambda width: layout.word_search_page(width, puzzle, footer),
+    )
+
+
+def sudoku_job(
+    difficulty: Difficulty, seed: int | None = None, profile: str | None = None
+) -> PrintJob:
+    """Build a 9x9 sudoku graded by the techniques it needs."""
+    seed = new_seed() if seed is None else seed
+    print_id = _id("sudoku", seed)
+    puzzle = sudoku.generate_graded(difficulty.value, seed)
+    footer = layout.Footer("Sudoku", print_id, _today(), difficulty)
+    answer = {**puzzle.answer(), "seed": seed, "difficulty": difficulty.value}
+    return PrintJob(
+        type=PrintType.SUDOKU,
+        label="Sudoku",
+        print_id=print_id,
+        difficulty=difficulty.value,
+        profile=profile,
+        answers=({"print_id": print_id, "type": PrintType.SUDOKU, "answer": answer},),
+        build=lambda width: layout.sudoku_page(width, puzzle, footer),
+    )
+
+
+def crossword_job(
+    difficulty: Difficulty, seed: int | None = None, profile: str | None = None
+) -> PrintJob:
+    """Build a criss-cross crossword."""
+    seed = new_seed() if seed is None else seed
+    print_id = _id("crossword", seed)
+    puzzle = crossword.generate(difficulty.value, seed)
+    footer = layout.Footer("Crossword", print_id, _today(), difficulty)
+    answer = {**puzzle.answer(), "seed": seed, "difficulty": difficulty.value}
+    return PrintJob(
+        type=PrintType.CROSSWORD,
+        label="Crossword",
+        print_id=print_id,
+        difficulty=difficulty.value,
+        profile=profile,
+        answers=(
+            {"print_id": print_id, "type": PrintType.CROSSWORD, "answer": answer},
+        ),
+        build=lambda width: layout.crossword_page(width, puzzle, footer),
+    )
+
+
+def cryptogram_job(
+    difficulty: Difficulty,
+    seed: int | None = None,
+    profile: str | None = None,
+    recent: list[int] | None = None,
+) -> PrintJob:
+    """Build a cryptogram from a bundled public-domain quote."""
+    seed = new_seed() if seed is None else seed
+    print_id = _id("cryptogram", seed)
+    puzzle = cryptogram.generate(difficulty.value, seed, recent)
+    footer = layout.Footer("Cryptogram", print_id, _today(), difficulty)
+    return PrintJob(
+        type=PrintType.CRYPTOGRAM,
+        label="Cryptogram",
+        print_id=print_id,
+        difficulty=difficulty.value,
+        profile=profile,
+        answers=(
+            {
+                "print_id": print_id,
+                "type": PrintType.CRYPTOGRAM,
+                "answer": {**puzzle.answer(), "seed": seed},
+            },
+        ),
+        response={"quote_index": puzzle.index},
+        build=lambda width: layout.cryptogram_page(width, puzzle, footer),
+    )
+
+
+def puzzle_pack_job(
+    difficulty: Difficulty,
+    sudoku_difficulty: Difficulty,
+    seed: int | None = None,
+    profile: str | None = None,
+    recent: list[int] | None = None,
+) -> PrintJob:
+    """Sudoku + crossword + cryptogram in one job (one cut)."""
+    seed = new_seed() if seed is None else seed
+    rng = random.Random(f"puzzle-pack-{seed}")
+    parts = [
+        sudoku_job(sudoku_difficulty, rng.randrange(2**31), profile),
+        crossword_job(difficulty, rng.randrange(2**31), profile),
+        cryptogram_job(difficulty, rng.randrange(2**31), profile, recent),
+    ]
+
+    def build(width: int) -> Canvas:
+        canvas = Canvas(width)
+        for i, part in enumerate(parts):
+            if i:
+                canvas.space(10)
+                canvas.rule(dashed=True, thickness=3, pad=16)
+                canvas.space(10)
+            canvas.extend(part.build(width))
+        return canvas
+
+    return PrintJob(
+        type=PrintType.PUZZLE_PACK,
+        label="Puzzle pack",
+        print_id=parts[0].print_id,
+        difficulty=difficulty.value,
+        profile=profile,
+        answers=tuple(a for part in parts for a in part.answers),
+        response={
+            "print_ids": [part.print_id for part in parts],
+            "quote_index": parts[2].response["quote_index"],
+        },
+        build=build,
     )
