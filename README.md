@@ -209,7 +209,6 @@ This is the general entry point that every button and voice phrase uses.
 | Field | Notes |
 |---|---|
 | `type` | `maze`, `word_search`, `math`, `joke`, `fact`, `kid_pack`, `kid_sudoku`, `spelling`, `spelling_search`, `sudoku`, `crossword`, `cryptogram`, `puzzle_pack`, `weather` or `test_page` |
-| `words` | For `spelling` and `spelling_search`: words to practice. Empty uses the kid profile's spelling to-do list. |
 | `profile` | Kid profile name for word searches, math, jokes and kid packs. Empty uses the Kid profile select. |
 | `difficulty` | For mazes (and the maze in a kid pack). Loose words work: `easy`, `medium`, `hard`, `harder`, `tricky`, `a little harder`. Empty uses the Maze difficulty select. |
 | `seed` | The same seed prints the same puzzle again (and the same bundled joke) |

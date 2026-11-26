@@ -422,13 +422,9 @@ def kid_sudoku_job(
     )
 
 
-def spelling_words_for(
-    profile: Profile,
-    words: list[str] | str | None,
-    todo_words: list[str] | None = None,
-) -> list[str]:
-    """Words from the action, else the kid's spelling to-do list."""
-    found = spelling.parse_words(words) or spelling.parse_words(todo_words)
+def spelling_words_for(todo_words: list[str] | None) -> list[str]:
+    """Return the unchecked words on the kid's spelling to-do list."""
+    found = spelling.parse_words(todo_words)
     if not found:
         raise ValueError("no spelling words")
     return found

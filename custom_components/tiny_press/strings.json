@@ -689,10 +689,6 @@
         "ignore_limits": {
           "name": "Ignore kid limits",
           "description": "For parents' scripts and dashboards: print even if kid-mode limits would block it."
-        },
-        "words": {
-          "name": "Spelling words",
-          "description": "For spelling prints: words to practice. Empty uses the kid's spelling to-do list (unchecked words)."
         }
       }
     },
@@ -755,10 +751,6 @@
         "seed": {
           "name": "[%key:component::tiny_press::services::print::fields::seed::name%]",
           "description": "[%key:component::tiny_press::services::print::fields::seed::description%]"
-        },
-        "words": {
-          "name": "[%key:component::tiny_press::services::print::fields::words::name%]",
-          "description": "[%key:component::tiny_press::services::print::fields::words::description%]"
         }
       }
     },

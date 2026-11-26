@@ -88,7 +88,6 @@ SERVICE_PREVIEW = "preview"
 SERVICE_PRINT_ANSWERS = "print_answers"
 ATTR_IGNORE_LIMITS = "ignore_limits"
 ATTR_PRINT_ID = "print_id"
-ATTR_WORDS = "words"
 STORY_LENGTHS = ("short", "medium", "long")
 SERVICE_PRINT_TEXT = "print_text"
 SERVICE_PRINT_IMAGE = "print_image"
@@ -133,7 +132,6 @@ PRINT_SCHEMA = vol.Schema(
         vol.Optional(ATTR_DIFFICULTY): cv.string,
         vol.Optional(ATTR_SEED): vol.All(vol.Coerce(int), vol.Range(min=0)),
         vol.Optional(ATTR_IGNORE_LIMITS, default=False): cv.boolean,
-        vol.Optional(ATTR_WORDS): vol.Any(cv.string, [cv.string]),
     }
 )
 PREVIEW_SCHEMA = vol.Schema(
@@ -143,7 +141,6 @@ PREVIEW_SCHEMA = vol.Schema(
         vol.Optional(ATTR_PROFILE): cv.string,
         vol.Optional(ATTR_DIFFICULTY): cv.string,
         vol.Optional(ATTR_SEED): vol.All(vol.Coerce(int), vol.Range(min=0)),
-        vol.Optional(ATTR_WORDS): vol.Any(cv.string, [cv.string]),
     }
 )
 PRINT_STORY_SCHEMA = vol.Schema(
@@ -334,7 +331,6 @@ async def async_build_job(
     profile: str | None = None,
     difficulty: str | None = None,
     seed: int | None = None,
-    words: list[str] | str | None = None,
 ) -> PrintJob | Callable[[], PrintJob]:
     """Return the job (or a builder to run in the executor) for one print type."""
     theme = current_theme(hass, coordinator)
@@ -386,10 +382,10 @@ async def async_build_job(
         case PrintType.SPELLING | PrintType.SPELLING_SEARCH:
             kid = coordinator.kid_profile(profile)
             todo_words = None
-            if not words and kid.spelling_todo:
+            if kid.spelling_todo:
                 todo_words = await async_todo_words(hass, kid.spelling_todo, kid.name)
             try:
-                found = jobs.spelling_words_for(kid, words, todo_words)
+                found = jobs.spelling_words_for(todo_words)
             except ValueError as err:
                 raise ServiceValidationError(
                     translation_domain=DOMAIN,
@@ -1038,7 +1034,6 @@ async def async_print_type(
     difficulty: str | None = None,
     seed: int | None = None,
     ignore_limits: bool = False,
-    words: list[str] | str | None = None,
 ) -> dict[str, Any]:
     """Print one type. Shared by the ``print`` action and the buttons."""
     if kind is PrintType.MORNING_SLIP:
@@ -1059,7 +1054,6 @@ async def async_print_type(
         profile=profile,
         difficulty=difficulty,
         seed=seed,
-        words=words,
     )
     response = await coordinator.async_print(job)
     if seed is None and response.get("quote_index") is not None:
@@ -1080,7 +1074,6 @@ async def async_preview_type(
     profile: str | None = None,
     difficulty: str | None = None,
     seed: int | None = None,
-    words: list[str] | str | None = None,
 ) -> dict[str, Any]:
     """Render a print without printing it. Pass the returned seed to ``print``."""
     seed = jobs.new_seed() if seed is None else seed
@@ -1091,7 +1084,6 @@ async def async_preview_type(
         profile=profile,
         difficulty=difficulty,
         seed=seed,
-        words=words,
     )
     return {**await coordinator.async_preview(job), "seed": seed}
 
@@ -1218,7 +1210,6 @@ def async_setup_services(hass: HomeAssistant) -> None:
             difficulty=call.data.get(ATTR_DIFFICULTY),
             seed=call.data.get(ATTR_SEED),
             ignore_limits=ignore,
-            words=call.data.get(ATTR_WORDS),
         )
 
     async def handle_preview(call: ServiceCall) -> ServiceResponse:
@@ -1231,7 +1222,6 @@ def async_setup_services(hass: HomeAssistant) -> None:
             profile=profile,
             difficulty=call.data.get(ATTR_DIFFICULTY),
             seed=call.data.get(ATTR_SEED),
-            words=call.data.get(ATTR_WORDS),
         )
 
     async def handle_print_story(call: ServiceCall) -> ServiceResponse:

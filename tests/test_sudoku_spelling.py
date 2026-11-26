@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+import voluptuous as vol
 
 from custom_components.tiny_press.const import DOMAIN, PAPER_DOTS
 from custom_components.tiny_press.generators import spelling, sudoku, word_search
@@ -156,10 +157,12 @@ async def test_prints_through_action(
 
     res = await _print(hass, type="spelling", seed=3)
     assert sorted(store.history[0]["answer"]["words"]) == ["cat", "dog", "fish", "sun"]
-    res = await _print(hass, type="spelling_search", words="moon, star", seed=3)
-    assert sorted(store.history[0]["answer"]["placements"][i][0] for i in range(2)) == [
-        "MOON",
-        "STAR",
+    res = await _print(hass, type="spelling_search", seed=3)
+    assert sorted(p[0] for p in store.history[0]["answer"]["placements"]) == [
+        "CAT",
+        "DOG",
+        "FISH",
+        "SUN",
     ]
     for kind in ("kid_sudoku", "spelling", "spelling_search"):
         await _print(hass, type=kind, seed=9)
@@ -172,7 +175,7 @@ async def test_prints_through_action(
     preview = await hass.services.async_call(
         DOMAIN,
         "preview",
-        {"type": "spelling", "words": ["zebra", "lion"]},
+        {"type": "spelling"},
         blocking=True,
         return_response=True,
     )
@@ -230,10 +233,10 @@ async def test_spelling_from_todo_list(
     await _print(hass, type="spelling_search", seed=1)
     words = sorted(p[0] for p in store.history[0]["answer"]["placements"])
     assert words == ["BECAUSE", "FRIEND"]
-    # Words passed to the action win over the list.
-    await _print(hass, type="spelling", words="moon", seed=2)
-    assert store.history[0]["answer"]["words"] == ["moon"]
     assert len(calls) == 2
+    # Words can't be passed to the action: the linked list is required.
+    with pytest.raises(vol.Invalid):
+        await _print(hass, type="spelling", words="moon", seed=2)
 
 
 async def test_all_words_learned(
