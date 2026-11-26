@@ -10,6 +10,7 @@
 | 6 | 0.6.0 | Voice blueprint and Siri docs |
 | 7 | — | Skylight (planning only, below) |
 | later | — | Selfie prints and AI-generated kid-safe pictures (planning only, below) |
+| later | — | Custom Tiny Press dashboard card (planning only, below) |
 
 ## Phase 7: Skylight family calendar (planning only)
 
@@ -58,3 +59,21 @@ Both build on `print_image`'s existing 1-bit rendering. Like everything else, th
   - Which `ai_task` providers support image generation, and at what cost per image.
   - Whether to cache generated pages for re-printing.
   - A per-day limit so a voice command can't run up a bill.
+
+## Later: custom dashboard card (planning only)
+
+A Lovelace card (`custom:tiny-press-card`) so the household gets one tidy,
+kid-friendly control instead of a grid of separate button entities.
+
+- **Big print buttons** with icons (Maze, Word search, Math, Joke, Kid pack, and later Sudoku, Story and Next chapter), sized for small fingers on a wall tablet.
+- **Profile chips** to switch the active kid or adult, plus a difficulty or story-length toggle next to the relevant buttons.
+- **Status strip:** online, paper state (OK / running low / out / cover open) and paper used, with a gentle warning when paper is low.
+- **Last print:** type, time and its `#ID`, with an "Answers" button that prints the answer key for it.
+- **Preview before printing:** a rendered preview of the next print (the same 1-bit image the printer gets), with Print and Shuffle buttons. This needs a small preview endpoint or action that returns a PNG without printing.
+- **Busy state:** buttons disable while a job is printing, and errors show as a friendly message, not a stack trace.
+- **Kid mode:** an option to hide settings and adult puzzles, and to require a hold-to-print press so a toddler can't empty the roll.
+- **Packaging:**
+  - Ship the card's JavaScript inside the integration and register it as a frontend resource automatically, so there's no separate HACS "Dashboard" repository to install.
+  - Configure it in the visual card editor (the printer device, and which buttons to show).
+  - Works in light and dark themes.
+- Nothing prints on its own. The card only prints when someone presses a button.
