@@ -25,6 +25,7 @@ from .generators import (
     word_search,
 )
 from .generators.jokes import Joke
+from .generators.morning import MorningSlip
 from .generators.story import Story
 from .generators.weather import WeatherReport
 from .printer import escpos
@@ -588,4 +589,31 @@ def story_job(story: Story, profile: Profile, length: str) -> PrintJob:
             "words": story.words,
         },
         build=lambda width: layout.story_page(width, story, footer),
+    )
+
+
+def morning_job(slip: MorningSlip) -> PrintJob:
+    """Build the morning slip (with an answer key if it has a puzzle)."""
+    print_id = layout.make_print_id()
+    footer = layout.Footer("Morning slip", print_id, slip.day)
+    answers: tuple[dict, ...] = ()
+    if slip.puzzle is not None:
+        answers = (
+            {
+                "print_id": print_id,
+                "type": PrintType.SUDOKU,
+                "answer": slip.puzzle.answer(),
+            },
+        )
+    return PrintJob(
+        type=PrintType.MORNING_SLIP,
+        label="Morning slip",
+        print_id=print_id,
+        answers=answers,
+        response={
+            "events": len(slip.events) + slip.more_events,
+            "weather": slip.weather.condition if slip.weather else None,
+            "todos": sum(len(items) for _n, items in slip.todos),
+        },
+        build=lambda width: layout.morning_page(width, slip, footer),
     )

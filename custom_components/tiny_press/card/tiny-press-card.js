@@ -6,7 +6,7 @@
  * Nothing prints unless someone presses a button.
  */
 
-const CARD_VERSION = "0.5.1";
+const CARD_VERSION = "0.6.0";
 
 const PRINTS = {
   maze: { label: "Maze", icon: "mdi:map-marker-path" },
@@ -24,11 +24,13 @@ const PRINTS = {
   puzzle_pack: { label: "Puzzle pack", icon: "mdi:puzzle-outline", adult: true },
   story: { label: "Bedtime story", icon: "mdi:book-open-page-variant-outline", service: "print_story" },
   next_chapter: { label: "Next chapter", icon: "mdi:book-arrow-right-outline", service: "continue_story" },
+  morning_slip: { label: "Morning slip", icon: "mdi:weather-sunset-up", service: "print_morning_slip" },
   weather: { label: "Weather", icon: "mdi:weather-partly-cloudy" },
 };
 const DEFAULT_BUTTONS = [
   "maze", "word_search", "math", "kid_sudoku", "spelling", "joke", "kid_pack",
-  "story", "next_chapter", "sudoku", "crossword", "cryptogram", "puzzle_pack", "weather",
+  "story", "next_chapter", "sudoku", "crossword", "cryptogram", "puzzle_pack",
+  "morning_slip", "weather",
 ];
 
 const PAPER = {
@@ -239,9 +241,15 @@ class TinyPressCard extends HTMLElement {
     const service = PRINTS[type]?.service;
     this._run(
       async () => {
-        const data = service
-          ? (this._config.ignore_limits ? { ignore_limits: true } : {})
-          : this._printData(type, seed);
+        let data;
+        if (service === "print_morning_slip") {
+          // Kid-mode cards may print one morning slip a day.
+          data = this._config.kid_mode ? { kid_mode: true } : {};
+        } else if (service) {
+          data = this._config.ignore_limits ? { ignore_limits: true } : {};
+        } else {
+          data = this._printData(type, seed);
+        }
         const res = await this._call(service || "print", data, true);
         this._state.preview = null;
         return res?.response;

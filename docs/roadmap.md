@@ -7,7 +7,7 @@
 | — | 0.3.0 ✅ | Dashboard card, kid-mode rate limiter, print preview, answer keys for kid puzzles |
 | 3 | 0.4.0 ✅ | Adult puzzles: sudoku, criss-cross crossword, cryptogram, puzzle pack |
 | 4 | 0.5.0 ✅ | Bedtime story (short/medium/long) and serial choose-your-own-adventure via `ai_task`, with offline fallback |
-| 5 | 0.6.0 | Morning slip (manual only) |
+| 5 | 0.6.0 ✅ | Morning slip (manual only) |
 | 6 | 0.7.0 | Voice blueprint and Siri docs |
 | 7 | — | Skylight (planning only, below) |
 | later | — | Selfie prints and AI-generated kid-safe pictures (planning only, below) |

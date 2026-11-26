@@ -25,6 +25,7 @@ print:
             - cryptogram
             - puzzle_pack
             - story
+            - morning_slip
             - weather
             - test_page
     profile:
@@ -215,6 +216,17 @@ continue_story:
             - medium
             - long
     ignore_limits:
+      default: false
+      selector:
+        boolean:
+
+print_morning_slip:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: tiny_press
+    kid_mode:
       default: false
       selector:
         boolean:

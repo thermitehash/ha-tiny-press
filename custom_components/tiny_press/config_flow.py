@@ -33,10 +33,13 @@ import voluptuous as vol
 from .const import (
     CONF_AI_JOKES,
     CONF_AI_TASK,
+    CONF_CALENDARS,
     CONF_MAX_LENGTH_MM,
+    CONF_MORNING_BOTTOM,
     CONF_PAPER_WIDTH,
     CONF_POLL_INTERVAL,
     CONF_PRINT_TEST_PAGE,
+    CONF_TODOS,
     CONF_WEATHER,
     DEFAULT_MAX_LENGTH_MM,
     DEFAULT_POLL_INTERVAL,
@@ -50,6 +53,7 @@ from .const import (
     Difficulty,
 )
 from .coordinator import TinyPressConfigEntry
+from .generators.morning import BOTTOM_OPTIONS
 from .jobs import test_page_job
 from .limits import (
     CONF_ADMINS_SKIP,
@@ -304,6 +308,9 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                     CONF_AI_TASK: user_input.get(CONF_AI_TASK) or None,
                     CONF_AI_JOKES: bool(user_input.get(CONF_AI_JOKES)),
                     CONF_WEATHER: user_input.get(CONF_WEATHER) or None,
+                    CONF_CALENDARS: list(user_input.get(CONF_CALENDARS) or []),
+                    CONF_TODOS: list(user_input.get(CONF_TODOS) or []),
+                    CONF_MORNING_BOTTOM: user_input.get(CONF_MORNING_BOTTOM, "joke"),
                 }
             )
         options = self.config_entry.options
@@ -344,6 +351,26 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                     CONF_WEATHER,
                     description={"suggested_value": options.get(CONF_WEATHER)},
                 ): EntitySelector(EntitySelectorConfig(domain="weather")),
+                vol.Optional(
+                    CONF_CALENDARS,
+                    description={"suggested_value": options.get(CONF_CALENDARS)},
+                ): EntitySelector(
+                    EntitySelectorConfig(domain="calendar", multiple=True)
+                ),
+                vol.Optional(
+                    CONF_TODOS,
+                    description={"suggested_value": options.get(CONF_TODOS)},
+                ): EntitySelector(EntitySelectorConfig(domain="todo", multiple=True)),
+                vol.Required(
+                    CONF_MORNING_BOTTOM,
+                    default=options.get(CONF_MORNING_BOTTOM, "joke"),
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=list(BOTTOM_OPTIONS),
+                        translation_key=CONF_MORNING_BOTTOM,
+                        mode=SelectSelectorMode.LIST,
+                    )
+                ),
             }
         )
         return self.async_show_form(step_id="settings", data_schema=schema)

@@ -44,6 +44,7 @@ BUTTONS: tuple[TinyPressButtonDescription, ...] = (
     TinyPressButtonDescription(key="puzzle_pack", print_type=PrintType.PUZZLE_PACK),
     TinyPressButtonDescription(key="bedtime_story", print_type=PrintType.STORY),
     TinyPressButtonDescription(key="next_chapter", print_type=None),
+    TinyPressButtonDescription(key="morning_slip", print_type=PrintType.MORNING_SLIP),
     TinyPressButtonDescription(key="weather", print_type=PrintType.WEATHER),
     TinyPressButtonDescription(key="answers", print_type=None),
     TinyPressButtonDescription(

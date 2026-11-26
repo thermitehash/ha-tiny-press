@@ -169,6 +169,9 @@ async def test_options_settings(
         "ai_task_entity": "ai_task.claude",
         "ai_jokes": True,
         "weather_entity": None,
+        "calendar_entities": [],
+        "todo_entities": [],
+        "morning_bottom": "joke",
     }
     coordinator = loaded_entry.runtime_data
     assert coordinator.max_length_mm == 450
