@@ -50,7 +50,17 @@ from .coordinator import TinyPressConfigEntry
 from .jobs import test_page_job
 from .printer import escpos
 from .printer.transport import PrinterConnectError, PrinterError, PrinterTransport
-from .profiles import ADULT, CONF_PROFILES, GRADES, KID, Profile, load_profiles, slugify
+from .profiles import (
+    ADULT,
+    CONF_PROFILES,
+    GRADES,
+    KID,
+    Profile,
+    grade_label,
+    grade_number,
+    load_profiles,
+    slugify,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -205,9 +215,9 @@ def _kid_schema(profile: Profile | None) -> vol.Schema:
     return vol.Schema(
         {
             vol.Required(CONF_NAME, default=p.name): TextSelector(),
-            vol.Required("grade", default=p.grade): SelectSelector(
+            vol.Required("grade", default=p.grade.lower()): SelectSelector(
                 SelectSelectorConfig(
-                    options=list(GRADES),
+                    options=[g.lower() for g in GRADES],
                     translation_key="grade",
                     mode=SelectSelectorMode.DROPDOWN,
                 )
@@ -333,7 +343,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
             id=profile_id,
             kind=KID,
             name=data[CONF_NAME].strip(),
-            grade=data["grade"],
+            grade=grade_label(grade_number(data["grade"])),
             interests=(data.get("interests") or "").strip(),
             stretch=bool(data.get("stretch")),
         )
