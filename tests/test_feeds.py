@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
+import json
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -16,12 +17,14 @@ from custom_components.tiny_press.const import DOMAIN, PAPER_DOTS
 from custom_components.tiny_press.coordinator import render_job
 from custom_components.tiny_press.fetch import FeedConfig, find_feed
 from custom_components.tiny_press.generators.feeds import (
+    WIKIQUOTE_API_URL,
     WIKIQUOTE_URL,
     FeedError,
     FeedItem,
     html_to_text,
     parse_feed,
     shorten,
+    wikiquote_api_html,
     wikiquote_quote,
 )
 from custom_components.tiny_press.jobs import feed_job, qr_mm
@@ -131,6 +134,31 @@ def test_wikiquote_quote() -> None:
     assert wikiquote_quote(no_author.encode()) is None
     long = WIKIQUOTE.replace("Whatever", "word " * 120)
     assert wikiquote_quote(long.encode()) is None
+
+
+def test_wikiquote_api_html() -> None:
+    v2 = json.dumps({"parse": {"text": WIKIQUOTE}}).encode()
+    v1 = json.dumps({"parse": {"text": {"*": WIKIQUOTE}}}).encode()
+    assert wikiquote_api_html(v2) == wikiquote_api_html(v1) == WIKIQUOTE.encode()
+    assert wikiquote_api_html(b'{"error": {"code": "missingtitle"}}') is None
+    assert wikiquote_api_html(b"<html>") is None
+
+
+async def test_live_quote_falls_back_to_page(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    printer: FakePrinter,
+    aioclient_mock: AiohttpClientMocker,
+) -> None:
+    aioclient_mock.get(WIKIQUOTE_API_URL, json={"error": {"code": "ratelimited"}})
+    aioclient_mock.get(WIKIQUOTE_URL, text=WIKIQUOTE)
+    await _setup(hass, config_entry, morning_bottom="quote")
+    await _call(hass, "print_morning_slip")
+    assert aioclient_mock.call_count == 2
+    store = config_entry.runtime_data.store
+    assert store.get_setting("live_quote_cache")["text"] == (
+        "Whatever you are, be a good one."
+    )
 
 
 def test_find_feed() -> None:
@@ -307,7 +335,9 @@ async def test_morning_live_quote_and_headlines(
     printer: FakePrinter,
     aioclient_mock: AiohttpClientMocker,
 ) -> None:
-    aioclient_mock.get(WIKIQUOTE_URL, text=WIKIQUOTE)
+    aioclient_mock.get(
+        WIKIQUOTE_API_URL, json={"parse": {"title": "x", "text": WIKIQUOTE}}
+    )
     aioclient_mock.get(FEED_URL, content=RSS)
     await _setup(hass, config_entry, morning_bottom="quote", feeds=FEEDS)
     store = config_entry.runtime_data.store

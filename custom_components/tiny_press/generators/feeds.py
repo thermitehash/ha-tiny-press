@@ -16,6 +16,7 @@ from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 import html
 from html.parser import HTMLParser
+import json
 import re
 import xml.etree.ElementTree as ET
 
@@ -186,6 +187,12 @@ def parse_feed(data: bytes, limit: int = MAX_ITEMS) -> Feed:
     return Feed(title, link, tuple(items[:limit]))
 
 
+# The MediaWiki Action API's parse module (officially supported) returns the
+# page's HTML in JSON; the plain render URL is the fallback.
+WIKIQUOTE_API_URL = (
+    "https://en.wikiquote.org/w/api.php?action=parse"
+    "&page=Main_Page/Quote_of_the_day&prop=text&format=json&formatversion=2"
+)
 WIKIQUOTE_URL = (
     "https://en.wikiquote.org/w/index.php"
     "?title=Main_Page/Quote_of_the_day&action=render"
@@ -247,3 +254,15 @@ def wikiquote_quote(data: bytes) -> tuple[str, str] | None:
     if not 10 <= len(quote) <= 500 or not author or len(author.split()) > 8:
         return None
     return quote, author
+
+
+def wikiquote_api_html(data: bytes) -> bytes | None:
+    """Take the page HTML out of a MediaWiki ``action=parse`` JSON reply."""
+    try:
+        reply = json.loads(data)
+    except ValueError:
+        return None
+    text = (reply.get("parse") or {}).get("text") if isinstance(reply, dict) else None
+    if isinstance(text, dict):  # formatversion=1 wraps it as {"*": html}
+        text = text.get("*")
+    return text.encode("utf-8") if isinstance(text, str) and text else None

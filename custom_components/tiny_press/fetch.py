@@ -18,10 +18,12 @@ from homeassistant.util import dt as dt_util
 from .generators.feeds import (
     DEFAULT_ITEMS,
     MAX_ITEMS,
+    WIKIQUOTE_API_URL,
     WIKIQUOTE_URL,
     Feed,
     FeedError,
     parse_feed,
+    wikiquote_api_html,
     wikiquote_quote,
 )
 from .store import TinyPressStore
@@ -126,14 +128,20 @@ async def async_live_quote(
     cached = store.get_setting(SETTING_LIVE_QUOTE_CACHE)
     if isinstance(cached, dict) and cached.get("day") == today:
         return cached["text"], cached["author"]
-    try:
-        data = await async_download(hass, WIKIQUOTE_URL)
-    except FetchError as err:
-        _LOGGER.info("Couldn't get Wikiquote's quote of the day: %s", err)
-        return None
-    found = await hass.async_add_executor_job(wikiquote_quote, data)
+    found = None
+    for url in (WIKIQUOTE_API_URL, WIKIQUOTE_URL):
+        try:
+            data = await async_download(hass, url)
+        except FetchError as err:
+            _LOGGER.info("Couldn't get Wikiquote's quote of the day: %s", err)
+            continue
+        if url == WIKIQUOTE_API_URL:
+            data = wikiquote_api_html(data) or b""
+        found = await hass.async_add_executor_job(wikiquote_quote, data)
+        if found is not None:
+            break
     if found is None:
-        _LOGGER.info("Wikiquote's quote of the day didn't fit; using a bundled one")
+        _LOGGER.info("No usable Wikiquote quote of the day; using a bundled one")
         return None
     store.set_setting(
         SETTING_LIVE_QUOTE_CACHE, {"day": today, "text": found[0], "author": found[1]}

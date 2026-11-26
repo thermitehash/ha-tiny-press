@@ -63,7 +63,7 @@ Both build on `print_image`'s existing 1-bit rendering. Like everything else, th
 
 ## v0.9.0: RSS/Atom feeds and a live quote of the day (built)
 
-Built as planned, with two changes: feeds are set up under Configure → Add a feed (Tiny Press fetches them itself rather than through the Feedreader integration), and Wikiquote has no Quote of the Day RSS feed, so Tiny Press reads its "Main Page/Quote of the day" page instead.
+Built as planned, with two changes: feeds are set up under Configure → Add a feed (Tiny Press fetches them itself rather than through the Feedreader integration), and Wikiquote has no Quote of the Day RSS feed, so Tiny Press reads its "Main Page/Quote of the day" page through the MediaWiki API (`action=parse`), with the rendered page as a fallback.
 
 ### Feed prints
 - A `tiny_press.print_feed` action (and card buttons) that prints the newest items from any RSS or Atom feed: headline, date, a short summary, the source's name and a QR code linking to the item.
