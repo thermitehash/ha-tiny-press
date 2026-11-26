@@ -12,6 +12,7 @@
 | 6 | 0.8.0 | Voice blueprint and Siri docs |
 | 7 | — | Skylight (planning only, below) |
 | later | — | Selfie prints and AI-generated kid-safe pictures (planning only, below) |
+| later | — | RSS/Atom feed prints and a live quote of the day (planning only, below) |
 
 ## Phase 7: Skylight family calendar (planning only)
 
@@ -60,6 +61,24 @@ Both build on `print_image`'s existing 1-bit rendering. Like everything else, th
   - Which `ai_task` providers support image generation, and at what cost per image.
   - Whether to cache generated pages for re-printing.
   - A per-day limit so a voice command can't run up a bill.
+
+## Later: RSS/Atom feeds and a live quote of the day (planning only)
+
+### Feed prints
+- A `tiny_press.print_feed` action (and card buttons) that prints the newest items from any RSS or Atom feed: headline, date, a short summary, the source's name and a QR code linking to the item.
+- Reuse Home Assistant's `feedreader` integration where it's set up (its events and entities), or fetch a feed URL directly with HA's shared HTTP session, with a timeout and size cap.
+- Strip HTML down to plain text; never print images or scripts from a feed.
+- Always print the feed's title and link as attribution. Leave paywalled or "no reuse" feeds to the user's judgment and say so in the docs.
+- Manual prints only, like everything else.
+
+### Live quote of the day (with the bundled quotes as fallback)
+- A "live" choice for the morning slip's quote: fetch today's quote from a source whose terms allow reuse with attribution. If the fetch fails, times out or returns nothing printable, fall back to the bundled public-domain quotes and print no error.
+- Candidates to check then (not yet verified from the build environment):
+  - **Wikiquote Quote of the Day** feed (MediaWiki `featuredfeed`, `feed=qotd`). The page text is CC BY-SA; print "Wikiquote (CC BY-SA)" and the author.
+  - **ZenQuotes** `today` API: free for low volume, and its terms ask for a visible "Inspirational quotes provided by ZenQuotes API" credit with a link.
+  - Any user-chosen feed through the generic feed support above.
+- Not used: sites whose terms forbid reuse of their quotes (for example BrainyQuote).
+- Cache one quote per day so reprints don't refetch, and filter by length so it fits the slip.
 
 ## Dashboard card (built in v0.3.0)
 
