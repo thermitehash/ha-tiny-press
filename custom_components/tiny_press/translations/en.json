@@ -80,7 +80,7 @@
           "todo_entities": "Optional. Unchecked items from these lists print as checkboxes. Leave empty for no to-dos.",
           "morning_bottom": "What prints at the end of the morning slip.",
           "live_quote": "For the Quote bottom: try Wikiquote's quote of the day first (credited on the print), and use the bundled public-domain quotes if it can't be read.",
-          "morning_feed": "For the Feed bottom: whose headlines print. Empty uses the first feed.",
+          "morning_feed": "For the Headlines bottom: whose headlines print. Leave empty for no feed (a quote prints instead).",
           "quiet_start": "No feed auto-prints during quiet hours. Clear both times to allow printing at any hour.",
           "quiet_end": "Quiet hours can span midnight, such as 9 PM to 7 AM.",
           "quiet_mode": "Skip new feed items, or print up to 3 per feed when quiet hours end."
@@ -287,7 +287,7 @@
         "fact": "A fun fact",
         "quote": "A quote of the day (Wikiquote when Live quote is on, else public domain)",
         "word": "A hard vocabulary word with its definition",
-        "feed": "Headlines from a feed (Configure → Add a feed)",
+        "feed": "Headlines from a feed (pick the morning slip feed below)",
         "puzzle": "A small sudoku (adult profile's difficulty)",
         "none": "Nothing"
       }

@@ -397,14 +397,28 @@ async def test_morning_fallbacks(
         hass, config_entry, morning_bottom="feed", feeds=FEEDS, live_quote=False
     )
     store = config_entry.runtime_data.store
-    await _call(hass, "print_morning_slip")  # feed fails: a bundled quote instead
+    await _call(hass, "print_morning_slip")  # no morning feed picked: a quote
     assert len(store.recent("quote")) == 1
+    assert aioclient_mock.call_count == 0  # and no feed was fetched
     hass.config_entries.async_update_entry(
         config_entry, options={"morning_bottom": "feed", "live_quote": False}
     )
     await hass.async_block_till_done()
     await _call(hass, "print_morning_slip")  # no feeds at all: quote again
     assert len(store.recent("quote")) == 2
+    hass.config_entries.async_update_entry(
+        config_entry,
+        options={
+            "morning_bottom": "feed",
+            "live_quote": False,
+            "feeds": FEEDS,
+            "morning_feed": "news",
+        },
+    )
+    await hass.async_block_till_done()
+    await _call(hass, "print_morning_slip")  # picked feed fails: quote again
+    assert len(store.recent("quote")) == 3
+    assert aioclient_mock.call_count == 1
 
 
 async def test_voice_and_llm_feed(

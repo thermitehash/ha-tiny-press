@@ -626,7 +626,8 @@ async def _morning_headlines(
     """Fetch the morning feed's newest headlines, or None if it can't be read."""
     options = coordinator.config_entry.options
     feeds = feeds_from_options(options)
-    chosen = find_feed(feeds, options.get(CONF_MORNING_FEED)) or find_feed(feeds, None)
+    wanted = options.get(CONF_MORNING_FEED)
+    chosen = find_feed(feeds, wanted) if wanted else None  # none picked: no feed
     if chosen is None:
         return None
     try:
