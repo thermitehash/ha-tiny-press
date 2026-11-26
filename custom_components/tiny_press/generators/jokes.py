@@ -24,6 +24,7 @@ class Joke:
     punchline: str | None = None
     source: str = "offline"  # or "ai"
     index: int | None = None  # position in the bundled list
+    credit: str | None = None  # where a bundled item comes from, printed small
 
     def answer(self) -> dict[str, object]:
         """Return the data stored with the print (the punchline is the answer)."""
@@ -38,14 +39,17 @@ def offline_count(kind: str) -> int:
 def pick(kind: str, seed: int, recent: list[int] | None = None) -> Joke:
     """Choose a bundled joke or fact, avoiding recently printed ones."""
     rng = random.Random(seed)
-    if kind == JOKE:
-        items: list[list[str]] = load_json("jokes.json")
-    else:
-        items = [[f] for f in load_json("facts.json")]
+    items: list[dict[str, str]] = load_json(
+        "jokes.json" if kind == JOKE else "facts.json"
+    )
     avoid = set(recent or [])
     choices = [i for i in range(len(items)) if i not in avoid] or list(
         range(len(items))
     )
     index = rng.choice(choices)
     item = items[index]
-    return Joke(kind, item[0], item[1] if len(item) > 1 else None, "offline", index)
+    if kind == JOKE:
+        return Joke(
+            JOKE, item["setup"], item["punchline"], "offline", index, item.get("credit")
+        )
+    return Joke(FACT, item["fact"], None, "offline", index, item.get("source"))

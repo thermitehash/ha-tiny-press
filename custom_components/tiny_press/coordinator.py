@@ -16,6 +16,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_AI_JOKES,
     CONF_AI_TASK,
     CONF_MAX_LENGTH_MM,
     CONF_PAPER_WIDTH,
@@ -157,6 +158,13 @@ class TinyPressCoordinator(DataUpdateCoordinator[PrinterState]):
     def ai_task_entity(self) -> str | None:
         """The ``ai_task`` entity chosen in the options, if any."""
         return self.config_entry.options.get(CONF_AI_TASK) or None
+
+    @property
+    def use_ai_jokes(self) -> bool:
+        """True when jokes and facts should come from the AI first."""
+        return bool(self.config_entry.options.get(CONF_AI_JOKES)) and bool(
+            self.ai_task_entity
+        )
 
     def kid_profile(self, wanted: str | None = None) -> Profile:
         """Return a kid profile by name/ID, else the one chosen in the select."""

@@ -30,6 +30,7 @@ from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 import voluptuous as vol
 
 from .const import (
+    CONF_AI_JOKES,
     CONF_AI_TASK,
     CONF_MAX_LENGTH_MM,
     CONF_PAPER_WIDTH,
@@ -283,6 +284,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                     CONF_MAX_LENGTH_MM: int(user_input[CONF_MAX_LENGTH_MM]),
                     CONF_POLL_INTERVAL: int(user_input[CONF_POLL_INTERVAL]),
                     CONF_AI_TASK: user_input.get(CONF_AI_TASK) or None,
+                    CONF_AI_JOKES: bool(user_input.get(CONF_AI_JOKES)),
                 }
             )
         options = self.config_entry.options
@@ -316,6 +318,9 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                     CONF_AI_TASK,
                     description={"suggested_value": options.get(CONF_AI_TASK)},
                 ): EntitySelector(EntitySelectorConfig(domain="ai_task")),
+                vol.Required(
+                    CONF_AI_JOKES, default=bool(options.get(CONF_AI_JOKES, False))
+                ): BooleanSelector(),
             }
         )
         return self.async_show_form(step_id="settings", data_schema=schema)

@@ -160,7 +160,9 @@ async def async_print_type(
         case PrintType.JOKE | PrintType.FACT:
             kid = coordinator.kid_profile(profile)
             joke = None
-            if seed is None:  # a seed asks for a repeatable (bundled) pick
+            # Bundled human-written lists unless AI jokes are switched on;
+            # a seed asks for a repeatable (bundled) pick.
+            if seed is None and coordinator.use_ai_jokes:
                 joke = await async_ai_joke(
                     hass, coordinator.ai_task_entity, kind.value, kid
                 )

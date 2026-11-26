@@ -18,11 +18,20 @@ def test_bundled_lists_are_big_enough() -> None:
     assert jokes.offline_count(jokes.JOKE) >= 100
     assert jokes.offline_count(jokes.FACT) >= 100
     joke_list = load_json("jokes.json")
-    assert all(len(j) == 2 and j[0].endswith("?") and j[1] for j in joke_list)
-    assert len({j[0] for j in joke_list}) == len(joke_list)
+    assert all(j["setup"].endswith("?") and j["punchline"] for j in joke_list)
+    assert len({j["setup"] for j in joke_list}) == len(joke_list)
     facts = load_json("facts.json")
-    assert len(set(facts)) == len(facts)
-    assert all(len(f) < 160 for f in facts)
+    assert len({f["fact"] for f in facts}) == len(facts)
+    federal = (
+        "https://oceanservice.noaa.gov/",
+        "https://science.nasa.gov/",
+        "https://www.nps.gov/",
+    )
+    for fact in facts:
+        assert len(fact["fact"]) <= 150
+        assert fact["source"]
+        # Every fact cites a U.S. federal page (public domain, 17 U.S.C. 105).
+        assert fact["url"].startswith(federal)
 
 
 def test_pick_avoids_recent() -> None:
@@ -35,6 +44,7 @@ def test_pick_avoids_recent() -> None:
     assert jokes.pick(jokes.JOKE, 1, recent=every).index is not None
     fact = jokes.pick(jokes.FACT, 2)
     assert fact.punchline is None
+    assert fact.credit
 
 
 def _register(hass: HomeAssistant, handler) -> None:

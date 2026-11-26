@@ -40,7 +40,8 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 |---|---|---|
 | Longest single print | 600 mm | Any print longer than this is trimmed and ends with a "trimmed" note, so a runaway print can't empty the roll. |
 | Status check interval | 60 s | How often paper and cover status are read. Status is never read while a job is printing. |
-| AI task entity | none | Optional. Any `ai_task` entity (for example the Anthropic integration's). Used for fresh jokes and fun facts now, and stories later. Without it, Tiny Press uses its bundled lists. |
+| AI task entity | none | Optional. Any `ai_task` entity (for example the Anthropic integration's). Used for bedtime stories in a later version. |
+| Use AI for jokes and fun facts | off | Off: jokes and facts come from bundled, human-written lists (facts from NOAA, NASA and the National Park Service, with credits). On: the AI is asked first. |
 
 ### Profiles
 
@@ -50,7 +51,7 @@ Open **Settings → Devices & services → Tiny Press → Configure** to add, ed
 |---|---|
 | Name | Shown on the Kid profile select; may be used in stories later |
 | Reading grade | K–5 (default 3). Sets word lists, grid size and math level. |
-| Interests | Free text such as `dinosaurs, space, horses`. Themed words appear in word searches; the AI uses them for jokes. |
+| Interests | Free text such as `dinosaurs, space, horses`. Themed words appear in word searches (and in AI jokes if switched on). |
 | Stretch | Makes puzzles one grade harder (reading stays at their grade) |
 
 An adult profile has a name and a default puzzle difficulty (used by the adult puzzles in v0.3.0). Add as many profiles as you like, for example a younger sibling later.
@@ -184,6 +185,10 @@ python script/gen_translations.py   # after editing strings.json
 ```
 
 Versioning is SemVer. `manifest.json` is the single source of truth: bump the minor version for a feature or phase, and the patch version for fixes. CI fails a pull request that changes `custom_components/` without bumping the version. Release notes go in `docs/releases/vX.Y.Z.md`.
+
+## Content sources
+
+Bundled content is human-written and comes from sources that allow redistribution: fun facts from NOAA, NASA and the National Park Service (U.S. government works, public domain), and K–3 words from the Dolch sight-word lists. See [`data/LICENSE.md`](custom_components/tiny_press/data/LICENSE.md) for every source.
 
 ## License
 

@@ -143,7 +143,11 @@ async def test_joke_uses_ai_task(
     )
     hass.config_entries.async_update_entry(
         config_entry,
-        options={"profiles": [ROSIE], "ai_task_entity": "ai_task.claude"},
+        options={
+            "profiles": [ROSIE],
+            "ai_task_entity": "ai_task.claude",
+            "ai_jokes": True,
+        },
     )
     assert await hass.config_entries.async_setup(config_entry.entry_id)
     response = await _print(hass, type="joke")
@@ -152,3 +156,24 @@ async def test_joke_uses_ai_task(
     assert "grade 2" in calls[0]["instructions"]
     assert "dinosaurs" in calls[0]["instructions"]
     assert config_entry.runtime_data.store.recent("joke") == []
+
+
+async def test_ai_not_used_unless_switched_on(
+    hass: HomeAssistant, config_entry: MockConfigEntry, printer: FakePrinter
+) -> None:
+    calls: list[ServiceCall] = []
+
+    async def handler(call: ServiceCall) -> dict[str, Any]:
+        calls.append(call)
+        return {"data": {"fact": "From the AI."}}
+
+    hass.services.async_register(
+        "ai_task", "generate_data", handler, supports_response=SupportsResponse.ONLY
+    )
+    hass.config_entries.async_update_entry(
+        config_entry, options={"ai_task_entity": "ai_task.claude"}
+    )
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    response = await _print(hass, type="fact")
+    assert response["source"] == "offline"
+    assert calls == []

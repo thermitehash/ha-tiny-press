@@ -158,6 +158,7 @@ async def test_options_settings(
             "max_length_mm": 450,
             "poll_interval": 120,
             "ai_task_entity": "ai_task.claude",
+            "ai_jokes": True,
         },
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
@@ -166,11 +167,13 @@ async def test_options_settings(
         "max_length_mm": 450,
         "poll_interval": 120,
         "ai_task_entity": "ai_task.claude",
+        "ai_jokes": True,
     }
     coordinator = loaded_entry.runtime_data
     assert coordinator.max_length_mm == 450
     assert coordinator.update_interval.total_seconds() == 120
     assert coordinator.ai_task_entity == "ai_task.claude"
+    assert coordinator.use_ai_jokes
 
 
 async def _menu(hass: HomeAssistant, entry: MockConfigEntry, step: str):

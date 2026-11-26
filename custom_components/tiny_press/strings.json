@@ -54,12 +54,14 @@
         "data": {
           "max_length_mm": "Longest single print",
           "poll_interval": "Status check interval",
-          "ai_task_entity": "AI task entity"
+          "ai_task_entity": "AI task entity",
+          "ai_jokes": "Use AI for jokes and fun facts"
         },
         "data_description": {
           "max_length_mm": "Any print longer than this is trimmed, so a runaway print can't empty the roll.",
           "poll_interval": "How often to read paper and cover status. Status is never read while printing.",
-          "ai_task_entity": "Optional. Used for fresh jokes and fun facts (and stories in a later version). Without it, Tiny Press uses its bundled lists."
+          "ai_task_entity": "Optional. Used for bedtime stories in a later version, and for jokes and fun facts if you switch that on below.",
+          "ai_jokes": "Off (recommended): jokes and facts come from Tiny Press's bundled, human-written lists, each with a credited source. On: ask the AI task entity first and fall back to the bundled lists."
         }
       },
       "add_kid": {

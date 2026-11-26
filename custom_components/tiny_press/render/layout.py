@@ -383,6 +383,9 @@ def joke_page(width: int, joke: Joke, footer: Footer) -> Canvas:
             flipped.paste(block, (0, y))
             y += block.height
         canvas.drawing(flipped.rotate(180))
+    if joke.credit:
+        canvas.space(8)
+        canvas.text(f"Source: {joke.credit}", px=18, align="center")
     canvas.space(12)
     canvas.footer(*footer.fields())
     return canvas
