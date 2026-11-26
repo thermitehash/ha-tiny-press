@@ -196,22 +196,42 @@ def kid_title(title: str, who: str | None) -> str:
     return f"{owner} {title[:1].lower()}{title[1:]}"
 
 
-def ascii_art(width: int, lines: tuple[str, ...], px: int = 20) -> Image.Image:
-    """Monospaced ASCII art, centered, as a drawing."""
-    face = font("mono", px, False)
+ART_MAX_PX = 26
+
+
+def ascii_art(width: int, lines: tuple[str, ...], px: int = ART_MAX_PX) -> Image.Image:
+    """Monospaced ASCII art, centered, as a drawing.
+
+    Bold and slightly thickened, as large as fits (up to ``px``): thin
+    anti-aliased strokes come out faint once the page is turned into 1-bit
+    printer dots.
+    """
+    cols = max((len(line) for line in lines), default=1) or 1
+    room = width - 2 * MARGIN - 4
+    while px > 12 and font("mono", px, True).getlength("M") * cols > room:
+        px -= 1
+    face = font("mono", px, True)
+    stroke = 1 if px >= 16 else 0
     ascent, descent = face.getmetrics()
-    line_h = ascent + descent
+    line_h = ascent + descent + 2 * stroke
     advance = face.getlength("M")  # monospaced
-    widest = max((len(line) for line in lines), default=0) * advance
-    img = Image.new("L", (width, line_h * len(lines) + 4), 255)
+    widest = cols * advance
+    img = Image.new("L", (width, line_h * len(lines) + 4 + 2 * stroke), 255)
     draw = ImageDraw.Draw(img)
-    left = max(0, (width - widest) / 2)
+    left = max(MARGIN, (width - widest) / 2)
     for i, line in enumerate(lines):
         # One character at a time, so the font can't join "_|_" or "-|" into
         # ligatures.
         for j, ch in enumerate(line):
             if ch != " ":
-                draw.text((left + j * advance, i * line_h), ch, font=face, fill=0)
+                draw.text(
+                    (left + j * advance, i * line_h + stroke),
+                    ch,
+                    font=face,
+                    fill=0,
+                    stroke_width=stroke,
+                    stroke_fill=0,
+                )
     return img
 
 
@@ -227,7 +247,7 @@ def maze_page(
     """Lay out a maze printout (or its answer key), themed when given one."""
     canvas = Canvas(width)
     if theme is not None and theme.art and not answer:
-        canvas.drawing(ascii_art(width, theme.art, px=18))
+        canvas.drawing(ascii_art(width, theme.art, px=22))
     name = f"{theme.name} maze" if theme is not None and not answer else "Maze"
     canvas.title("Maze answer" if answer else kid_title(name, who))
     canvas.text("Start at the dot. Find the star!", px=24, align="center")

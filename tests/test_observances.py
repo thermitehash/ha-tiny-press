@@ -366,3 +366,34 @@ async def test_no_jokes_on_a_solemn_day(
         )
     assert captured[0].banner.id == "yom_kippur"
     assert captured[0].joke.kind == "fact"  # the joke bottom becomes a fact
+
+
+@pytest.mark.parametrize("width", sorted(PAPER_DOTS.values()))
+def test_ascii_art_is_bold_and_fits(width: int) -> None:
+    """Art must survive 1-bit printing: much darker than thin text, and inside the paper."""
+    from PIL import Image, ImageDraw
+
+    from custom_components.tiny_press.render.canvas import Canvas, font
+
+    def dark_share(img: Image.Image) -> float:
+        canvas = Canvas(width)
+        canvas.drawing(img)
+        one_bit = canvas.render()[0].convert("L")
+        box = one_bit.point(lambda v: 255 - v).getbbox()
+        assert box is not None and box[0] >= 4 and box[2] <= width - 4
+        crop = one_bit.crop(box)
+        return sum(crop.histogram()[:128]) / (crop.width * crop.height)
+
+    def thin(lines: tuple[str, ...]) -> Image.Image:  # the old, faint style
+        face = font("mono", 20, False)
+        ascent, descent = face.getmetrics()
+        img = Image.new("L", (width, (ascent + descent) * len(lines) + 4), 255)
+        draw = ImageDraw.Draw(img)
+        for i, line in enumerate(lines):
+            draw.text((20, i * (ascent + descent)), line, font=face, fill=0)
+        return img
+
+    for name in ob.art_names():
+        lines = ob.art(name)
+        bold = dark_share(layout.ascii_art(width, lines))
+        assert bold > 1.5 * dark_share(thin(lines)), name
