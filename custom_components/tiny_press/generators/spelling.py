@@ -44,6 +44,15 @@ def scramble(word: str, rng: random.Random) -> str:
     return "".join(letters)
 
 
+CROSSWORD_WORDS = 10  # per spelling crossword (keeps the grid readable)
+
+
+def scramble_clue(word: str, seed: int) -> str:
+    """Return the offline crossword clue: the word's letters, mixed up."""
+    rng = random.Random(f"clue-{seed}-{word}")
+    return f"Unscramble: {scramble(word.upper(), rng)}"
+
+
 def blank_positions(word: str, rng: random.Random) -> list[int]:
     """Which letters to hide: about a third, at least one, never the first."""
     if len(word) < 2:

@@ -873,11 +873,22 @@ def crossword_drawing(
 
 
 def crossword_page(
-    width: int, puzzle: Crossword, footer: Footer, *, answer: bool = False
+    width: int,
+    puzzle: Crossword,
+    footer: Footer,
+    *,
+    answer: bool = False,
+    title: str = "Crossword",
+    who: str | None = None,
+    also: tuple[str, ...] = (),
 ) -> Canvas:
-    """Lay out a criss-cross crossword with Across and Down clues."""
+    """Lay out a criss-cross crossword with Across and Down clues.
+
+    ``also`` lists words that couldn't join the grid (a spelling crossword),
+    so they still get practiced.
+    """
     canvas = Canvas(width)
-    canvas.title("Crossword answers" if answer else "Crossword")
+    canvas.title(f"{title} answers" if answer else kid_title(title, who))
     canvas.space(6)
     canvas.drawing(crossword_drawing(width, puzzle, show_answers=answer))
     canvas.space(6)
@@ -892,6 +903,10 @@ def crossword_page(
             if answer:
                 line += f"  {entry.word}"
             canvas.text(line, px=22)
+        canvas.space(6)
+    if also:
+        canvas.text("Also practice", px=26, bold=True)
+        canvas.text(", ".join(w.lower() for w in also), px=22)
         canvas.space(6)
     canvas.footer(*footer.fields())
     return canvas

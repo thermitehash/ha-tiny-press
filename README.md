@@ -11,7 +11,7 @@ A Home Assistant integration that turns an Epson receipt printer into a househol
 - **Home Assistant:** 2026.11.0 or newer
 - **Nothing prints on a schedule.** Tiny Press ships no schedules or time-based automations. The only automatic printing is feed auto-print, which is off until you switch it on for a feed.
 
-> **Status: v0.11.0.** Kid prints (maze, word search, math, kid sudoku, spelling, jokes, facts, kid pack), adult puzzles, bedtime stories, the morning slip, weather, sensor history, a dashboard card with kid mode, and kid-mode limits, Assist voice phrases, AI-agent print tools, feed prints, a live quote of the day, and holidays and themes. See [docs/releases](docs/releases) for each version and the [roadmap](docs/roadmap.md) for what's next.
+> **Status: v0.12.0.** Kid prints (maze, word search, math, kid sudoku, spelling practice, word searches and crosswords, jokes, facts, kid pack), adult puzzles, bedtime stories, the morning slip, weather, sensor history, a dashboard card with kid mode, and kid-mode limits, Assist voice phrases, AI-agent print tools, feed prints, a live quote of the day, and holidays and themes. See [docs/releases](docs/releases) for each version and the [roadmap](docs/roadmap.md) for what's next.
 
 <!-- Screenshot placeholders -->
 <!-- ![Device page](docs/images/device.png) -->
@@ -131,7 +131,7 @@ Open **Settings → Devices & services → Tiny Press → Configure** to add, ed
 | Maze difficulty | This kid's mazes: Easy, Medium or Hard, or follow the Maze difficulty select (the default). Asking for a level, as in "print a hard maze", still wins. |
 | Interests | Free text such as `dinosaurs, space, horses`. Themed words appear in word searches (and in AI jokes if switched on). |
 | Stretch | Makes puzzles one grade harder, for both reading and math puzzles (stories stay at their reading grade) |
-| Spelling list (to-do list) | The only source of spelling words: a `todo` list, one word per item. Check a word off when it's learned; prints use the unchecked words. Add words by voice: "Add *because* to Rosie's spelling list". With no list, or every word checked off, the card greys out the Spelling and Spelling search tiles. |
+| Spelling list (to-do list) | The only source of spelling words: a `todo` list, one word per item. Check a word off when it's learned; prints use the unchecked words. Add words by voice: "Add *because* to Rosie's spelling list". With no list, or every word checked off, the card greys out the Spelling, Spelling search and Spelling crossword tiles. |
 
 An adult profile has a name, a default puzzle difficulty (used by the adult puzzles) and an optional Home Assistant user. A linked adult's card prints as them, and never counts against kid-mode limits. Add as many profiles as you like, for example a younger sibling later.
 
@@ -163,6 +163,7 @@ Every math strip ends with a harder ★ bonus problem. Kid sudoku (numbers) foll
 | `button.tiny_press_kid_sudoku` | Prints a 4×4 or 6×6 number sudoku |
 | `button.tiny_press_spelling` | Prints unscramble and missing-letter practice from the kid's spelling list |
 | `button.tiny_press_spelling_search` | Prints a word search of the kid's spelling list |
+| `button.tiny_press_spelling_crossword` | Prints a crossword of the kid's spelling list. With an AI task set up, each clue is written by the AI for the kid's reading grade (never containing the word); otherwise, or for any clue that fails the checks, the clue is the word scrambled |
 | `button.tiny_press_sudoku` | Prints a 9×9 sudoku (difficulty from the Sudoku difficulty select) |
 | `button.tiny_press_crossword` | Prints a criss-cross crossword for the selected adult |
 | `button.tiny_press_cryptogram` | Prints a cryptogram from a public-domain quote |
@@ -208,7 +209,7 @@ This is the general entry point that every button and voice phrase uses.
 
 | Field | Notes |
 |---|---|
-| `type` | `maze`, `word_search`, `math`, `joke`, `fact`, `kid_pack`, `kid_sudoku`, `spelling`, `spelling_search`, `sudoku`, `crossword`, `cryptogram`, `puzzle_pack`, `weather` or `test_page` |
+| `type` | `maze`, `word_search`, `math`, `joke`, `fact`, `kid_pack`, `kid_sudoku`, `spelling`, `spelling_search`, `spelling_crossword`, `sudoku`, `crossword`, `cryptogram`, `puzzle_pack`, `weather` or `test_page` |
 | `profile` | Kid profile name for word searches, math, jokes and kid packs. Empty uses the Kid profile select. |
 | `difficulty` | For mazes (and the maze in a kid pack). Loose words work: `easy`, `medium`, `hard`, `harder`, `tricky`, `a little harder`. Empty uses the Maze difficulty select. |
 | `seed` | The same seed prints the same puzzle again (and the same bundled joke) |
@@ -324,7 +325,7 @@ type: custom:tiny-press-card
 title: Rosie's printer
 kid_mode: true          # hold-to-print, no settings or answers, shows limits
 show_preview: false     # true: see the print first, then Shuffle or Print
-buttons: [maze, word_search, math, kid_sudoku, spelling, spelling_search, joke, kid_pack, story, next_chapter, sudoku, crossword, cryptogram, puzzle_pack, morning_slip, weather]
+buttons: [maze, word_search, math, kid_sudoku, spelling, spelling_search, spelling_crossword, joke, kid_pack, story, next_chapter, sudoku, crossword, cryptogram, puzzle_pack, morning_slip, weather]
 # ignore_limits: true   # for a parents' dashboard
 history:                # optional one-tap history buttons (hidden in kid mode)
   - {name: Freezer, entity: sensor.freezer_temperature, hours: 24}
@@ -383,6 +384,7 @@ Two ways to print by voice. Use either or both.
 | "Print a word search / math sheet / kid pack / kid sudoku for Rosie" | That kid print | "Printing a word search for Rosie." |
 | "Print spelling practice for Rosie" | Spelling practice | "Printing spelling practice for Rosie." |
 | "Print a spelling word search for Rosie" | Spelling word search | "Printing a spelling word search for Rosie." |
+| "Print a spelling crossword for Rosie" | Spelling crossword | "Printing a spelling crossword for Rosie." |
 | "Tell me a joke", "Tell me a fun fact" | Joke or fact | The joke or fact itself, read aloud |
 | "Print a bedtime story", "Print a story about a brave dragon", "Print the next chapter" | Story | "Printing *title*. Sweet dreams!" |
 | "Print an easy sudoku / crossword / cryptogram", "Print a puzzle pack" | Adult puzzle | "Printing a sudoku." |

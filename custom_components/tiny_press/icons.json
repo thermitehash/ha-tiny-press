@@ -62,6 +62,9 @@
       "spelling_search": {
         "default": "mdi:text-box-search-outline"
       },
+      "spelling_crossword": {
+        "default": "mdi:alpha-s-box-outline"
+      },
       "sudoku": {
         "default": "mdi:grid"
       },

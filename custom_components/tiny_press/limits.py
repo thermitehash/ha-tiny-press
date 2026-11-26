@@ -46,6 +46,7 @@ KID_TYPES = frozenset(
         PrintType.KID_SUDOKU,
         PrintType.SPELLING,
         PrintType.SPELLING_SEARCH,
+        PrintType.SPELLING_CROSSWORD,
         PrintType.STORY,
     }
 )

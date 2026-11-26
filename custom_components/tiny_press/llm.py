@@ -102,7 +102,7 @@ class PrintTool(_TinyPressTool):
     description = (
         "Print something on the household Tiny Press receipt printer: kid "
         "puzzles (maze, word_search, math, kid_pack, kid_sudoku, spelling, "
-        "spelling_search), a "
+        "spelling_search, spelling_crossword), a "
         "joke or fun fact, a bedtime story (optionally about a topic) or the "
         "next chapter of the story in progress, adult puzzles (sudoku, "
         "crossword, cryptogram, puzzle_pack), the morning slip, the "

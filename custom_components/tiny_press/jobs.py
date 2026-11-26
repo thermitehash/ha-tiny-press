@@ -261,6 +261,7 @@ def answer_job(entry: dict) -> PrintJob:
         PrintType.CRYPTOGRAM: "Cryptogram answer",
         PrintType.SPELLING: "Spelling answers",
         PrintType.SPELLING_SEARCH: "Word search answers",
+        PrintType.SPELLING_CROSSWORD: "Spelling crossword answers",
         PrintType.JOKE: "Joke answer",
         PrintType.FACT: "Fun fact",
     }
@@ -291,15 +292,23 @@ def answer_job(entry: dict) -> PrintJob:
         def build(width: int) -> Canvas:
             return layout.math_page(width, sheet, footer, answer=True)
 
-    elif kind == PrintType.CROSSWORD:
+    elif kind in (PrintType.CROSSWORD, PrintType.SPELLING_CROSSWORD):
         cw = crossword.Crossword(
             data["rows"],
             data["cols"],
             tuple(crossword.Entry(*e) for e in data["entries"]),
         )
+        title = (
+            "Spelling crossword"
+            if kind == PrintType.SPELLING_CROSSWORD
+            else "Crossword"
+        )
+        also = tuple(data.get("also") or ())
 
         def build(width: int) -> Canvas:
-            return layout.crossword_page(width, cw, footer, answer=True)
+            return layout.crossword_page(
+                width, cw, footer, answer=True, title=title, also=also
+            )
 
     elif kind == PrintType.CRYPTOGRAM:
         cg = cryptogram.Cryptogram(
@@ -482,6 +491,50 @@ def spelling_search_job(
         build=lambda width: layout.word_search_page(
             width, puzzle, footer, who=profile.display_name
         ),
+    )
+
+
+def spelling_crossword_job(
+    profile: Profile,
+    words: list[str],
+    clues: dict[str, str],
+    seed: int | None = None,
+) -> PrintJob:
+    """Build a crossword of the spelling words, clued by ``clues`` or scrambles."""
+    seed = new_seed() if seed is None else seed
+    print_id = _id("spelling_crossword", seed)
+    picked = spelling.pick_words(words, seed)[: spelling.CROSSWORD_WORDS]
+    entries = [
+        {"word": w, "clue": clues.get(w) or spelling.scramble_clue(w, seed)}
+        for w in picked
+    ]
+    puzzle, also = crossword.generate_from_words(entries, seed)
+    ai = sum(1 for w in picked if clues.get(w))
+    footer = layout.Footer(
+        "Spelling crossword", print_id, _today(), f"{len(picked)} words"
+    )
+    answer = {**puzzle.answer(), "seed": seed, "also": list(also)}
+    return PrintJob(
+        type=PrintType.SPELLING_CROSSWORD,
+        label="Spelling crossword",
+        print_id=print_id,
+        profile=profile.name,
+        answers=(
+            {
+                "print_id": print_id,
+                "type": PrintType.SPELLING_CROSSWORD,
+                "answer": answer,
+            },
+        ),
+        build=lambda width: layout.crossword_page(
+            width,
+            puzzle,
+            footer,
+            title="Spelling crossword",
+            who=profile.display_name,
+            also=also,
+        ),
+        response={"ai_clues": ai, "left_out": [w.lower() for w in also]},
     )
 
 
