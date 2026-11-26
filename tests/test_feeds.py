@@ -324,7 +324,18 @@ async def test_feed_options(
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
     assert loaded_entry.options["feeds"] == [
-        {"id": "news", "name": "News", "url": FEED_URL, "items": 3}
+        {
+            "id": "news",
+            "name": "News",
+            "url": FEED_URL,
+            "items": 3,
+            "auto_print": False,  # off by default
+            "check_minutes": 15,
+            "quiet_start": "21:00",
+            "quiet_end": "07:00",
+            "quiet_mode": "skip",
+            "auto_qr": False,
+        }
     ]
     result = await add(name="news", url=FEED_URL)
     assert result["errors"] == {"name": "feed_exists"}

@@ -4,7 +4,7 @@
 
 # Tiny Press
 
-A Home Assistant integration that turns an Epson receipt printer into a household fun-printer. It prints mazes, word searches, math strips, jokes, fun facts, puzzles, bedtime stories, a morning slip, weather, sensor history, notes and pictures. Everything is printed on demand: from buttons, the dashboard card, actions or Assist voice phrases.
+A Home Assistant integration that turns an Epson receipt printer into a household fun-printer. It prints mazes, word searches, math strips, jokes, fun facts, puzzles, bedtime stories, a morning slip, weather, sensor history, notes and pictures. Everything is printed on demand, from buttons, the dashboard card, actions or Assist voice phrases. The one exception is feed auto-print, which you switch on per feed.
 
 - **Printer:** Epson TM-m30III (other ESC/POS printers that answer `DLE EOT` on port 9100 should work)
 - **Paper:** 80 mm (576 dots, the default) or 58 mm (420 dots)
@@ -52,6 +52,15 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 ### Feeds
 
 Configure → **Add a feed**: a name (used on the print and by voice), the feed's URL and how many items to print (1–10). Any RSS or Atom feed works, such as news sites, blogs or podcasts. Tiny Press reads the feed once to check it, then fetches it only when you print it, with a 15-second timeout and a 2 MB cap. Prints carry headlines, dates and short text summaries, never pictures. Remove feeds with Configure → **Remove feeds**.
+
+**Auto-print (off by default):** Configure → **Edit a feed** → **Auto-print new items** prints a short slip each time that feed adds an item.
+- **Check every:** 15 minutes by default (5–1440).
+- **First check:** only notes what's already in the feed, so turning auto-print on never prints a backlog.
+- **Bursts:** at most 3 slips print per check (the newest, oldest first). Items older than 12 hours never auto-print, so a printer that was off overnight doesn't wake up to old news.
+- **Quiet hours:** set per feed, 9 PM–7 AM by default. Choose **Skip them** to drop items that arrive during quiet hours, or **Print them when quiet hours end** for up to 3. Clear both times to print at any hour.
+- **QR code on auto slips:** optional.
+- **Printer off:** if a slip can't print, it waits for the next check (up to 3).
+- **Limits:** auto slips never count toward kid-mode limits.
 
 ### Profiles
 

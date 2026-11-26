@@ -49,6 +49,7 @@
           "edit_profile": "Edit a profile",
           "remove_profile": "Remove profiles",
           "add_feed": "Add a feed",
+          "edit_feed": "Edit a feed (auto-print)",
           "remove_feed": "Remove feeds"
         }
       },
@@ -177,6 +178,34 @@
         "data": {
           "feeds": "Feeds to remove"
         }
+      },
+      "edit_feed": {
+        "title": "Edit a feed",
+        "data": {
+          "feed": "Feed"
+        }
+      },
+      "feed_settings": {
+        "title": "{name}",
+        "description": "Auto-print prints a short slip each time this feed adds an item. The first check only notes what's already there, so no backlog prints. At most 3 slips print per check, and items older than 12 hours are skipped. Auto slips never count toward kid-mode limits.",
+        "data": {
+          "items": "Items per print",
+          "auto_print": "Auto-print new items",
+          "check_minutes": "Check every",
+          "quiet_start": "Quiet hours start",
+          "quiet_end": "Quiet hours end",
+          "quiet_mode": "During quiet hours",
+          "auto_qr": "QR code on auto slips"
+        },
+        "data_description": {
+          "items": "For the Print feed action and buttons (1–10).",
+          "auto_print": "Off by default.",
+          "check_minutes": "How often to look for new items (5–1440 minutes).",
+          "quiet_start": "Leave both quiet-hours times empty to print at any time.",
+          "quiet_end": "Quiet hours can span midnight, such as 9 PM to 7 AM.",
+          "quiet_mode": "Skip new items, or print up to 3 of them when quiet hours end.",
+          "auto_qr": "A small QR code that opens the item on a phone."
+        }
       }
     },
     "error": {
@@ -290,6 +319,12 @@
         "weather": "Weather",
         "note": "Note",
         "feed": "Feed headlines"
+      }
+    },
+    "quiet_mode": {
+      "options": {
+        "skip": "Skip them",
+        "morning": "Print them when quiet hours end (up to 3)"
       }
     }
   },
