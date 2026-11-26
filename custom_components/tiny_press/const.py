@@ -85,6 +85,7 @@ SETTING_ADULT_PROFILE: Final = "adult_profile"
 SETTING_SUDOKU_DIFFICULTY: Final = "sudoku_difficulty"
 SETTING_STORY_LENGTH: Final = "story_length"
 SETTING_MORNING_KID_DAY: Final = "morning_kid_day"
+SETTING_MORNING_LAST: Final = "morning_last"  # when the slip last printed (anyone)
 
 
 class PrintType(StrEnum):

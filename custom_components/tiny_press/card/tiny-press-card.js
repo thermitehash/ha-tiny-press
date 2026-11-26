@@ -54,6 +54,7 @@ const ROLES = {
   sudoku_difficulty: "sudokuDifficulty",
   story_length: "storyLength",
   next_chapter: "nextChapter",
+  morning_slip: "morningSlip",
 };
 
 const esc = (value) =>
@@ -467,6 +468,9 @@ class TinyPressCard extends HTMLElement {
   }
 
   _tileLabel(t) {
+    if (t === "morning_slip" && this._morningDone()) {
+      return `${esc(PRINTS[t].label)}<small>Printed today</small>`;
+    }
     if (t !== "next_chapter") return esc(PRINTS[t].label);
     const info = this._chapterInfo();
     if (!info.known) return esc(PRINTS[t].label);
@@ -474,7 +478,12 @@ class TinyPressCard extends HTMLElement {
     return `Chapter ${info.next}<small>${esc(info.story)}</small>`;
   }
 
+  _morningDone() {
+    return !!this._stateOf("morningSlip")?.attributes?.printed_today;
+  }
+
   _tileDisabled(t) {
+    if (t === "morning_slip") return this._morningDone();
     if (t !== "next_chapter") return false;
     const info = this._chapterInfo();
     return info.known && !info.story;
@@ -498,13 +507,24 @@ class TinyPressCard extends HTMLElement {
     chips.push(`<span class="chip ${online?.state === "on" ? "ok" : "bad"}"><span class="dot"></span>${online?.state === "on" ? "Online" : "Offline"}</span>`);
     chips.push(`<span class="chip ${p.tone}"><ha-icon icon="${p.icon}"></ha-icon>${p.label}</span>`);
     if (limits.enabled && !this._parent()) {
-      chips.push(`<span class="chip"><ha-icon icon="mdi:timer-sand"></ha-icon>${esc(limits.left)} left today</span>`);
+      // Yellow for the last three prints, red for the last one (or none left).
+      const tone = limits.left <= 1 ? "last" : limits.left <= 3 ? "few" : "";
+      chips.push(`<span class="chip left ${tone}"><ha-icon icon="mdi:timer-sand"></ha-icon>${esc(limits.left)} left today</span>`);
     }
     if (!this._kidMode() && used && used.state !== "unknown") {
       const metres = (Number(used.state) / 1000).toFixed(1);
       chips.push(`<span class="chip muted"><ha-icon icon="mdi:ruler"></ha-icon>${metres} m used</span>`);
     }
     return `<div class="status">${chips.join("")}</div>`;
+  }
+
+  // Whose card this is: the linked person, the admin's pick, or the active kid.
+  _headerName() {
+    if (!this._hass) return "";
+    const p = this._asProfile();
+    const name = p ? p.name : this._stateOf("kidProfile")?.state;
+    if (!name || name === "unknown" || name === "unavailable") return "";
+    return `<span class="who"><ha-icon icon="mdi:account"></ha-icon>${esc(name)}</span>`;
   }
 
   // Admins: print as any kid or adult (never counted against limits).
@@ -609,7 +629,7 @@ class TinyPressCard extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>${STYLES}</style>
       <ha-card>
-        <div class="header"><ha-icon icon="mdi:printer-pos-outline"></ha-icon><span>${esc(this._config.title)}</span></div>
+        <div class="header"><ha-icon icon="mdi:printer-pos-outline"></ha-icon><span>${esc(this._config.title)}</span>${this._headerName()}</div>
         <div class="content">${body}</div>
       </ha-card>`;
     this._bind();
@@ -670,6 +690,13 @@ const STYLES = `
   .chip.ok { background: color-mix(in srgb, var(--success-color, #43a047) 18%, transparent); }
   .chip.warn { background: color-mix(in srgb, var(--warning-color, #ffa000) 22%, transparent); }
   .chip.bad { background: color-mix(in srgb, var(--error-color, #db4437) 20%, transparent); }
+  .chip.left.few { background: #ffd600; color: #000; font-weight: 700; }
+  .chip.left.last { background: #d50000; color: #fff; font-weight: 700; }
+  .chip.left.few ha-icon, .chip.left.last ha-icon { color: inherit; }
+  .header .who { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: 0.95rem;
+    font-weight: 600; padding: 3px 10px; border-radius: 999px;
+    background: color-mix(in srgb, var(--primary-color, #03a9f4) 14%, transparent); }
+  .header .who ha-icon { --mdc-icon-size: 16px; }
   .chip.muted { color: var(--secondary-text-color); }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: 0.7; }
   .chip.ok .dot { background: var(--success-color, #43a047); opacity: 1; }

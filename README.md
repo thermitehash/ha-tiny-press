@@ -344,6 +344,9 @@ feeds:                  # optional feed buttons (hidden in kid mode)
 **Also on the card:**
 - **Time bar:** while a print has to wait, a live bar sits at the top with the countdown inside it ("Next print in 0:44"), filling until the next print is allowed.
 - **Next chapter button:** shows the kid's story in progress ("Chapter 3 · The Lighthouse Fox"), or is greyed out with "No story yet".
+- **Header:** shows whose card it is: the logged-in person, the admin's Print as pick, or the active kid.
+- **Prints left today:** the chip turns yellow with bold black text for the last three prints, and red with bold white text for the last one.
+- **Morning slip:** greyed out as "Printed today" on every card once it has printed that day. Actions and automations can still print it.
 
 <!-- ![Dashboard card](docs/images/card.png) -->
 

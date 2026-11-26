@@ -57,6 +57,7 @@ from .const import (
     PAPER_DOTS,
     SETTING_MAZE_DIFFICULTY,
     SETTING_MORNING_KID_DAY,
+    SETTING_MORNING_LAST,
     SETTING_STORY_LENGTH,
     SETTING_SUDOKU_DIFFICULTY,
     TEXT_SIZES,
@@ -922,6 +923,9 @@ async def async_morning_slip(
     response = await coordinator.async_print(jobs.morning_job(slip))
     if kid_mode:
         coordinator.store.set_setting(kid_key, today.isoformat())
+    # Cards grey the Morning slip out once it's printed today, for everyone.
+    coordinator.store.set_setting(SETTING_MORNING_LAST, dt_util.utcnow().isoformat())
+    coordinator.async_update_listeners()
     return response
 
 

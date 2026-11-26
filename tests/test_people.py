@@ -132,3 +132,26 @@ async def test_link_a_user_in_options(
     )
     await hass.async_block_till_done()
     assert loaded_entry.options["profiles"][0]["ha_user"] == rosie.id
+
+
+async def test_morning_slip_greys_out_for_everyone(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    printer: FakePrinter,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    await hass.config.async_set_time_zone("UTC")
+    freezer.move_to("2026-11-26 07:00:00+00:00")
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+    button = "button.tiny_press_morning_slip"
+    assert hass.states.get(button).attributes["printed_today"] is False
+    await hass.services.async_call(DOMAIN, "print_morning_slip", {}, blocking=True)
+    await hass.async_block_till_done()
+    attrs = hass.states.get(button).attributes
+    assert attrs["printed_today"] is True
+    assert attrs["last_printed"].startswith("2026-11-26T07:00")
+    freezer.move_to("2026-11-27 07:00:00+00:00")  # a new day
+    config_entry.runtime_data.async_update_listeners()
+    await hass.async_block_till_done()
+    assert hass.states.get(button).attributes["printed_today"] is False
