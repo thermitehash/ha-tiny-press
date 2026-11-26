@@ -11,7 +11,7 @@ A Home Assistant integration that turns an Epson receipt printer into a househol
 - **Home Assistant:** 2026.11.0 or newer
 - **Nothing prints automatically.** Tiny Press ships no schedules or time-based automations.
 
-> **Status: v0.7.0.** Kid prints (maze, word search, math, kid sudoku, spelling, jokes, facts, kid pack), adult puzzles, bedtime stories, the morning slip, weather, sensor history, a dashboard card with kid mode, and kid-mode limits. See [docs/releases](docs/releases) for each version and the [roadmap](docs/roadmap.md) for what's next.
+> **Status: v0.8.0.** Kid prints (maze, word search, math, kid sudoku, spelling, jokes, facts, kid pack), adult puzzles, bedtime stories, the morning slip, weather, sensor history, a dashboard card with kid mode, and kid-mode limits, Assist voice phrases and AI-agent print tools. See [docs/releases](docs/releases) for each version and the [roadmap](docs/roadmap.md) for what's next.
 
 <!-- Screenshot placeholders -->
 <!-- ![Device page](docs/images/device.png) -->
@@ -265,9 +265,56 @@ data:
 
 ## 5. Voice
 
-Assist voice phrases (an automation blueprint) arrive in **v0.8.0**.
+Two ways to print by voice. Use either or both.
 
-> **Heads-up for later:** the voice phrases use sentence triggers, which only run when Home Assistant's built-in conversation agent handles the sentence. If your Assist pipeline uses Claude/Anthropic (or another LLM) as its agent, turn on **"Prefer handling commands locally"** in the pipeline settings, or the phrases won't work.
+### Voice phrases (Assist blueprint)
+
+[![Import the voice phrases blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fthermitehash%2Fha-tiny-press%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Ftiny_press%2Fvoice_phrases.yaml)
+
+1. Click the button above (or go to Settings → Automations & scenes → Blueprints → Import blueprint and paste `https://github.com/thermitehash/ha-tiny-press/blob/main/blueprints/automation/tiny_press/voice_phrases.yaml`).
+2. Create an automation from **Tiny Press voice phrases**, pick your printer and save. All phrases are on; untick any group under **Phrases to use**.
+3. Say a phrase to Assist (a voice satellite, the Companion app or the Assist button):
+
+| Say | Prints | Tiny Press says |
+|---|---|---|
+| "Print a maze", "Print a hard maze for Rosie" | Maze | "Printing a maze for Rosie." |
+| "Print a word search / math sheet / kid pack / kid sudoku for Rosie" | That kid print | "Printing a word search for Rosie." |
+| "Print spelling practice for Rosie" | Spelling practice | "Printing spelling practice for Rosie." |
+| "Tell me a joke", "Tell me a fun fact" | Joke or fact | The joke or fact itself, read aloud |
+| "Print a bedtime story", "Print a story about a brave dragon", "Print the next chapter" | Story | "Printing *title*. Sweet dreams!" |
+| "Print an easy sudoku / crossword / cryptogram", "Print a puzzle pack" | Adult puzzle | "Printing a sudoku." |
+| "Print the morning slip", "Print the weather" | Morning slip or weather | "Printing your morning slip." |
+| "Print a note that says feed the cat" | The note | "Printing your note." |
+
+- **Kid-mode limits apply** to kid prints by voice, exactly as on the card. When a limit is reached, Tiny Press says why instead of printing ("That's enough printing for today! See you tomorrow.").
+- **Notes are adult prints.** They never count toward kid-mode limits (like `print_text`) and are capped at 500 characters.
+- **Problems are spoken, not silent:** an offline printer, a missing weather entity or an empty spelling list each get a spoken answer.
+- **Names:** "for Rosie" picks that kid profile. A name Tiny Press doesn't know uses the active profile.
+- **Your own phrases:** every group's phrases are editable in the automation (Kid print phrases, Adult print phrases). `[word]` is optional, `(a|b)` means either, and `{name}`, `{topic}` and `{text}` capture what's said there. Phrases ship in English; type your own in any language Assist supports.
+- **AI agents:** sentence phrases only run when Home Assistant's built-in conversation agent handles the sentence. If your Assist pipeline uses Claude, OpenAI or another AI as its agent, turn on **"Prefer handling commands locally"** in the pipeline, or rely on the tools below.
+
+### AI agents (Claude, OpenAI, …)
+
+When an Assist pipeline's agent has **Assist** control turned on (Settings → Voice assistants → your assistant → the agent's options), Tiny Press gives it two tools:
+
+- **Print on Tiny Press** (`tiny_press__print`): any kid print, joke, fact, story (optionally about a topic), next chapter, adult puzzle, morning slip or weather, for a named profile and difficulty.
+- **Print a note on Tiny Press** (`tiny_press__print_note`): a dictated note.
+
+So "print my daughter a dinosaur story" or "can you print a hard crossword?" just works, with no "Prefer handling commands locally" needed. The same kid-mode limits and length caps apply, and the agent is told what to say back.
+
+### `tiny_press.voice_print`
+
+The action behind both. It prints and always returns `printed` and `speech`, even when nothing printed, so a script can speak the result:
+
+```yaml
+action: tiny_press.voice_print
+data:
+  type: maze            # any kid or adult print, story, next_chapter, morning_slip, weather, note
+  profile: Rosie        # optional, as spoken
+  sentence: print a hard maze   # optional: a difficulty word in it is used
+response_variable: result
+# result.speech → "Printing a maze for Rosie."
+```
 
 ## 6. Thermal paper notes
 

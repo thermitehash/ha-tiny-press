@@ -239,6 +239,27 @@
         "table": "Table and summary",
         "both": "Graph, summary and table"
       }
+    },
+    "voice_type": {
+      "options": {
+        "maze": "Maze",
+        "word_search": "Word search",
+        "math": "Math",
+        "kid_pack": "Kid pack",
+        "kid_sudoku": "Kid sudoku",
+        "spelling": "Spelling practice",
+        "joke": "Joke",
+        "fact": "Fun fact",
+        "story": "Bedtime story",
+        "next_chapter": "Next story chapter",
+        "sudoku": "Sudoku",
+        "crossword": "Crossword",
+        "cryptogram": "Cryptogram",
+        "puzzle_pack": "Puzzle pack",
+        "morning_slip": "Morning slip",
+        "weather": "Weather",
+        "note": "Note"
+      }
     }
   },
   "entity": {
@@ -694,6 +715,40 @@
         "grid": {
           "name": "Grid",
           "description": "Add time gridlines and a frame to the graph."
+        }
+      }
+    },
+    "voice_print": {
+      "name": "Voice print",
+      "description": "Prints from a voice request and returns `speech` to say back, even when nothing printed (kid-mode limits, printer offline). Used by the voice phrases blueprint.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Printer",
+          "description": "Only needed when more than one Tiny Press printer is set up."
+        },
+        "type": {
+          "name": "Type",
+          "description": "What to print. Note prints dictated text and never counts toward kid-mode limits."
+        },
+        "profile": {
+          "name": "Profile",
+          "description": "Kid or adult profile name, as spoken. Unknown names use the active profile."
+        },
+        "difficulty": {
+          "name": "Difficulty",
+          "description": "Loose difficulty words such as easy or hard."
+        },
+        "topic": {
+          "name": "Topic",
+          "description": "Bedtime story topic."
+        },
+        "text": {
+          "name": "Text",
+          "description": "Note text (up to 500 characters)."
+        },
+        "sentence": {
+          "name": "Sentence",
+          "description": "The whole spoken sentence. A difficulty word in it (\"print a hard maze\") is used when difficulty isn't given."
         }
       }
     }

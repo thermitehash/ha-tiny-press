@@ -129,6 +129,9 @@
     },
     "print_history": {
       "service": "mdi:chart-line"
+    },
+    "voice_print": {
+      "service": "mdi:microphone-message"
     }
   }
 }

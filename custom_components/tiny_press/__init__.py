@@ -14,6 +14,7 @@ from .generators.data import preload
 from .repairs import async_clear_offline_issue
 from .services import async_setup_services
 from .store import TinyPressStore
+from .voice import async_setup_voice_service
 
 PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
@@ -28,6 +29,7 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register the actions once for all printers."""
     async_setup_services(hass)
+    async_setup_voice_service(hass)
     # Read the bundled word lists, jokes and facts once, off the event loop.
     await hass.async_add_executor_job(preload)
     await async_register_card(hass)

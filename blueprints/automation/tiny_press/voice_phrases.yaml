@@ -1,0 +1,208 @@
+blueprint:
+  name: Tiny Press voice phrases
+  description: >-
+    Print from Assist by voice: "print a maze for Rosie", "tell me a joke",
+    "print a story about dinosaurs", "print a note that says feed the cat".
+    Tiny Press says what it printed, or why it didn't (for example, kid-mode
+    limits). Kid prints count toward kid-mode limits; notes, adult puzzles,
+    the morning slip and the weather don't.
+
+
+    Phrases run only when Home Assistant's built-in conversation agent
+    handles the sentence. With an AI agent (Claude, OpenAI, …) in the Assist
+    pipeline, turn on "Prefer handling commands locally", or just ask the AI:
+    Tiny Press gives it print tools of its own.
+
+
+    In phrases, [word] is optional, (a|b) means either, and {name}, {topic}
+    and {text} capture what's said there.
+  domain: automation
+  author: Tiny Press
+  source_url: https://github.com/thermitehash/ha-tiny-press/blob/main/blueprints/automation/tiny_press/voice_phrases.yaml
+  homeassistant:
+    min_version: "2026.11.0"
+  input:
+    printer:
+      name: Printer
+      description: The Tiny Press printer to print on.
+      selector:
+        config_entry:
+          integration: tiny_press
+    turned_on:
+      name: Phrases to use
+      description: Untick a group to turn its phrases off.
+      default: [maze, word_search, math, kid_pack, kid_sudoku, spelling, joke, fact, story, story_topic, next_chapter, sudoku, crossword, cryptogram, puzzle_pack, morning_slip, weather, note]
+      selector:
+        select:
+          multiple: true
+          options:
+            - {label: Maze, value: maze}
+            - {label: Word search, value: word_search}
+            - {label: Math sheet, value: math}
+            - {label: Kid pack, value: kid_pack}
+            - {label: Kid sudoku, value: kid_sudoku}
+            - {label: Spelling practice, value: spelling}
+            - {label: Joke (read aloud too), value: joke}
+            - {label: Fun fact (read aloud too), value: fact}
+            - {label: Bedtime story, value: story}
+            - {label: Story about a topic, value: story_topic}
+            - {label: Next story chapter, value: next_chapter}
+            - {label: Sudoku, value: sudoku}
+            - {label: Crossword, value: crossword}
+            - {label: Cryptogram, value: cryptogram}
+            - {label: Puzzle pack, value: puzzle_pack}
+            - {label: Morning slip, value: morning_slip}
+            - {label: Weather, value: weather}
+            - {label: "Note (adult print, not limited)", value: note}
+    kid_phrases:
+      name: Kid print phrases
+      icon: mdi:puzzle
+      collapsed: true
+      input:
+        maze_phrases:
+          name: Maze
+          default:
+            - "print [a|an] [easy|medium|hard|tricky] maze"
+            - "print [a|an] [easy|medium|hard|tricky] maze for {name}"
+          selector: {text: {multiple: true}}
+        word_search_phrases:
+          name: Word search
+          default:
+            - "print a word search"
+            - "print a word search for {name}"
+          selector: {text: {multiple: true}}
+        math_phrases:
+          name: Math sheet
+          default:
+            - "print [a] math (sheet|strip|page)"
+            - "print [a] math (sheet|strip|page) for {name}"
+          selector: {text: {multiple: true}}
+        kid_pack_phrases:
+          name: Kid pack
+          default:
+            - "print a (kid|kids) pack"
+            - "print a (kid|kids) pack for {name}"
+          selector: {text: {multiple: true}}
+        kid_sudoku_phrases:
+          name: Kid sudoku
+          default:
+            - "print a (kid|kids) sudoku"
+            - "print a (kid|kids) sudoku for {name}"
+          selector: {text: {multiple: true}}
+        spelling_phrases:
+          name: Spelling practice
+          default:
+            - "print spelling [practice|words]"
+            - "print spelling [practice|words] for {name}"
+          selector: {text: {multiple: true}}
+        joke_phrases:
+          name: Joke
+          default:
+            - "(tell me|print) a joke"
+            - "print a joke for {name}"
+          selector: {text: {multiple: true}}
+        fact_phrases:
+          name: Fun fact
+          default:
+            - "(tell me|print) a [fun] fact"
+          selector: {text: {multiple: true}}
+        story_phrases:
+          name: Bedtime story
+          default:
+            - "print a [bedtime] story"
+            - "print a [bedtime] story for {name}"
+          selector: {text: {multiple: true}}
+        story_topic_phrases:
+          name: Story about a topic
+          default:
+            - "print a [bedtime] story about {topic}"
+          selector: {text: {multiple: true}}
+        next_chapter_phrases:
+          name: Next story chapter
+          default:
+            - "print the next chapter"
+            - "print the next chapter for {name}"
+          selector: {text: {multiple: true}}
+    adult_phrases:
+      name: Adult print phrases
+      icon: mdi:printer-pos
+      collapsed: true
+      input:
+        sudoku_phrases:
+          name: Sudoku
+          default:
+            - "print [a|an] [easy|medium|hard] sudoku"
+          selector: {text: {multiple: true}}
+        crossword_phrases:
+          name: Crossword
+          default:
+            - "print [a|an] [easy|medium|hard] crossword"
+          selector: {text: {multiple: true}}
+        cryptogram_phrases:
+          name: Cryptogram
+          default:
+            - "print [a|an] [easy|medium|hard] cryptogram"
+          selector: {text: {multiple: true}}
+        puzzle_pack_phrases:
+          name: Puzzle pack
+          default:
+            - "print a puzzle pack"
+          selector: {text: {multiple: true}}
+        morning_slip_phrases:
+          name: Morning slip
+          default:
+            - "print [the|my] morning slip"
+          selector: {text: {multiple: true}}
+        weather_phrases:
+          name: Weather
+          default:
+            - "print the (weather|forecast)"
+          selector: {text: {multiple: true}}
+        note_phrases:
+          name: Note
+          description: The dictated note goes in {text}.
+          default:
+            - "print a note [that says] {text}"
+          selector: {text: {multiple: true}}
+
+mode: queued
+max: 5
+max_exceeded: silent
+
+trigger_variables:
+  turned_on: !input turned_on
+
+triggers:
+  - {trigger: conversation, id: maze, command: !input maze_phrases, enabled: "{{ 'maze' in turned_on }}"}
+  - {trigger: conversation, id: word_search, command: !input word_search_phrases, enabled: "{{ 'word_search' in turned_on }}"}
+  - {trigger: conversation, id: math, command: !input math_phrases, enabled: "{{ 'math' in turned_on }}"}
+  - {trigger: conversation, id: kid_pack, command: !input kid_pack_phrases, enabled: "{{ 'kid_pack' in turned_on }}"}
+  - {trigger: conversation, id: kid_sudoku, command: !input kid_sudoku_phrases, enabled: "{{ 'kid_sudoku' in turned_on }}"}
+  - {trigger: conversation, id: spelling, command: !input spelling_phrases, enabled: "{{ 'spelling' in turned_on }}"}
+  - {trigger: conversation, id: joke, command: !input joke_phrases, enabled: "{{ 'joke' in turned_on }}"}
+  - {trigger: conversation, id: fact, command: !input fact_phrases, enabled: "{{ 'fact' in turned_on }}"}
+  - {trigger: conversation, id: story, command: !input story_phrases, enabled: "{{ 'story' in turned_on }}"}
+  - {trigger: conversation, id: story, command: !input story_topic_phrases, enabled: "{{ 'story_topic' in turned_on }}"}
+  - {trigger: conversation, id: next_chapter, command: !input next_chapter_phrases, enabled: "{{ 'next_chapter' in turned_on }}"}
+  - {trigger: conversation, id: sudoku, command: !input sudoku_phrases, enabled: "{{ 'sudoku' in turned_on }}"}
+  - {trigger: conversation, id: crossword, command: !input crossword_phrases, enabled: "{{ 'crossword' in turned_on }}"}
+  - {trigger: conversation, id: cryptogram, command: !input cryptogram_phrases, enabled: "{{ 'cryptogram' in turned_on }}"}
+  - {trigger: conversation, id: puzzle_pack, command: !input puzzle_pack_phrases, enabled: "{{ 'puzzle_pack' in turned_on }}"}
+  - {trigger: conversation, id: morning_slip, command: !input morning_slip_phrases, enabled: "{{ 'morning_slip' in turned_on }}"}
+  - {trigger: conversation, id: weather, command: !input weather_phrases, enabled: "{{ 'weather' in turned_on }}"}
+  - {trigger: conversation, id: note, command: !input note_phrases, enabled: "{{ 'note' in turned_on }}"}
+
+variables:
+  printer: !input printer
+
+actions:
+  - action: tiny_press.voice_print
+    data:
+      config_entry_id: "{{ printer }}"
+      type: "{{ trigger.id }}"
+      profile: "{{ trigger.slots.name | default('') }}"
+      topic: "{{ trigger.slots.topic | default('') }}"
+      text: "{{ trigger.slots.text | default('') }}"
+      sentence: "{{ trigger.sentence }}"
+    response_variable: result
+  - set_conversation_response: "{{ result.speech }}"

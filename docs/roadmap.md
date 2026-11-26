@@ -9,7 +9,7 @@
 | 4 | 0.5.0 ✅ | Bedtime story (short/medium/long) and serial choose-your-own-adventure via `ai_task`, with offline fallback |
 | 5 | 0.6.0 ✅ | Morning slip (manual only) |
 | — | 0.7.0 ✅ | Sensor history prints (graph, table, timeline) |
-| 6 | 0.8.0 | Assist voice phrases (blueprint) and voice commands for AI agents |
+| 6 | 0.8.0 ✅ | Assist voice phrases (blueprint) and print tools for AI agents |
 | — | 0.9.0 | RSS/Atom feed prints and live quote of the day from Wikiquote (planned, below) |
 | 7 | — | Skylight (planning only, below) |
 | later | — | Selfie prints and AI-generated kid-safe pictures (planning only, below) |
