@@ -31,6 +31,9 @@ DC = "{http://purl.org/dc/elements/1.1/}"
 CONTENT = "{http://purl.org/rss/1.0/modules/content/}"
 
 
+_UNDATED = datetime.min.replace(tzinfo=UTC)
+
+
 class FeedError(ValueError):
     """The bytes aren't an RSS or Atom feed Tiny Press can read."""
 
@@ -184,6 +187,9 @@ def parse_feed(data: bytes, limit: int = MAX_ITEMS) -> Feed:
     else:
         raise FeedError("not an RSS or Atom feed")
     items = [item for item in items if item.title or item.summary]
+    # Some feeds (NYT's, for one) list items by editors' order, not by date.
+    # Newest first; undated items keep their feed order, after dated ones.
+    items.sort(key=lambda item: item.published or _UNDATED, reverse=True)
     return Feed(title, link, tuple(items[:limit]))
 
 

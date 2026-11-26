@@ -93,6 +93,24 @@ def test_parse_rss() -> None:
     assert parse_feed(RSS, limit=1).items == (first,)
 
 
+def test_parse_sorts_newest_first() -> None:
+    def item(title: str, when: str | None) -> str:
+        date_tag = f"<pubDate>{when}</pubDate>" if when else ""
+        return f"<item><title>{title}</title>{date_tag}</item>"
+
+    data = (
+        "<rss><channel><title>T</title>"
+        + item("old", "Mon, 23 Nov 2026 21:46:34 +0000")
+        + item("undated", None)
+        + item("newest", "Thu, 26 Nov 2026 12:08:50 +0000")
+        + item("middle", "Thu, 26 Nov 2026 10:04:12 +0000")
+        + "</channel></rss>"
+    ).encode()
+    titles = [i.title for i in parse_feed(data).items]
+    assert titles == ["newest", "middle", "old", "undated"]
+    assert [i.title for i in parse_feed(data, limit=2).items] == ["newest", "middle"]
+
+
 def test_parse_atom_and_rdf() -> None:
     atom = parse_feed(ATOM)
     assert atom.title == "Example Blog" and atom.link == "https://blog.example.com/"
