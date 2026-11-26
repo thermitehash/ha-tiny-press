@@ -387,10 +387,6 @@
         "words": {
           "name": "Spelling words",
           "description": "For spelling prints: words to practice. Leave empty to use the kid profile's spelling list."
-        },
-        "pictures": {
-          "name": "Pictures",
-          "description": "For kid sudoku: shapes instead of numbers. Empty uses pictures for kindergarten and grade 1."
         }
       }
     },
@@ -457,10 +453,6 @@
         "words": {
           "name": "Spelling words",
           "description": "For spelling prints: words to practice. Leave empty to use the kid profile's spelling list."
-        },
-        "pictures": {
-          "name": "Pictures",
-          "description": "For kid sudoku: shapes instead of numbers. Empty uses pictures for kindergarten and grade 1."
         }
       }
     },

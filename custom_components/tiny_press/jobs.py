@@ -254,12 +254,9 @@ def answer_job(entry: dict) -> PrintJob:
             tuple(tuple(r) for r in data["puzzle"]),
             tuple(tuple(r) for r in data["solution"]),
         )
-        pictures = bool(data.get("pictures"))
 
         def build(width: int) -> Canvas:
-            return layout.sudoku_page(
-                width, grid_puzzle, footer, pictures=pictures, answer=True
-            )
+            return layout.sudoku_page(width, grid_puzzle, footer, answer=True)
 
     elif kind == PrintType.SPELLING:
         sheet_s = spelling.SpellingSheet(
@@ -335,18 +332,15 @@ def kid_sudoku_job(
     profile: Profile,
     difficulty: Difficulty | None = None,
     seed: int | None = None,
-    pictures: bool | None = None,
 ) -> PrintJob:
-    """Build a 4x4 or 6x6 sudoku with numbers, or pictures for young kids."""
+    """Build a 4x4 or 6x6 number sudoku."""
     seed = new_seed() if seed is None else seed
     print_id = _id("kid_sudoku", seed)
     level = difficulty or kid_sudoku_level(profile)
     size, givens = KID_SUDOKU_LEVELS[level]
-    if pictures is None:
-        pictures = grade_number(profile.puzzle_grade) <= 1
     puzzle = sudoku.generate(size, givens, seed)
     footer = layout.Footer("Sudoku", print_id, _today(), f"{size}x{size}")
-    answer = {**puzzle.answer(), "seed": seed, "pictures": pictures}
+    answer = {**puzzle.answer(), "seed": seed}
     return PrintJob(
         type=PrintType.KID_SUDOKU,
         label="Sudoku",
@@ -356,9 +350,7 @@ def kid_sudoku_job(
         answers=(
             {"print_id": print_id, "type": PrintType.KID_SUDOKU, "answer": answer},
         ),
-        build=lambda width: layout.sudoku_page(
-            width, puzzle, footer, pictures=pictures
-        ),
+        build=lambda width: layout.sudoku_page(width, puzzle, footer),
     )
 
 

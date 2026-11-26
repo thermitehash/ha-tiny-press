@@ -46,9 +46,6 @@ print:
       selector:
         text:
           multiline: true
-    pictures:
-      selector:
-        boolean:
 
 print_text:
   fields:
@@ -132,9 +129,6 @@ preview:
       selector:
         text:
           multiline: true
-    pictures:
-      selector:
-        boolean:
 
 print_answers:
   fields:

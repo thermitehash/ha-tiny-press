@@ -67,7 +67,7 @@ What each grade gets:
 | 3 | 10×10, plus diagonals | adds ×/÷ facts to 10 and two word problems |
 | 4–5 | 12×12, more diagonals | bigger numbers, ×/÷ to 12, multi-digit × |
 
-Every math strip ends with a harder ★ bonus problem. Kid sudoku is 4×4 with pictures for K–1, 6×6 with numbers for grades 2–3, and a harder 6×6 for grades 4–5.
+Every math strip ends with a harder ★ bonus problem. Kid sudoku (numbers) is 4×4 for K–1, 6×6 for grades 2–3, and a harder 6×6 for grades 4–5.
 
 ## 3. Entities
 
@@ -82,7 +82,7 @@ Every math strip ends with a harder ★ bonus problem. Kid sudoku is 4×4 with p
 | `button.tiny_press_math` | Prints a math strip for the selected kid |
 | `button.tiny_press_joke` | Prints a joke (punchline upside down below a fold line) |
 | `button.tiny_press_kid_pack` | Prints a maze, word search and math strip in one go |
-| `button.tiny_press_kid_sudoku` | Prints a 4×4 or 6×6 sudoku (pictures for K–1) |
+| `button.tiny_press_kid_sudoku` | Prints a 4×4 or 6×6 number sudoku |
 | `button.tiny_press_spelling` | Prints unscramble and missing-letter practice from the kid's spelling list |
 | `button.tiny_press_spelling_search` | Prints a word search of the kid's spelling list |
 | `button.tiny_press_weather` | Prints current weather and a forecast of up to 10 days |
@@ -122,7 +122,6 @@ This is the general entry point that every button and voice phrase uses.
 |---|---|
 | `type` | `maze`, `word_search`, `math`, `joke`, `fact`, `kid_pack`, `kid_sudoku`, `spelling`, `spelling_search`, `weather` or `test_page` |
 | `words` | For `spelling` and `spelling_search`: words to practice. Empty uses the kid profile's spelling list. |
-| `pictures` | For `kid_sudoku`: shapes instead of numbers (default for K–1) |
 | `profile` | Kid profile name for word searches, math, jokes and kid packs. Empty uses the Kid profile select. |
 | `difficulty` | For mazes (and the maze in a kid pack). Loose words work: `easy`, `medium`, `hard`, `harder`, `tricky`, `a little harder`. Empty uses the Maze difficulty select. |
 | `seed` | The same seed prints the same puzzle again (and the same bundled joke) |

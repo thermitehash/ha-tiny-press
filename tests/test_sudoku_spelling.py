@@ -101,8 +101,6 @@ def test_pages_exact_width(width: int) -> None:
         pages += [
             layout.sudoku_page(width, p, FOOTER),
             layout.sudoku_page(width, p, FOOTER, answer=True),
-            layout.sudoku_page(width, p, FOOTER, pictures=True),
-            layout.sudoku_page(width, p, FOOTER, pictures=True, answer=True),
         ]
     sheet = spelling.generate(["because", "friend", "said"], 1)
     pages += [
@@ -140,11 +138,11 @@ async def test_prints_through_action(
 
     await _print(hass, type="kid_sudoku", seed=1)
     answer = store.history[0]["answer"]
-    assert answer["size"] == 4 and answer["pictures"] is True  # grade 1 default
+    assert answer["size"] == 4  # grade 1 default
     await _print(hass, type="kid_sudoku", profile="max", seed=1)
     answer = store.history[0]["answer"]
-    assert answer["size"] == 6 and answer["pictures"] is False
-    await _print(hass, type="kid_sudoku", difficulty="easy", pictures=False, seed=2)
+    assert answer["size"] == 6
+    await _print(hass, type="kid_sudoku", difficulty="easy", seed=2)
     assert store.history[0]["answer"]["size"] == 4
 
     res = await _print(hass, type="spelling", seed=3)
