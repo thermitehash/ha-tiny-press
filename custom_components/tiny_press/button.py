@@ -16,6 +16,7 @@ from .const import DOMAIN, PrintType
 from .coordinator import TinyPressConfigEntry, TinyPressCoordinator
 from .entity import TinyPressEntity
 from .jobs import answer_job
+from .profiles import KID, profiles_of
 from .services import async_print_type, async_story
 
 PARALLEL_UPDATES = 1
@@ -84,13 +85,22 @@ class TinyPressButton(TinyPressEntity, ButtonEntity):
         """Next chapter: the active kid's story in progress (for the card)."""
         if self.entity_description.key != "next_chapter":
             return None
+        store = self.coordinator.store
         kid = self.coordinator.kid_profile()
-        series = self.coordinator.store.series(kid.id) or {}
+        series = store.series(kid.id) or {}
+        stories = {}
+        for each in profiles_of(dict(self.coordinator.config_entry.options), KID):
+            if found := store.series(each.id):
+                stories[each.id] = {
+                    "story": found.get("title"),
+                    "chapter": found.get("chapter"),
+                }
         return {
             "profile": kid.name,
             "story": series.get("title"),
             "chapter": series.get("chapter"),
             "choices": series.get("choices"),
+            "stories": stories,  # every kid's story in progress, by profile ID
         }
 
     async def async_press(self) -> None:

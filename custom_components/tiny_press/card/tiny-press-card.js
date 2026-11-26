@@ -181,23 +181,72 @@ class TinyPressCard extends HTMLElement {
     return id ? this._hass.states[id] : undefined;
   }
 
+  // Who's looking at the card: an admin (prints as anyone, never limited), a
+  // kid or adult linked to a profile (sees only their own things), or a
+  // shared account (the card's own settings decide).
+  _viewer() {
+    const user = this._hass?.user;
+    const profiles = this._stateOf("kidProfile")?.attributes?.profiles || [];
+    const linked = user ? profiles.find((p) => p.ha_user && p.ha_user === user.id) : undefined;
+    if (user?.is_admin) return { mode: "admin", profiles, linked };
+    if (linked?.kind === "kid") return { mode: "kid", profiles, profile: linked };
+    if (linked?.kind === "adult") return { mode: "adult", profiles, profile: linked };
+    return { mode: "shared", profiles };
+  }
+
+  _kidMode() {
+    const viewer = this._viewer();
+    if (viewer.mode === "kid") return true;
+    if (viewer.mode === "admin" || viewer.mode === "adult") return false;
+    return !!this._config.kid_mode;
+  }
+
+  // Parents (admins, linked adults, or a card set to ignore limits) aren't limited.
+  _parent() {
+    const mode = this._viewer().mode;
+    return mode === "admin" || mode === "adult" || !!this._config.ignore_limits;
+  }
+
+  // The profile prints are for: the linked kid or adult, or the admin's pick.
+  _asProfile() {
+    const viewer = this._viewer();
+    if (viewer.mode === "kid" || viewer.mode === "adult") return viewer.profile;
+    if (viewer.mode === "admin") {
+      const pick = viewer.profiles.find((p) => p.id === this._state.as);
+      if (pick) return pick;
+      if (viewer.linked) return viewer.linked;
+      const active = this._stateOf("kidProfile")?.state;
+      return viewer.profiles.find((p) => p.name === active && p.kind === "kid") || viewer.profiles[0];
+    }
+    return undefined;
+  }
+
+  // The kid whose limits and story to show.
+  _kidShown() {
+    const p = this._asProfile();
+    return p && p.kind === "kid" ? p : undefined;
+  }
+
   _limits() {
     const s = this._stateOf("printsLeft");
     if (!s || !s.attributes.enabled) return { enabled: false };
-    const next = s.attributes.next_print_at ? new Date(s.attributes.next_print_at) : null;
-    const since = s.attributes.blocked_since ? new Date(s.attributes.blocked_since) : null;
+    const kid = this._kidShown();
+    const a = (kid && s.attributes.kids && s.attributes.kids[kid.id]) || s.attributes;
+    const left = kid && s.attributes.kids && s.attributes.kids[kid.id] ? a.prints_left : s.state;
+    const next = a.next_print_at ? new Date(a.next_print_at) : null;
+    const since = a.blocked_since ? new Date(a.blocked_since) : null;
     return {
       enabled: true,
-      left: Number(s.state),
+      left: Number(left),
       next,
       since,
-      reason: s.attributes.blocked_reason,
+      reason: a.blocked_reason,
       waiting: next && next.getTime() > Date.now(),
     };
   }
 
   _blocked() {
-    if (this._config.ignore_limits) return false;
+    if (this._parent()) return false;
     const limits = this._limits();
     return limits.enabled && limits.waiting;
   }
@@ -240,7 +289,14 @@ class TinyPressCard extends HTMLElement {
   _printData(type, seed) {
     const data = { type };
     if (seed !== undefined) data.seed = seed;
-    if (this._config.ignore_limits) data.ignore_limits = true;
+    return this._who(data);
+  }
+
+  // Add who it's for, and skip limits for parents.
+  _who(data) {
+    const p = this._asProfile();
+    if (p) data.profile = p.id;
+    if (this._parent()) data.ignore_limits = true;
     return data;
   }
 
@@ -252,9 +308,9 @@ class TinyPressCard extends HTMLElement {
         let data;
         if (service === "print_morning_slip") {
           // Kid-mode cards may print one morning slip a day.
-          data = this._config.kid_mode ? { kid_mode: true } : {};
+          data = this._kidMode() ? { kid_mode: true } : {};
         } else if (service) {
-          data = this._config.ignore_limits ? { ignore_limits: true } : {};
+          data = this._who({});
         } else {
           data = this._printData(type, seed);
         }
@@ -268,7 +324,10 @@ class TinyPressCard extends HTMLElement {
 
   _preview(type) {
     this._run(async () => {
-      const res = await this._call("preview", { type }, true);
+      const data = { type };
+      const p = this._asProfile();
+      if (p) data.profile = p.id;
+      const res = await this._call("preview", data, true);
       this._state.preview = res?.response;
       this._state.previewType = type;
     });
@@ -289,7 +348,7 @@ class TinyPressCard extends HTMLElement {
 
   _historyHtml() {
     const items = Array.isArray(this._config.history) ? this._config.history : [];
-    if (this._config.kid_mode || !items.length) return "";
+    if (this._kidMode() || !items.length) return "";
     const busy = this._state.busy ? "disabled" : "";
     return `<div class="row-label">History</div><div class="history">${items
       .map((item, i) => {
@@ -312,7 +371,7 @@ class TinyPressCard extends HTMLElement {
 
   _feedsHtml() {
     const items = Array.isArray(this._config.feeds) ? this._config.feeds : [];
-    if (this._config.kid_mode || !items.length) return "";
+    if (this._kidMode() || !items.length) return "";
     const busy = this._state.busy ? "disabled" : "";
     return `<div class="row-label">Feeds</div><div class="history">${items
       .map(
@@ -387,8 +446,8 @@ class TinyPressCard extends HTMLElement {
   _waitHtml(limits) {
     const pct = this._waitProgress(limits).toFixed(1);
     return `<div class="wait" role="timer" aria-live="off">
+      <div class="wait-bar" data-wait-bar style="width:${pct}%"></div>
       <div class="wait-text"><ha-icon icon="mdi:timer-sand"></ha-icon><span data-countdown>${esc(this._countdownText(limits))}</span></div>
-      <div class="wait-track"><div class="wait-bar" data-wait-bar style="width:${pct}%"></div></div>
     </div>`;
   }
 
@@ -396,12 +455,14 @@ class TinyPressCard extends HTMLElement {
   _chapterInfo() {
     const s = this._stateOf("nextChapter");
     if (!s) return { known: false };
-    const story = s.attributes.story;
+    const kid = this._kidShown();
+    const mine = kid ? (s.attributes.stories || {})[kid.id] || {} : s.attributes;
+    const story = mine.story;
     return {
       known: true,
       story,
-      next: story ? Number(s.attributes.chapter || 0) + 1 : null,
-      profile: s.attributes.profile,
+      next: story ? Number(mine.chapter || 0) + 1 : null,
+      profile: kid ? kid.name : s.attributes.profile,
     };
   }
 
@@ -409,7 +470,7 @@ class TinyPressCard extends HTMLElement {
     if (t !== "next_chapter") return esc(PRINTS[t].label);
     const info = this._chapterInfo();
     if (!info.known) return esc(PRINTS[t].label);
-    if (!info.story) return `No story in progress<small>Start one with Bedtime story</small>`;
+    if (!info.story) return `No story yet<small>Start a Bedtime story</small>`;
     return `Chapter ${info.next}<small>${esc(info.story)}</small>`;
   }
 
@@ -436,14 +497,28 @@ class TinyPressCard extends HTMLElement {
     const chips = [];
     chips.push(`<span class="chip ${online?.state === "on" ? "ok" : "bad"}"><span class="dot"></span>${online?.state === "on" ? "Online" : "Offline"}</span>`);
     chips.push(`<span class="chip ${p.tone}"><ha-icon icon="${p.icon}"></ha-icon>${p.label}</span>`);
-    if (limits.enabled && !this._config.ignore_limits) {
+    if (limits.enabled && !this._parent()) {
       chips.push(`<span class="chip"><ha-icon icon="mdi:timer-sand"></ha-icon>${esc(limits.left)} left today</span>`);
     }
-    if (!this._config.kid_mode && used && used.state !== "unknown") {
+    if (!this._kidMode() && used && used.state !== "unknown") {
       const metres = (Number(used.state) / 1000).toFixed(1);
       chips.push(`<span class="chip muted"><ha-icon icon="mdi:ruler"></ha-icon>${metres} m used</span>`);
     }
     return `<div class="status">${chips.join("")}</div>`;
+  }
+
+  // Admins: print as any kid or adult (never counted against limits).
+  _asHtml() {
+    const viewer = this._viewer();
+    if (viewer.mode !== "admin" || viewer.profiles.length < 2) return "";
+    const current = this._asProfile();
+    const kids = viewer.profiles.filter((p) => p.kind === "kid");
+    const adults = viewer.profiles.filter((p) => p.kind === "adult");
+    const btn = (p) =>
+      `<button class="segbtn ${current && p.id === current.id ? "on" : ""}" data-as="${esc(p.id)}">${esc(p.name)}</button>`;
+    return `<div class="row as"><span class="row-label">Print as</span><div class="seg">${kids
+      .map(btn)
+      .join("")}${kids.length && adults.length ? '<span class="seg-gap"></span>' : ""}${adults.map(btn).join("")}</div></div>`;
   }
 
   _chipsHtml(role, label) {
@@ -465,7 +540,7 @@ class TinyPressCard extends HTMLElement {
     const id = last.attributes.print_id ? ` #${esc(last.attributes.print_id)}` : "";
     const when = last.attributes.printed_at ? new Date(last.attributes.printed_at) : null;
     const time = when ? when.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "";
-    const answers = this._config.kid_mode
+    const answers = this._kidMode()
       ? ""
       : `<button class="link" data-action="answers"><ha-icon icon="mdi:check-decagram-outline"></ha-icon>Answers</button>`;
     return `<div class="last"><span>Last: ${esc(label)}${id} · ${esc(time)}</span>${answers}</div>`;
@@ -474,7 +549,7 @@ class TinyPressCard extends HTMLElement {
   _previewHtml() {
     const pv = this._state.preview;
     if (!pv) return "";
-    const kid = this._config.kid_mode;
+    const kid = this._kidMode();
     const label = PRINTS[this._state.previewType]?.label || "print";
     return `<div class="preview">
       <div class="paper"><img alt="Preview of the ${esc(label)}" src="${esc(pv.image)}"></div>
@@ -492,7 +567,7 @@ class TinyPressCard extends HTMLElement {
   _render() {
     if (!this._config) return;
     const hass = this._hass;
-    const kid = this._config.kid_mode;
+    const kid = this._kidMode();
     const entities = hass ? this._entities() : {};
     const missing = hass && !Object.keys(entities).length;
     const limits = hass ? this._limits() : { enabled: false };
@@ -506,10 +581,12 @@ class TinyPressCard extends HTMLElement {
       ? `<div class="empty">No Tiny Press printer found. Add the Tiny Press integration first.</div>`
       : `
         ${this._statusHtml()}
-        ${kid ? "" : this._chipsHtml("kidProfile", "Kid")}
+        ${blocked ? this._waitHtml(limits) : ""}
+        ${this._asHtml()}
+        ${kid || this._viewer().mode === "admin" ? "" : this._chipsHtml("kidProfile", "Kid")}
         ${kid ? "" : this._chipsHtml("mazeDifficulty", "Maze")}
         ${kid || !buttons.includes("story") ? "" : this._chipsHtml("storyLength", "Story")}
-        ${kid || !hasAdult ? "" : this._chipsHtml("adultProfile", "Adult")}
+        ${kid || !hasAdult || this._viewer().mode === "admin" ? "" : this._chipsHtml("adultProfile", "Adult")}
         ${kid || !hasAdult ? "" : this._chipsHtml("sudokuDifficulty", "Sudoku")}
         ${this._state.preview ? this._previewHtml() : `
           <div class="grid ${kid ? "kid" : ""}">
@@ -525,7 +602,6 @@ class TinyPressCard extends HTMLElement {
           </div>`}
         ${this._state.preview ? "" : this._historyHtml()}
         ${this._state.preview ? "" : this._feedsHtml()}
-        ${blocked ? this._waitHtml(limits) : ""}
         ${this._state.busy ? `<div class="notice">Working on it…</div>` : ""}
         ${this._state.message ? `<div class="notice ${this._state.tone}">${esc(this._state.message)}</div>` : ""}
         ${this._lastPrintHtml()}`;
@@ -541,7 +617,7 @@ class TinyPressCard extends HTMLElement {
 
   _bind() {
     const root = this.shadowRoot;
-    const kid = this._config.kid_mode;
+    const kid = this._kidMode();
     root.querySelectorAll("[data-print]").forEach((b) => {
       const type = b.dataset.print;
       if (kid && !this._config.show_preview) {
@@ -554,6 +630,9 @@ class TinyPressCard extends HTMLElement {
     });
     root.querySelectorAll("[data-select]").forEach((b) =>
       b.addEventListener("click", () => this._selectOption(b.dataset.select, b.dataset.option))
+    );
+    root.querySelectorAll("[data-as]").forEach((b) =>
+      b.addEventListener("click", () => { this._state.as = b.dataset.as; this._render(); })
     );
     const act = (name, fn) => root.querySelectorAll(`[data-action="${name}"]`).forEach((b) => b.addEventListener("click", fn));
     act("answers", () => this._answers());
@@ -612,14 +691,18 @@ const STYLES = `
   .grid.kid .tile ha-icon { --mdc-icon-size: 44px; }
   .tile span:not(.fill), .primary span:not(.fill) { position: relative; }
   .tile:disabled, .primary:disabled { opacity: 0.45; cursor: default; }
+  .tile .label { max-width: 100%; }
   .tile .label small { display: block; font-size: 0.75rem; opacity: 0.8; margin-top: 2px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-  .wait { padding: 10px 12px; border-radius: 12px; background: var(--secondary-background-color, rgba(127,127,127,0.12)); }
-  .wait-text { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 1rem;
-    font-weight: 600; font-variant-numeric: tabular-nums; margin-bottom: 8px; }
-  .wait-text ha-icon { --mdc-icon-size: 20px; color: var(--primary-color, #03a9f4); }
-  .wait-track { height: 12px; border-radius: 6px; overflow: hidden; background: var(--divider-color, rgba(127,127,127,0.25)); }
-  .wait-bar { height: 100%; border-radius: 6px; background: var(--primary-color, #03a9f4); transition: width 1s linear; }
+  .wait { position: relative; height: 40px; border-radius: 20px; overflow: hidden;
+    background: var(--secondary-background-color, rgba(127,127,127,0.15)); margin: 4px 0 8px; }
+  .wait-text { position: relative; height: 100%; display: flex; align-items: center; justify-content: center;
+    gap: 6px; font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums;
+    color: var(--primary-text-color, #212121); }
+  .wait-text ha-icon { --mdc-icon-size: 20px; }
+  .wait-bar { position: absolute; inset: 0 auto 0 0; border-radius: 20px; transition: width 1s linear;
+    background: color-mix(in srgb, var(--primary-color, #03a9f4) 45%, transparent); }
+  .seg-gap { display: inline-block; width: 10px; }
   .tile:not(:disabled):active { transform: scale(0.97); }
   .fill { position: absolute; inset: 0; width: 0; background: color-mix(in srgb, var(--primary-color) 35%, transparent); }
   .holding .fill { width: 100%; transition: width var(--hold-ms, 800ms) linear; }

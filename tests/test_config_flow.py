@@ -231,6 +231,7 @@ async def test_profiles_add_edit_remove(
             "difficulty": "medium",
             "math_grade": "1",  # separate from the reading grade
             "maze_difficulty": "",  # follows the Maze difficulty select
+            "ha_user": "",
         }
     ]
     assert hass.states.get("select.tiny_press_kid_profile").state == "Rosie"

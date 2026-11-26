@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from homeassistant.components.select import SelectEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
@@ -17,7 +19,7 @@ from .const import (
 )
 from .coordinator import TinyPressConfigEntry, TinyPressCoordinator
 from .entity import TinyPressEntity
-from .profiles import ADULT, KID, profiles_of
+from .profiles import ADULT, KID, load_profiles, profiles_of
 
 PARALLEL_UPDATES = 0
 
@@ -88,6 +90,23 @@ class TinyPressProfileSelect(TinyPressEntity, SelectEntity):
         if self._kind == KID:
             return self.coordinator.kid_profile().name
         return self.coordinator.adult_profile().name
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Every profile with its linked Home Assistant user (for the card)."""
+        if self._kind != KID:
+            return None
+        return {
+            "profiles": [
+                {
+                    "id": p.id,
+                    "name": p.name,
+                    "kind": p.kind,
+                    "ha_user": p.ha_user or None,
+                }
+                for p in load_profiles(dict(self.coordinator.config_entry.options))
+            ]
+        }
 
     async def async_select_option(self, option: str) -> None:
         """Store the chosen profile's ID."""

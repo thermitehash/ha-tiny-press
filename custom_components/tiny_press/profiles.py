@@ -51,6 +51,7 @@ class Profile:
     difficulty: str = Difficulty.MEDIUM.value  # adults
     math_grade: str = ""  # kids: empty means the same as the reading grade
     maze_difficulty: str = ""  # kids: empty follows the Maze difficulty select
+    ha_user: str = ""  # the Home Assistant user this profile belongs to, if any
 
     @property
     def display_name(self) -> str | None:
@@ -99,6 +100,7 @@ class Profile:
                 if data.get("math_grade") not in (None, "")
                 else ""
             ),
+            ha_user=str(data.get("ha_user") or ""),
             maze_difficulty=(
                 str(data["maze_difficulty"])
                 if data.get("maze_difficulty") in {d.value for d in Difficulty}
