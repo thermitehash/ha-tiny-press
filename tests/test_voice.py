@@ -156,6 +156,7 @@ async def test_blueprint_phrases(
                             "note",
                             "sudoku",
                             "feed",
+                            "spelling_search",
                         ],
                     },
                 },
@@ -185,6 +186,9 @@ async def test_blueprint_phrases(
         "Printing 1 headline from Example News."
     )
     last = store.data["last_print"]["print_id"]
+    # Rosie has no spelling list: the reply says so and nothing prints.
+    assert "no spelling words" in await say("print a spelling word search")
+    assert store.data["last_print"]["print_id"] == last
     # Word search phrases are turned off in this blueprint instance.
     assert await say("print a word search") != "Printing a word search for Rosie."
     assert store.data["last_print"]["print_id"] == last

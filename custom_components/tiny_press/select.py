@@ -103,6 +103,7 @@ class TinyPressProfileSelect(TinyPressEntity, SelectEntity):
                     "name": p.name,
                     "kind": p.kind,
                     "ha_user": p.ha_user or None,
+                    "spelling_todo": p.spelling_todo or None,
                 }
                 for p in load_profiles(dict(self.coordinator.config_entry.options))
             ]

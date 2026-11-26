@@ -99,7 +99,6 @@
           "grade": "Reading grade",
           "interests": "Interests",
           "stretch": "Stretch",
-          "spelling_words": "Spelling words",
           "spelling_todo": "Spelling list (to-do list)",
           "math_grade": "Math grade",
           "maze_difficulty": "Maze difficulty",
@@ -109,8 +108,7 @@
           "grade": "Used by word searches, spelling and stories.",
           "interests": "Free text, for example: dinosaurs, space, horses.",
           "stretch": "Make puzzles one grade harder (reading and math).",
-          "spelling_words": "Optional. Typed list (commas or new lines), used when no to-do list is chosen or it can't be read.",
-          "spelling_todo": "Optional. A to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words.",
+          "spelling_todo": "The only source of spelling words: a to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words. Without a list, or with every word checked off, the Spelling tiles are greyed out on the card.",
           "math_grade": "Used by math strips and kid sudoku. Grade 1 is single-digit addition and subtraction.",
           "maze_difficulty": "This kid's mazes. \"Follow the Maze difficulty select\" uses the device's select; asking for a level (\"print a hard maze\") still wins.",
           "ha_user": "Optional. When this person is logged in, the Tiny Press card shows only their prints, limits and story, and kid-mode limits always apply to them."
@@ -123,7 +121,6 @@
           "grade": "[%key:component::tiny_press::options::step::add_kid::data::grade%]",
           "interests": "[%key:component::tiny_press::options::step::add_kid::data::interests%]",
           "stretch": "[%key:component::tiny_press::options::step::add_kid::data::stretch%]",
-          "spelling_words": "[%key:component::tiny_press::options::step::add_kid::data::spelling_words%]",
           "spelling_todo": "[%key:component::tiny_press::options::step::add_kid::data::spelling_todo%]",
           "math_grade": "Math grade",
           "maze_difficulty": "Maze difficulty",
@@ -133,7 +130,6 @@
           "grade": "Used by word searches, spelling and stories.",
           "interests": "[%key:component::tiny_press::options::step::add_kid::data_description::interests%]",
           "stretch": "[%key:component::tiny_press::options::step::add_kid::data_description::stretch%]",
-          "spelling_words": "[%key:component::tiny_press::options::step::add_kid::data_description::spelling_words%]",
           "spelling_todo": "[%key:component::tiny_press::options::step::add_kid::data_description::spelling_todo%]",
           "math_grade": "Used by math strips and kid sudoku. Grade 1 is single-digit addition and subtraction.",
           "maze_difficulty": "This kid's mazes. \"Follow the Maze difficulty select\" uses the device's select; asking for a level (\"print a hard maze\") still wins.",
@@ -377,6 +373,7 @@
         "kid_pack": "Kid pack",
         "kid_sudoku": "Kid sudoku",
         "spelling": "Spelling practice",
+        "spelling_search": "Spelling word search",
         "joke": "Joke",
         "fact": "Fun fact",
         "story": "Bedtime story",
@@ -628,7 +625,7 @@
       "message": "Choose a weather entity under Configure → Settings to print the weather."
     },
     "no_spelling_words": {
-      "message": "{profile} has no spelling words yet. Add them to the spelling to-do list or under Configure → Edit a profile, or pass words to the action."
+      "message": "{profile} has no spelling words yet. Choose a spelling to-do list under Configure → Edit a profile and add words to it."
     },
     "all_words_learned": {
       "message": "{profile} has learned every word on the spelling list. Add new words (or uncheck some) to print more practice."
@@ -692,10 +689,6 @@
         "ignore_limits": {
           "name": "Ignore kid limits",
           "description": "For parents' scripts and dashboards: print even if kid-mode limits would block it."
-        },
-        "words": {
-          "name": "Spelling words",
-          "description": "For spelling prints: words to practice. Empty uses the kid's spelling to-do list (unchecked words), then the typed list."
         }
       }
     },
@@ -758,10 +751,6 @@
         "seed": {
           "name": "[%key:component::tiny_press::services::print::fields::seed::name%]",
           "description": "[%key:component::tiny_press::services::print::fields::seed::description%]"
-        },
-        "words": {
-          "name": "[%key:component::tiny_press::services::print::fields::words::name%]",
-          "description": "[%key:component::tiny_press::services::print::fields::words::description%]"
         }
       }
     },

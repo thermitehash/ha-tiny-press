@@ -47,11 +47,6 @@ print:
       default: false
       selector:
         boolean:
-    words:
-      example: "because, friend, said"
-      selector:
-        text:
-          multiline: true
 
 print_text:
   fields:
@@ -134,11 +129,6 @@ preview:
           min: 0
           max: 2147483647
           mode: box
-    words:
-      example: "because, friend, said"
-      selector:
-        text:
-          multiline: true
 
 print_answers:
   fields:
@@ -304,6 +294,7 @@ voice_print:
             - kid_pack
             - kid_sudoku
             - spelling
+            - spelling_search
             - joke
             - fact
             - story
