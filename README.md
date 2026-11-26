@@ -124,9 +124,10 @@ Open **Settings → Devices & services → Tiny Press → Configure** to add, ed
 
 | Kid profile | |
 |---|---|
-| Name | Shown on the Kid profile select; may be used in stories later |
+| Name | Shown on the Kid profile select, and in the header of their prints ("Rosie's maze", "Joke time, Rosie!") |
 | Reading grade | K–5 (default 3). Sets word lists and word search size, spelling, and story reading level. |
 | Math grade | K–5 (default: same as the reading grade). Sets the math strip and kid sudoku. A kid can read at grade 3 and do grade 1 math. |
+| Maze difficulty | This kid's mazes: Easy, Medium or Hard, or follow the Maze difficulty select (the default). Asking for a level, as in "print a hard maze", still wins. |
 | Interests | Free text such as `dinosaurs, space, horses`. Themed words appear in word searches (and in AI jokes if switched on). |
 | Stretch | Makes puzzles one grade harder, for both reading and math puzzles (stories stay at their reading grade) |
 | Spelling list (to-do list) | Optional: a `todo` list, one word per item. Check a word off when it's learned; prints use the unchecked words. Add words by voice: "Add *because* to Rosie's spelling list". |
@@ -332,6 +333,9 @@ history:                # optional one-tap history buttons (hidden in kid mode)
 feeds:                  # optional feed buttons (hidden in kid mode)
   - {name: News, feed: BBC News, items: 5, qr: true}
 ```
+
+- **Kid-mode limits:** while kid-mode limits are on and a print has to wait, the card shows a live time bar, "Next print in 0:44", filling until the next print is allowed.
+- **Next chapter button:** shows the active kid's story in progress ("Chapter 3 · The Lighthouse Fox"), and is greyed out with "No story in progress" when there isn't one.
 
 <!-- ![Dashboard card](docs/images/card.png) -->
 

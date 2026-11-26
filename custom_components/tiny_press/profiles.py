@@ -50,6 +50,16 @@ class Profile:
     spelling_todo: str = ""  # kids: a todo entity holding the list (one word per item)
     difficulty: str = Difficulty.MEDIUM.value  # adults
     math_grade: str = ""  # kids: empty means the same as the reading grade
+    maze_difficulty: str = ""  # kids: empty follows the Maze difficulty select
+
+    @property
+    def display_name(self) -> str | None:
+        """The name to print in headers (None for the built-in default kid)."""
+        return (
+            None
+            if self.id in ("kid", "adult") and self.name in ("Kid", "Adult")
+            else self.name
+        )
 
     @property
     def puzzle_grade(self) -> str:
@@ -87,6 +97,11 @@ class Profile:
             math_grade=(
                 grade_label(grade_number(data["math_grade"]))
                 if data.get("math_grade") not in (None, "")
+                else ""
+            ),
+            maze_difficulty=(
+                str(data["maze_difficulty"])
+                if data.get("maze_difficulty") in {d.value for d in Difficulty}
                 else ""
             ),
         )

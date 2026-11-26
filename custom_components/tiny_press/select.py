@@ -93,7 +93,8 @@ class TinyPressProfileSelect(TinyPressEntity, SelectEntity):
         """Store the chosen profile's ID."""
         profile = next(p for p in self._profiles if p.name == option)
         self.coordinator.store.set_setting(self._key, profile.id)
-        self.async_write_ha_state()
+        # Other entities show the active kid's state (the Next chapter button).
+        self.coordinator.async_update_listeners()
 
 
 class TinyPressStoryLengthSelect(TinyPressEntity, SelectEntity):

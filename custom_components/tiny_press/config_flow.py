@@ -277,6 +277,15 @@ def _kid_schema(profile: Profile | None) -> vol.Schema:
                     mode=SelectSelectorMode.DROPDOWN,
                 )
             ),
+            vol.Required(
+                "maze_difficulty", default=p.maze_difficulty or "follow"
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=["follow", *[d.value for d in Difficulty]],
+                    translation_key="kid_maze",
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
+            ),
             vol.Optional("interests", default=p.interests): TextSelector(),
             vol.Required("stretch", default=p.stretch): BooleanSelector(),
             vol.Optional(
@@ -541,6 +550,11 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
             name=data[CONF_NAME].strip(),
             grade=grade_label(grade_number(data["grade"])),
             math_grade=grade_label(grade_number(data.get("math_grade", data["grade"]))),
+            maze_difficulty=(
+                ""
+                if data.get("maze_difficulty", "follow") == "follow"
+                else data["maze_difficulty"]
+            ),
             interests=(data.get("interests") or "").strip(),
             stretch=bool(data.get("stretch")),
             spelling_words=(data.get("spelling_words") or "").strip(),

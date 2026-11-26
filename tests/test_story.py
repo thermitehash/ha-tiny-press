@@ -205,9 +205,15 @@ async def test_serial_adventure(
 
     with pytest.raises(ServiceValidationError, match="no story in progress"):
         await _call(hass, "continue_story")
+    button = "button.tiny_press_next_chapter"
+    attrs = hass.states.get(button).attributes
+    assert attrs["story"] is None and attrs["profile"] == "Rosie"  # greyed out
 
     one = await _call(hass, "print_story", mode="serial", topic="maps", length="short")
     assert one["chapter"] == 1
+    attrs = hass.states.get(button).attributes
+    assert (attrs["story"], attrs["chapter"]) == ("The Owl Map", 1)
+    assert attrs["choices"] == {"A": "Follow the river", "B": "Climb the hill"}
     assert one["choices"] == {"A": "Follow the river", "B": "Climb the hill"}
     assert store.series("rosie")["chapter"] == 1
 
@@ -229,6 +235,7 @@ async def test_serial_adventure(
     final = await _call(hass, "continue_story", final=True)
     assert final["chapter"] == 4 and final["choices"] is None
     assert store.series("rosie") is None
+    assert hass.states.get(button).attributes["story"] is None  # finished
 
 
 async def test_serial_without_ai_keeps_the_series(

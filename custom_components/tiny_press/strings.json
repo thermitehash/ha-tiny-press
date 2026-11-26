@@ -101,7 +101,8 @@
           "stretch": "Stretch",
           "spelling_words": "Spelling words",
           "spelling_todo": "Spelling list (to-do list)",
-          "math_grade": "Math grade"
+          "math_grade": "Math grade",
+          "maze_difficulty": "Maze difficulty"
         },
         "data_description": {
           "grade": "Used by word searches, spelling and stories.",
@@ -109,7 +110,8 @@
           "stretch": "Make puzzles one grade harder (reading and math).",
           "spelling_words": "Optional. Typed list (commas or new lines), used when no to-do list is chosen or it can't be read.",
           "spelling_todo": "Optional. A to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words.",
-          "math_grade": "Used by math strips and kid sudoku. Grade 1 is single-digit addition and subtraction."
+          "math_grade": "Used by math strips and kid sudoku. Grade 1 is single-digit addition and subtraction.",
+          "maze_difficulty": "This kid's mazes. \"Follow the Maze difficulty select\" uses the device's select; asking for a level (\"print a hard maze\") still wins."
         }
       },
       "edit_kid": {
@@ -121,7 +123,8 @@
           "stretch": "[%key:component::tiny_press::options::step::add_kid::data::stretch%]",
           "spelling_words": "[%key:component::tiny_press::options::step::add_kid::data::spelling_words%]",
           "spelling_todo": "[%key:component::tiny_press::options::step::add_kid::data::spelling_todo%]",
-          "math_grade": "Math grade"
+          "math_grade": "Math grade",
+          "maze_difficulty": "Maze difficulty"
         },
         "data_description": {
           "grade": "Used by word searches, spelling and stories.",
@@ -129,7 +132,8 @@
           "stretch": "[%key:component::tiny_press::options::step::add_kid::data_description::stretch%] (reading and math).",
           "spelling_words": "[%key:component::tiny_press::options::step::add_kid::data_description::spelling_words%]",
           "spelling_todo": "[%key:component::tiny_press::options::step::add_kid::data_description::spelling_todo%]",
-          "math_grade": "Used by math strips and kid sudoku. Grade 1 is single-digit addition and subtraction."
+          "math_grade": "Used by math strips and kid sudoku. Grade 1 is single-digit addition and subtraction.",
+          "maze_difficulty": "This kid's mazes. \"Follow the Maze difficulty select\" uses the device's select; asking for a level (\"print a hard maze\") still wins."
         }
       },
       "add_adult": {
@@ -404,6 +408,14 @@
         "persian": "Nowruz (the spring-equinox new year)",
         "heritage": "Cultural and heritage days, US (Juneteenth, Indigenous Peoples' Day, Día de los Muertos, Kwanzaa)",
         "fun": "Fun days (Valentine's Day, Halloween, New Year's Eve)"
+      }
+    },
+    "kid_maze": {
+      "options": {
+        "follow": "Follow the Maze difficulty select",
+        "easy": "Easy",
+        "medium": "Medium",
+        "hard": "Hard"
       }
     }
   },

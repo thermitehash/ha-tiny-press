@@ -53,6 +53,7 @@ const ROLES = {
   maze_difficulty: "mazeDifficulty",
   sudoku_difficulty: "sudokuDifficulty",
   story_length: "storyLength",
+  next_chapter: "nextChapter",
 };
 
 const esc = (value) =>
@@ -184,10 +185,12 @@ class TinyPressCard extends HTMLElement {
     const s = this._stateOf("printsLeft");
     if (!s || !s.attributes.enabled) return { enabled: false };
     const next = s.attributes.next_print_at ? new Date(s.attributes.next_print_at) : null;
+    const since = s.attributes.blocked_since ? new Date(s.attributes.blocked_since) : null;
     return {
       enabled: true,
       left: Number(s.state),
       next,
+      since,
       reason: s.attributes.blocked_reason,
       waiting: next && next.getTime() > Date.now(),
     };
@@ -368,6 +371,52 @@ class TinyPressCard extends HTMLElement {
     }
     this._wasWaiting = true;
     if (el) el.textContent = this._countdownText(limits);
+    const bar = this.shadowRoot.querySelector("[data-wait-bar]");
+    if (bar) bar.style.width = `${this._waitProgress(limits)}%`;
+  }
+
+  // How far through the wait we are, 0-100 (for the kid-mode time bar).
+  _waitProgress(limits) {
+    if (!limits.next || !limits.since) return 0;
+    const total = limits.next.getTime() - limits.since.getTime();
+    if (total <= 0) return 100;
+    const done = Date.now() - limits.since.getTime();
+    return Math.max(0, Math.min(100, (done / total) * 100));
+  }
+
+  _waitHtml(limits) {
+    const pct = this._waitProgress(limits).toFixed(1);
+    return `<div class="wait" role="timer" aria-live="off">
+      <div class="wait-text"><ha-icon icon="mdi:timer-sand"></ha-icon><span data-countdown>${esc(this._countdownText(limits))}</span></div>
+      <div class="wait-track"><div class="wait-bar" data-wait-bar style="width:${pct}%"></div></div>
+    </div>`;
+  }
+
+  // The Next chapter tile: the story in progress, or greyed out without one.
+  _chapterInfo() {
+    const s = this._stateOf("nextChapter");
+    if (!s) return { known: false };
+    const story = s.attributes.story;
+    return {
+      known: true,
+      story,
+      next: story ? Number(s.attributes.chapter || 0) + 1 : null,
+      profile: s.attributes.profile,
+    };
+  }
+
+  _tileLabel(t) {
+    if (t !== "next_chapter") return esc(PRINTS[t].label);
+    const info = this._chapterInfo();
+    if (!info.known) return esc(PRINTS[t].label);
+    if (!info.story) return `No story in progress<small>Start one with Bedtime story</small>`;
+    return `Chapter ${info.next}<small>${esc(info.story)}</small>`;
+  }
+
+  _tileDisabled(t) {
+    if (t !== "next_chapter") return false;
+    const info = this._chapterInfo();
+    return info.known && !info.story;
   }
 
   _countdownText(limits) {
@@ -466,17 +515,17 @@ class TinyPressCard extends HTMLElement {
           <div class="grid ${kid ? "kid" : ""}">
             ${buttons
               .map(
-                (t) => `<button class="tile ${kid && !this._config.show_preview ? "hold" : ""}" data-print="${t}" ${disabled ? "disabled" : ""}>
+                (t) => `<button class="tile ${kid && !this._config.show_preview ? "hold" : ""}" data-print="${t}" ${disabled || this._tileDisabled(t) ? "disabled" : ""}>
                   <span class="fill"></span>
                   <ha-icon icon="${PRINTS[t].icon}"></ha-icon>
-                  <span>${PRINTS[t].label}</span>
+                  <span class="label">${this._tileLabel(t)}</span>
                 </button>`
               )
               .join("")}
           </div>`}
         ${this._state.preview ? "" : this._historyHtml()}
         ${this._state.preview ? "" : this._feedsHtml()}
-        ${blocked ? `<div class="notice" data-countdown>${esc(this._countdownText(limits))}</div>` : ""}
+        ${blocked ? this._waitHtml(limits) : ""}
         ${this._state.busy ? `<div class="notice">Working on it…</div>` : ""}
         ${this._state.message ? `<div class="notice ${this._state.tone}">${esc(this._state.message)}</div>` : ""}
         ${this._lastPrintHtml()}`;
@@ -563,6 +612,14 @@ const STYLES = `
   .grid.kid .tile ha-icon { --mdc-icon-size: 44px; }
   .tile span:not(.fill), .primary span:not(.fill) { position: relative; }
   .tile:disabled, .primary:disabled { opacity: 0.45; cursor: default; }
+  .tile .label small { display: block; font-size: 0.75rem; opacity: 0.8; margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+  .wait { padding: 10px 12px; border-radius: 12px; background: var(--secondary-background-color, rgba(127,127,127,0.12)); }
+  .wait-text { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 1rem;
+    font-weight: 600; font-variant-numeric: tabular-nums; margin-bottom: 8px; }
+  .wait-text ha-icon { --mdc-icon-size: 20px; color: var(--primary-color, #03a9f4); }
+  .wait-track { height: 12px; border-radius: 6px; overflow: hidden; background: var(--divider-color, rgba(127,127,127,0.25)); }
+  .wait-bar { height: 100%; border-radius: 6px; background: var(--primary-color, #03a9f4); transition: width 1s linear; }
   .tile:not(:disabled):active { transform: scale(0.97); }
   .fill { position: absolute; inset: 0; width: 0; background: color-mix(in srgb, var(--primary-color) 35%, transparent); }
   .holding .fill { width: 100%; transition: width var(--hold-ms, 800ms) linear; }

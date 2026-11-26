@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import partial
+from typing import Any
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.const import EntityCategory
@@ -77,6 +78,20 @@ class TinyPressButton(TinyPressEntity, ButtonEntity):
         """Store the description."""
         super().__init__(coordinator, description.key)
         self.entity_description = description
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Next chapter: the active kid's story in progress (for the card)."""
+        if self.entity_description.key != "next_chapter":
+            return None
+        kid = self.coordinator.kid_profile()
+        series = self.coordinator.store.series(kid.id) or {}
+        return {
+            "profile": kid.name,
+            "story": series.get("title"),
+            "chapter": series.get("chapter"),
+            "choices": series.get("choices"),
+        }
 
     async def async_press(self) -> None:
         """Print."""

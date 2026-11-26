@@ -64,6 +64,7 @@ class LimitStatus:
     paper_left_mm: float | None = None
     next_print_at: datetime | None = None  # None: a print is allowed now
     reason: str | None = None  # why the next print would be blocked
+    blocked_since: datetime | None = None  # when the wait began (the last print)
 
     def as_attributes(self) -> dict[str, Any]:
         """State attributes for the sensor (and the dashboard card)."""
@@ -75,6 +76,9 @@ class LimitStatus:
             if self.next_print_at
             else None,
             "blocked_reason": self.reason,
+            "blocked_since": self.blocked_since.isoformat()
+            if self.blocked_since
+            else None,
         }
 
 
@@ -132,7 +136,10 @@ class RateLimiter:
         if prints and prints[-1] + cooldown > now:
             waits.append((prints[-1] + cooldown, REASON_COOLDOWN))
         next_at, reason = max(waits) if waits else (None, None)
-        return LimitStatus(True, len(prints), left, round(paper_left), next_at, reason)
+        since = prints[-1] if next_at and prints else None
+        return LimitStatus(
+            True, len(prints), left, round(paper_left), next_at, reason, since
+        )
 
     def record(self, length_mm: float, now: datetime | None = None) -> None:
         """Count a finished kid print."""

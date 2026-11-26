@@ -78,6 +78,7 @@ from .generators.jokes import Joke, pick_themed
 from .generators.story import pick_offline
 from .generators.weather import WeatherReport, build_report
 from .limits import KID_TYPES
+from .profiles import Profile
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -239,11 +240,18 @@ def test_page_info(coordinator: TinyPressCoordinator) -> tuple[str, dict[str, st
     }
 
 
-def maze_difficulty(coordinator: TinyPressCoordinator, value: str | None) -> Difficulty:
-    """Loose difficulty text, else the Maze difficulty select."""
-    default = Difficulty(
-        coordinator.store.get_setting(SETTING_MAZE_DIFFICULTY, Difficulty.EASY)
-    )
+def maze_difficulty(
+    coordinator: TinyPressCoordinator,
+    value: str | None,
+    kid: Profile | None = None,
+) -> Difficulty:
+    """Loose difficulty text, else the kid's maze setting, else the select."""
+    if kid is not None and kid.maze_difficulty:
+        default = Difficulty(kid.maze_difficulty)
+    else:
+        default = Difficulty(
+            coordinator.store.get_setting(SETTING_MAZE_DIFFICULTY, Difficulty.EASY)
+        )
     return normalize_difficulty(value, default)
 
 
@@ -331,8 +339,11 @@ async def async_build_job(
     theme = current_theme(hass, coordinator)
     match kind:
         case PrintType.MAZE:
-            level = maze_difficulty(coordinator, difficulty)
-            return partial(jobs.maze_job, level, seed, profile, theme[0])
+            kid = coordinator.kid_profile(profile)
+            level = maze_difficulty(coordinator, difficulty, kid)
+            return partial(
+                jobs.maze_job, level, seed, kid.name, theme[0], kid.display_name
+            )
         case PrintType.WORD_SEARCH:
             return partial(
                 jobs.word_search_job, coordinator.kid_profile(profile), seed, theme[0]
@@ -361,7 +372,7 @@ async def async_build_job(
             return jobs.joke_job(joke, kid)
         case PrintType.KID_PACK:
             kid = coordinator.kid_profile(profile)
-            level = maze_difficulty(coordinator, difficulty)
+            level = maze_difficulty(coordinator, difficulty, kid)
             return partial(jobs.kid_pack_job, kid, level, seed, theme[0])
         case PrintType.KID_SUDOKU:
             kid = coordinator.kid_profile(profile)

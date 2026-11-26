@@ -79,6 +79,7 @@ async def test_cooldown_hour_and_day(
     assert state.state == "3"
     assert state.attributes["blocked_reason"] == "cooldown"
     assert state.attributes["next_print_at"].startswith("2026-11-26T15:01:00")
+    assert state.attributes["blocked_since"].startswith("2026-11-26T15:00:00")
 
     # Cooldown blocks the action and the buttons alike.
     with pytest.raises(ServiceValidationError, match="Just a moment"):
