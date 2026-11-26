@@ -7,6 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
+from .card import async_register_card
 from .const import DOMAIN
 from .coordinator import TinyPressConfigEntry, TinyPressCoordinator
 from .generators.data import preload
@@ -29,6 +30,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async_setup_services(hass)
     # Read the bundled word lists, jokes and facts once, off the event loop.
     await hass.async_add_executor_job(preload)
+    await async_register_card(hass)
     return True
 
 

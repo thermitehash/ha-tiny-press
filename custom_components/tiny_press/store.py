@@ -31,6 +31,7 @@ class TinyPressStore:
             "offline_since": None,
             "settings": {},
             "recent": {},
+            "limits": {},
         }
 
     async def async_load(self) -> None:
@@ -40,6 +41,17 @@ class TinyPressStore:
 
     def _save(self) -> None:
         self._store.async_delay_save(lambda: self.data, SAVE_DELAY)
+
+    def save(self) -> None:
+        """Schedule a write (debounced)."""
+        self._save()
+
+    def find_answer(self, print_id: str | None) -> dict[str, Any] | None:
+        """Return an answer key by print ID, or the newest one."""
+        if not print_id:
+            return self.history[0] if self.history else None
+        wanted = print_id.strip().lstrip("#").upper()
+        return next((h for h in self.history if h["print_id"] == wanted), None)
 
     async def async_flush(self) -> None:
         """Write now (used on unload)."""

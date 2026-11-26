@@ -148,7 +148,7 @@ async def test_options_settings(
 ) -> None:
     result = await hass.config_entries.options.async_init(loaded_entry.entry_id)
     assert result["type"] is FlowResultType.MENU
-    assert result["menu_options"] == ["settings", "add_kid", "add_adult"]
+    assert result["menu_options"] == ["settings", "kid_limits", "add_kid", "add_adult"]
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"next_step_id": "settings"}
     )

@@ -391,3 +391,19 @@ def joke_page(width: int, joke: Joke, footer: Footer) -> Canvas:
     canvas.space(12)
     canvas.footer(*footer.fields())
     return canvas
+
+
+def joke_answer_page(
+    width: int, setup: str, punchline: str | None, footer: Footer
+) -> Canvas:
+    """Lay out a joke with its punchline the right way up."""
+    canvas = Canvas(width)
+    canvas.title("Joke answer" if punchline else "Fun fact")
+    canvas.space(10)
+    canvas.text(setup, px=30, align="center")
+    if punchline:
+        canvas.space(10)
+        canvas.text(punchline, px=34, bold=True, align="center")
+    canvas.space(12)
+    canvas.footer(*footer.fields())
+    return canvas

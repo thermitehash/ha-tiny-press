@@ -11,7 +11,7 @@ A Home Assistant integration that turns an Epson receipt printer into a househol
 - **Home Assistant:** 2026.11.0 or newer
 - **Nothing prints automatically.** Tiny Press ships no schedules or time-based automations.
 
-> **Status: v0.2.0.** Kid pack: profiles, maze, word search, math strip, jokes and fun facts, plus notes, pictures and the test page. See the [roadmap](docs/roadmap.md) for what's next.
+> **Status: v0.3.0.** Kid pack (profiles, maze, word search, math strip, jokes and fun facts), a dashboard card with kid mode, kid-mode print limits, previews and answer keys. See the [roadmap](docs/roadmap.md) for what's next.
 
 <!-- Screenshot placeholders -->
 <!-- ![Device page](docs/images/device.png) -->
@@ -80,7 +80,9 @@ Every math strip ends with a harder ★ bonus problem.
 | `button.tiny_press_math` | Prints a math strip for the selected kid |
 | `button.tiny_press_joke` | Prints a joke (punchline upside down below a fold line) |
 | `button.tiny_press_kid_pack` | Prints a maze, word search and math strip in one go |
+| `button.tiny_press_answers` | Prints the answer key for the newest puzzle |
 | `button.tiny_press_test_page` | Prints the test page |
+| `sensor.tiny_press_kid_prints_left_today` | Kid prints left today when kid-mode limits are on. Attributes: `next_print_at`, `paper_left_mm`, `blocked_reason` |
 | `select.tiny_press_kid_profile` | Who the buttons print for |
 | `select.tiny_press_maze_difficulty` | Easy, medium or hard |
 
@@ -132,6 +134,14 @@ data:
   profile: Rosie
 ```
 
+### `tiny_press.preview`
+
+Draws a print without printing it. Returns `image` (a PNG data URI), `seed` and the usual fields. Call `tiny_press.print` with the same `seed` to print exactly what you saw.
+
+### `tiny_press.print_answers`
+
+Prints the answer key for the newest puzzle, or for a footer ID: `print_id: K7Q2`. Answer keys are kept for the last 20 puzzles.
+
 ### `tiny_press.print_text`
 
 ```yaml
@@ -155,9 +165,39 @@ data:
   path: /config/www/drawings/rocket.png
 ```
 
+## Dashboard card
+
+Tiny Press includes a dashboard card. It loads automatically; there's nothing extra to install. Edit a dashboard, choose **Add card**, and search for **Tiny Press**.
+
+```yaml
+type: custom:tiny-press-card
+title: Rosie's printer
+kid_mode: true          # hold-to-print, no settings or answers, shows limits
+show_preview: false     # true: see the print first, then Shuffle or Print
+buttons: [maze, word_search, math, joke, kid_pack]
+# ignore_limits: true   # for a parents' dashboard
+```
+
+<!-- ![Dashboard card](docs/images/card.png) -->
+
+## Kid-mode limits
+
+Under **Configure → Kid-mode limits** you can turn on a wait between prints (default 2 minutes), prints per hour (4), prints per day (10) and a daily paper budget (1.5 m).
+
+- **Who they apply to:** kid prints from every button, card, action, voice phrase and Siri shortcut. Counts reset at midnight.
+- **What she sees:** when a print is blocked, she gets a friendly message ("Just a moment! The next print is ready at 3:42 PM"), and Tiny Press fires `tiny_press_rate_limited` so you can be notified.
+- **Parents skip the limits** with `ignore_limits: true`:
+
+```yaml
+action: tiny_press.print
+data:
+  type: kid_pack
+  ignore_limits: true
+```
+
 ## 5. Voice and Siri
 
-Assist voice phrases (an automation blueprint) and Siri shortcuts arrive in **v0.6.0**.
+Assist voice phrases (an automation blueprint) and Siri shortcuts arrive in **v0.7.0**.
 
 > **Heads-up for later:** the voice phrases use sentence triggers, which only run when Home Assistant's built-in conversation agent handles the sentence. If your Assist pipeline uses Claude/Anthropic (or another LLM) as its agent, turn on **"Prefer handling commands locally"** in the pipeline settings, or the phrases won't work.
 

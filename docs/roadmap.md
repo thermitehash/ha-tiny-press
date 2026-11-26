@@ -4,13 +4,13 @@
 |---|---|---|
 | 1 | 0.1.0 ✅ | Printer transport, queue and status; rendering; `print_text`, `print_image`; test page; maze; status entities |
 | 2 | 0.2.0 ✅ | Kid pack: word search, math strip, joke/fun fact, kid profiles, combined Kid pack |
-| 3 | 0.3.0 | Adult puzzles: sudoku, criss-cross crossword, cryptogram, answer keys, puzzle pack |
-| 4 | 0.4.0 | Bedtime story and serial choose-your-own-adventure via `ai_task`, with offline fallback |
-| 5 | 0.5.0 | Morning slip (manual only) |
-| 6 | 0.6.0 | Voice blueprint and Siri docs |
+| — | 0.3.0 ✅ | Dashboard card, kid-mode rate limiter, print preview, answer keys for kid puzzles |
+| 3 | 0.4.0 | Adult puzzles: sudoku, criss-cross crossword, cryptogram, puzzle pack |
+| 4 | 0.5.0 | Bedtime story (short/medium/long) and serial choose-your-own-adventure via `ai_task`, with offline fallback |
+| 5 | 0.6.0 | Morning slip (manual only) |
+| 6 | 0.7.0 | Voice blueprint and Siri docs |
 | 7 | — | Skylight (planning only, below) |
 | later | — | Selfie prints and AI-generated kid-safe pictures (planning only, below) |
-| later | — | Custom Tiny Press dashboard card (planning only, below) |
 
 ## Phase 7: Skylight family calendar (planning only)
 
@@ -60,7 +60,9 @@ Both build on `print_image`'s existing 1-bit rendering. Like everything else, th
   - Whether to cache generated pages for re-printing.
   - A per-day limit so a voice command can't run up a bill.
 
-## Later: custom dashboard card (planning only)
+## Dashboard card (built in v0.3.0)
+
+The items below were the plan. Everything is built except the visual-editor niceties beyond the basic form.
 
 A Lovelace card (`custom:tiny-press-card`) so the household gets one tidy,
 kid-friendly control instead of a grid of separate button entities.

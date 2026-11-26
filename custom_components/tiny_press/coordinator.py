@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import base64
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+import io
 import logging
 from typing import Any
 
@@ -33,6 +35,7 @@ from .const import (
     SETTING_KID_PROFILE,
     PaperState,
 )
+from .limits import RateLimiter
 from .printer import escpos
 from .printer.escpos import PrinterStatus
 from .printer.queue import PrintQueue
@@ -174,6 +177,45 @@ class TinyPressCoordinator(DataUpdateCoordinator[PrinterState]):
             wanted,
             self.store.get_setting(SETTING_KID_PROFILE),
         )
+
+    @property
+    def limiter(self) -> RateLimiter:
+        """Kid-mode limits (settings from the options, counts from the store)."""
+        return RateLimiter(self.store, dict(self.config_entry.options))
+
+    async def async_preview(
+        self, job: PrintJob | Callable[[], PrintJob]
+    ) -> dict[str, Any]:
+        """Render a job to a PNG (as a data URI) without printing it."""
+        if not isinstance(job, PrintJob):
+            job = await self.hass.async_add_executor_job(job)
+        max_dots = max(1, self.max_length_mm - FEED_MM) * DOTS_PER_MM
+        width = self.width
+
+        def render() -> tuple[str, int, bool]:
+            image, truncated = job.build(width).render(max_dots)
+            buffer = io.BytesIO()
+            image.save(buffer, format="PNG", optimize=True)
+            encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+            return f"data:image/png;base64,{encoded}", image.height, truncated
+
+        try:
+            image, height, truncated = await self.hass.async_add_executor_job(render)
+        except (OSError, ValueError) as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="render_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        return {
+            "print_id": job.print_id,
+            "type": job.type,
+            "profile": job.profile,
+            "length_mm": round(height / DOTS_PER_MM + FEED_MM + job.extra_mm, 1),
+            "truncated": truncated,
+            "image": image,
+            **job.response,
+        }
 
     async def async_print(
         self, job: PrintJob | Callable[[], PrintJob]

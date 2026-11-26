@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from functools import partial
 from pathlib import Path
 import re
@@ -18,6 +19,7 @@ from homeassistant.core import (
 )
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.util import dt as dt_util
 import voluptuous as vol
 
 from . import jobs
@@ -34,6 +36,7 @@ from .const import (
     ATTR_TYPE,
     CONF_PAPER_WIDTH,
     DOMAIN,
+    EVENT_RATE_LIMITED,
     PAPER_80MM,
     PAPER_DOTS,
     SETTING_MAZE_DIFFICULTY,
@@ -41,9 +44,14 @@ from .const import (
     Difficulty,
     PrintType,
 )
-from .coordinator import TinyPressConfigEntry, TinyPressCoordinator
+from .coordinator import PrintJob, TinyPressConfigEntry, TinyPressCoordinator
+from .limits import KID_TYPES
 
 SERVICE_PRINT = "print"
+SERVICE_PREVIEW = "preview"
+SERVICE_PRINT_ANSWERS = "print_answers"
+ATTR_IGNORE_LIMITS = "ignore_limits"
+ATTR_PRINT_ID = "print_id"
 SERVICE_PRINT_TEXT = "print_text"
 SERVICE_PRINT_IMAGE = "print_image"
 
@@ -86,7 +94,20 @@ PRINT_SCHEMA = vol.Schema(
         vol.Optional(ATTR_PROFILE): cv.string,
         vol.Optional(ATTR_DIFFICULTY): cv.string,
         vol.Optional(ATTR_SEED): vol.All(vol.Coerce(int), vol.Range(min=0)),
+        vol.Optional(ATTR_IGNORE_LIMITS, default=False): cv.boolean,
     }
+)
+PREVIEW_SCHEMA = vol.Schema(
+    {
+        **ENTRY_FIELD,
+        vol.Required(ATTR_TYPE): vol.In([t.value for t in PrintType]),
+        vol.Optional(ATTR_PROFILE): cv.string,
+        vol.Optional(ATTR_DIFFICULTY): cv.string,
+        vol.Optional(ATTR_SEED): vol.All(vol.Coerce(int), vol.Range(min=0)),
+    }
+)
+PRINT_ANSWERS_SCHEMA = vol.Schema(
+    {**ENTRY_FIELD, vol.Optional(ATTR_PRINT_ID): cv.string}
 )
 PRINT_TEXT_SCHEMA = vol.Schema(
     {
@@ -133,7 +154,7 @@ def maze_difficulty(coordinator: TinyPressCoordinator, value: str | None) -> Dif
     return normalize_difficulty(value, default)
 
 
-async def async_print_type(
+async def async_build_job(
     hass: HomeAssistant,
     coordinator: TinyPressCoordinator,
     kind: PrintType,
@@ -141,22 +162,16 @@ async def async_print_type(
     profile: str | None = None,
     difficulty: str | None = None,
     seed: int | None = None,
-) -> dict[str, Any]:
-    """Print one type. Shared by the ``print`` action and the buttons."""
+) -> PrintJob | Callable[[], PrintJob]:
+    """Return the job (or a builder to run in the executor) for one print type."""
     match kind:
         case PrintType.MAZE:
             level = maze_difficulty(coordinator, difficulty)
-            return await coordinator.async_print(
-                partial(jobs.maze_job, level, seed, profile)
-            )
+            return partial(jobs.maze_job, level, seed, profile)
         case PrintType.WORD_SEARCH:
-            kid = coordinator.kid_profile(profile)
-            return await coordinator.async_print(
-                partial(jobs.word_search_job, kid, seed)
-            )
+            return partial(jobs.word_search_job, coordinator.kid_profile(profile), seed)
         case PrintType.MATH:
-            kid = coordinator.kid_profile(profile)
-            return await coordinator.async_print(partial(jobs.math_job, kid, seed))
+            return partial(jobs.math_job, coordinator.kid_profile(profile), seed)
         case PrintType.JOKE | PrintType.FACT:
             kid = coordinator.kid_profile(profile)
             joke = None
@@ -174,16 +189,89 @@ async def async_print_type(
                 )
                 if seed is None and joke.index is not None:
                     coordinator.store.remember(kind, joke.index)
-            return await coordinator.async_print(jobs.joke_job(joke, kid))
+            return jobs.joke_job(joke, kid)
         case PrintType.KID_PACK:
             kid = coordinator.kid_profile(profile)
             level = maze_difficulty(coordinator, difficulty)
-            return await coordinator.async_print(
-                partial(jobs.kid_pack_job, kid, level, seed)
-            )
+            return partial(jobs.kid_pack_job, kid, level, seed)
         case _:
             paper, info = test_page_info(coordinator)
-            return await coordinator.async_print(jobs.test_page_job(paper, info))
+            return jobs.test_page_job(paper, info)
+
+
+def check_limits(
+    hass: HomeAssistant,
+    coordinator: TinyPressCoordinator,
+    kind: PrintType,
+    profile: str | None,
+) -> None:
+    """Raise if kid-mode limits block this print (and fire an event)."""
+    status = coordinator.limiter.status()
+    if status.next_print_at is None:
+        return
+    hass.bus.async_fire(
+        EVENT_RATE_LIMITED,
+        {
+            "type": kind.value,
+            "profile": profile,
+            "reason": status.reason,
+            "next_print_at": status.next_print_at.isoformat(),
+        },
+    )
+    when = dt_util.as_local(status.next_print_at)
+    raise ServiceValidationError(
+        translation_domain=DOMAIN,
+        translation_key=f"rate_limited_{status.reason}",
+        translation_placeholders={"time": when.strftime("%-I:%M %p")},
+    )
+
+
+async def async_print_type(
+    hass: HomeAssistant,
+    coordinator: TinyPressCoordinator,
+    kind: PrintType,
+    *,
+    profile: str | None = None,
+    difficulty: str | None = None,
+    seed: int | None = None,
+    ignore_limits: bool = False,
+) -> dict[str, Any]:
+    """Print one type. Shared by the ``print`` action and the buttons."""
+    limited = kind in KID_TYPES and not ignore_limits and coordinator.limiter.enabled
+    if limited:
+        check_limits(hass, coordinator, kind, profile)
+    job = await async_build_job(
+        hass, coordinator, kind, profile=profile, difficulty=difficulty, seed=seed
+    )
+    response = await coordinator.async_print(job)
+    if limited:
+        coordinator.limiter.record(response["length_mm"])
+        coordinator.async_update_listeners()
+    return response
+
+
+async def async_preview_type(
+    hass: HomeAssistant,
+    coordinator: TinyPressCoordinator,
+    kind: PrintType,
+    *,
+    profile: str | None = None,
+    difficulty: str | None = None,
+    seed: int | None = None,
+) -> dict[str, Any]:
+    """Render a print without printing it. Pass the returned seed to ``print``."""
+    seed = jobs.new_seed() if seed is None else seed
+    job = await async_build_job(
+        hass, coordinator, kind, profile=profile, difficulty=difficulty, seed=seed
+    )
+    return {**await coordinator.async_preview(job), "seed": seed}
+
+
+async def _is_admin(hass: HomeAssistant, call: ServiceCall) -> bool:
+    if not call.context.user_id:
+        return False
+    user = await hass.auth.async_get_user(call.context.user_id)
+    return bool(user and user.is_admin)
 
 
 def _coordinator(hass: HomeAssistant, call: ServiceCall) -> TinyPressCoordinator:
@@ -241,6 +329,9 @@ def async_setup_services(hass: HomeAssistant) -> None:
 
     async def handle_print(call: ServiceCall) -> ServiceResponse:
         coordinator = _coordinator(hass, call)
+        ignore = bool(call.data.get(ATTR_IGNORE_LIMITS)) or (
+            coordinator.limiter.admins_skip and await _is_admin(hass, call)
+        )
         return await async_print_type(
             hass,
             coordinator,
@@ -248,7 +339,32 @@ def async_setup_services(hass: HomeAssistant) -> None:
             profile=call.data.get(ATTR_PROFILE),
             difficulty=call.data.get(ATTR_DIFFICULTY),
             seed=call.data.get(ATTR_SEED),
+            ignore_limits=ignore,
         )
+
+    async def handle_preview(call: ServiceCall) -> ServiceResponse:
+        coordinator = _coordinator(hass, call)
+        return await async_preview_type(
+            hass,
+            coordinator,
+            PrintType(call.data[ATTR_TYPE]),
+            profile=call.data.get(ATTR_PROFILE),
+            difficulty=call.data.get(ATTR_DIFFICULTY),
+            seed=call.data.get(ATTR_SEED),
+        )
+
+    async def handle_print_answers(call: ServiceCall) -> ServiceResponse:
+        coordinator = _coordinator(hass, call)
+        entry = coordinator.store.find_answer(call.data.get(ATTR_PRINT_ID))
+        if entry is None:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="no_answers",
+                translation_placeholders={
+                    "print_id": call.data.get(ATTR_PRINT_ID) or "-"
+                },
+            )
+        return await coordinator.async_print(partial(jobs.answer_job, entry))
 
     async def handle_print_text(call: ServiceCall) -> ServiceResponse:
         coordinator = _coordinator(hass, call)
@@ -264,8 +380,16 @@ def async_setup_services(hass: HomeAssistant) -> None:
         )
         return await coordinator.async_print(jobs.image_job(path))
 
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_PREVIEW,
+        handle_preview,
+        schema=PREVIEW_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
     for name, handler, schema in (
         (SERVICE_PRINT, handle_print, PRINT_SCHEMA),
+        (SERVICE_PRINT_ANSWERS, handle_print_answers, PRINT_ANSWERS_SCHEMA),
         (SERVICE_PRINT_TEXT, handle_print_text, PRINT_TEXT_SCHEMA),
         (SERVICE_PRINT_IMAGE, handle_print_image, PRINT_IMAGE_SCHEMA),
     ):

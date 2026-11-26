@@ -33,6 +33,10 @@ print:
           min: 0
           max: 2147483647
           mode: box
+    ignore_limits:
+      default: false
+      selector:
+        boolean:
 
 print_text:
   fields:
@@ -69,5 +73,52 @@ print_image:
     path:
       required: true
       example: /config/www/drawing.png
+      selector:
+        text:
+
+preview:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: tiny_press
+    type:
+      required: true
+      example: maze
+      selector:
+        select:
+          translation_key: print_type
+          options:
+            - maze
+            - word_search
+            - math
+            - joke
+            - fact
+            - kid_pack
+            - test_page
+    profile:
+      example: Kid
+      selector:
+        text:
+    difficulty:
+      example: harder
+      selector:
+        text:
+    seed:
+      example: 42
+      selector:
+        number:
+          min: 0
+          max: 2147483647
+          mode: box
+
+print_answers:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: tiny_press
+    print_id:
+      example: K7Q2
       selector:
         text:

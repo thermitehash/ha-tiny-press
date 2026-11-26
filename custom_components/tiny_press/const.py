@@ -37,6 +37,7 @@ OFFLINE_REPAIR_AFTER_HOURS: Final = 24
 ISSUE_OFFLINE: Final = "printer_offline"
 
 EVENT_PRINTED: Final = "tiny_press_printed"
+EVENT_RATE_LIMITED: Final = "tiny_press_rate_limited"
 
 STORAGE_VERSION: Final = 1
 HISTORY_SIZE: Final = 20

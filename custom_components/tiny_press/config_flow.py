@@ -49,6 +49,15 @@ from .const import (
 )
 from .coordinator import TinyPressConfigEntry
 from .jobs import test_page_job
+from .limits import (
+    CONF_ADMINS_SKIP,
+    CONF_COOLDOWN_S,
+    CONF_LIMITS_ENABLED,
+    CONF_PAPER_MM_DAY,
+    CONF_PER_DAY,
+    CONF_PER_HOUR,
+    DEFAULTS as LIMIT_DEFAULTS,
+)
 from .printer import escpos
 from .printer.transport import PrinterConnectError, PrinterError, PrinterTransport
 from .profiles import (
@@ -269,7 +278,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Choose what to change."""
-        menu = ["settings", "add_kid", "add_adult"]
+        menu = ["settings", "kid_limits", "add_kid", "add_adult"]
         if self._profiles:
             menu += ["edit_profile", "remove_profile"]
         return self.async_show_menu(step_id="init", menu_options=menu)
@@ -324,6 +333,52 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
             }
         )
         return self.async_show_form(step_id="settings", data_schema=schema)
+
+    async def async_step_kid_limits(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Kid-mode rate limits."""
+        if user_input is not None:
+            return self._save(
+                **{
+                    CONF_LIMITS_ENABLED: bool(user_input[CONF_LIMITS_ENABLED]),
+                    CONF_COOLDOWN_S: int(user_input[CONF_COOLDOWN_S]),
+                    CONF_PER_HOUR: int(user_input[CONF_PER_HOUR]),
+                    CONF_PER_DAY: int(user_input[CONF_PER_DAY]),
+                    CONF_PAPER_MM_DAY: int(user_input[CONF_PAPER_MM_DAY]),
+                    CONF_ADMINS_SKIP: bool(user_input[CONF_ADMINS_SKIP]),
+                }
+            )
+        current = {**LIMIT_DEFAULTS, **self.config_entry.options}
+
+        def number(key: str, low: int, high: int, step: int, unit: str) -> Any:
+            return {
+                vol.Required(key, default=current[key]): NumberSelector(
+                    NumberSelectorConfig(
+                        min=low,
+                        max=high,
+                        step=step,
+                        unit_of_measurement=unit,
+                        mode=NumberSelectorMode.BOX,
+                    )
+                )
+            }
+
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_LIMITS_ENABLED, default=current[CONF_LIMITS_ENABLED]
+                ): BooleanSelector(),
+                **number(CONF_COOLDOWN_S, 0, 3600, 10, "s"),
+                **number(CONF_PER_HOUR, 0, 60, 1, "prints"),
+                **number(CONF_PER_DAY, 1, 200, 1, "prints"),
+                **number(CONF_PAPER_MM_DAY, 100, 20000, 50, "mm"),
+                vol.Required(
+                    CONF_ADMINS_SKIP, default=current[CONF_ADMINS_SKIP]
+                ): BooleanSelector(),
+            }
+        )
+        return self.async_show_form(step_id="kid_limits", data_schema=schema)
 
     def _check_name(self, name: str, keep_id: str | None = None) -> str | None:
         name = name.strip()

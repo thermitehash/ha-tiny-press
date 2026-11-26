@@ -203,3 +203,60 @@ def image_job(path: Path) -> PrintJob:
         print_id=print_id,
         build=lambda width: layout.image_page(width, path, footer),
     )
+
+
+def answer_job(entry: dict) -> PrintJob:
+    """Build the answer key for a stored puzzle (see ``TinyPressStore.history``)."""
+    kind = entry["type"]
+    data = entry["answer"]
+    print_id = entry["print_id"]
+    labels = {
+        PrintType.MAZE: "Maze answers",
+        PrintType.WORD_SEARCH: "Word search answers",
+        PrintType.MATH: "Math answers",
+        PrintType.JOKE: "Joke answer",
+        PrintType.FACT: "Fun fact",
+    }
+    footer = layout.Footer(labels.get(kind, "Answers"), print_id, _today())
+    if kind == PrintType.MAZE:
+        puzzle = maze.generate(data["difficulty"], data["seed"])
+
+        def build(width: int) -> Canvas:
+            return layout.maze_page(width, puzzle, footer, answer=True)
+
+    elif kind == PrintType.WORD_SEARCH:
+        grid = word_search.WordSearch(
+            data["size"],
+            tuple(data["grid"]),
+            tuple(word_search.Placement(*p) for p in data["placements"]),
+        )
+
+        def build(width: int) -> Canvas:
+            return layout.word_search_page(width, grid, footer, answer=True)
+
+    elif kind == PrintType.MATH:
+        sheet = math_strip.MathStrip(
+            data["grade"],
+            tuple(math_strip.Problem(**p) for p in data["problems"]),
+            math_strip.Problem(**data["bonus"]),
+        )
+
+        def build(width: int) -> Canvas:
+            return layout.math_page(width, sheet, footer, answer=True)
+
+    elif kind in (PrintType.JOKE, PrintType.FACT):
+        setup, punchline = data["setup"], data.get("punchline")
+
+        def build(width: int) -> Canvas:
+            return layout.joke_answer_page(width, setup, punchline, footer)
+
+    else:
+        raise ValueError(f"no answer key for {kind}")
+    return PrintJob(
+        type="answers",
+        label=footer.label,
+        print_id=print_id,
+        profile=None,
+        response={"answers_for": kind},
+        build=build,
+    )

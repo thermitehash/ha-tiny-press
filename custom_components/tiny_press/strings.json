@@ -43,6 +43,7 @@
         "title": "Tiny Press options",
         "menu_options": {
           "settings": "Settings",
+          "kid_limits": "Kid-mode limits",
           "add_kid": "Add a kid",
           "add_adult": "Add an adult",
           "edit_profile": "Edit a profile",
@@ -117,6 +118,22 @@
         "title": "Remove profiles",
         "data": {
           "profiles": "Profiles to remove"
+        }
+      },
+      "kid_limits": {
+        "title": "Kid-mode limits",
+        "description": "Limits apply to kid prints (maze, word search, math, joke, fun fact, kid pack) from every button, dashboard card, voice phrase and Siri shortcut. Parents can skip them with `ignore_limits: true` on an action. Counts reset at midnight.",
+        "data": {
+          "limits_enabled": "Limit kid prints",
+          "limit_cooldown_s": "Wait between prints",
+          "limit_per_hour": "Prints per hour",
+          "limit_per_day": "Prints per day",
+          "limit_paper_mm_day": "Paper per day",
+          "limit_admins_skip": "Admin users skip the limits"
+        },
+        "data_description": {
+          "limit_per_hour": "0 means no hourly limit.",
+          "limit_admins_skip": "Leave off if a shared wall tablet is signed in as an admin."
         }
       }
     },
@@ -207,6 +224,26 @@
             "name": "Difficulty"
           }
         }
+      },
+      "prints_left": {
+        "name": "Kid prints left today",
+        "state_attributes": {
+          "enabled": {
+            "name": "Limits on"
+          },
+          "prints_today": {
+            "name": "Prints today"
+          },
+          "paper_left_mm": {
+            "name": "Paper left today"
+          },
+          "next_print_at": {
+            "name": "Next print at"
+          },
+          "blocked_reason": {
+            "name": "Blocked because"
+          }
+        }
       }
     },
     "button": {
@@ -227,6 +264,9 @@
       },
       "test_page": {
         "name": "Test page"
+      },
+      "answers": {
+        "name": "Answers"
       }
     },
     "select": {
@@ -270,6 +310,21 @@
     },
     "image_not_found": {
       "message": "{path} isn't an image file Tiny Press can read."
+    },
+    "rate_limited_cooldown": {
+      "message": "Just a moment! The next print is ready at {time}."
+    },
+    "rate_limited_hour": {
+      "message": "That's lots of printing for now. Try again at {time}."
+    },
+    "rate_limited_day": {
+      "message": "That's enough printing for today! See you tomorrow."
+    },
+    "rate_limited_paper": {
+      "message": "Today's paper is all used up. See you tomorrow!"
+    },
+    "no_answers": {
+      "message": "There's no answer key for {print_id}. Answer keys are kept for the last 20 puzzles."
     }
   },
   "services": {
@@ -296,6 +351,10 @@
         "seed": {
           "name": "Seed",
           "description": "Prints the same puzzle again for the same seed. Jokes with a seed come from the bundled list."
+        },
+        "ignore_limits": {
+          "name": "Ignore kid limits",
+          "description": "For parents' scripts and dashboards: print even if kid-mode limits would block it."
         }
       }
     },
@@ -332,6 +391,46 @@
         "path": {
           "name": "Path",
           "description": "An image under /media or /config/www, for example /config/www/drawing.png."
+        }
+      }
+    },
+    "preview": {
+      "name": "Preview",
+      "description": "Draws a print without printing it and returns the picture (a PNG data URI) and its seed. Call Print with the same seed to print exactly what you saw.",
+      "fields": {
+        "config_entry_id": {
+          "name": "[%key:component::tiny_press::services::print::fields::config_entry_id::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::config_entry_id::description%]"
+        },
+        "type": {
+          "name": "[%key:component::tiny_press::services::print::fields::type::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::type::description%]"
+        },
+        "profile": {
+          "name": "[%key:component::tiny_press::services::print::fields::profile::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::profile::description%]"
+        },
+        "difficulty": {
+          "name": "[%key:component::tiny_press::services::print::fields::difficulty::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::difficulty::description%]"
+        },
+        "seed": {
+          "name": "[%key:component::tiny_press::services::print::fields::seed::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::seed::description%]"
+        }
+      }
+    },
+    "print_answers": {
+      "name": "Print answers",
+      "description": "Prints the answer key for the newest puzzle, or for a puzzle ID from its footer (like K7Q2).",
+      "fields": {
+        "config_entry_id": {
+          "name": "[%key:component::tiny_press::services::print::fields::config_entry_id::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::config_entry_id::description%]"
+        },
+        "print_id": {
+          "name": "Puzzle ID",
+          "description": "The 4-character ID printed in the footer. Leave empty for the newest puzzle."
         }
       }
     }
