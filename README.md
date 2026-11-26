@@ -46,7 +46,7 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 | Morning slip to-do lists | none | Optional: unchecked items print as checkboxes |
 | Morning slip headlines | none | A feed whose 3 newest headlines print on the morning slip, above its bottom. Leave empty for none |
 | Bottom of the morning slip | joke | Joke, fun fact, quote of the day, vocabulary word, small sudoku or nothing |
-| Live quote of the day | on | For the Quote bottom: Wikiquote's quote of the day first (credited), bundled public-domain quotes if it can't be read |
+| Bottom of the slip: content source | Online | **Online** uses live sources where one exists, falling back to the bundled content. Today that's Wikiquote's quote of the day for the Quote bottom, credited. **Local** uses bundled content only, with no internet |
 | Auto-print quiet hours | 9 PM–7 AM, skip | No feed auto-prints during these hours. Items that arrive then are skipped, or printed when quiet hours end (up to 3 per feed) |
 | Use AI for jokes and fun facts | off | Off: jokes and facts come from bundled, human-written lists (facts from NOAA, NASA and the National Park Service, with credits). On: the AI is asked first. |
 
@@ -374,7 +374,7 @@ Versioning is SemVer. `manifest.json` is the single source of truth: bump the mi
 
 ## Content sources
 
-Bundled content comes from sources that allow redistribution: fun facts from NOAA, NASA and the National Park Service (U.S. government works, public domain), K–3 words from the Dolch sight-word lists, and cryptogram quotes from public-domain works (Roosevelt, Muir, Lincoln, Shakespeare) as collected by the National Park Service, and vocabulary definitions from Open English WordNet (CC BY 4.0). Jokes and the NYT-style crossword clues were written for Tiny Press. With Live quote of the day on, the morning slip fetches Wikiquote's quote of the day (CC BY-SA 4.0) and prints its credit. Feed prints show each feed's own content and name. See [`data/LICENSE.md`](custom_components/tiny_press/data/LICENSE.md) for every source.
+Bundled content comes from sources that allow redistribution: fun facts from NOAA, NASA and the National Park Service (U.S. government works, public domain), K–3 words from the Dolch sight-word lists, and cryptogram quotes from public-domain works (Roosevelt, Muir, Lincoln, Shakespeare) as collected by the National Park Service, and vocabulary definitions from Open English WordNet (CC BY 4.0). Jokes and the NYT-style crossword clues were written for Tiny Press. With the bottom's content source set to Online, the morning slip fetches Wikiquote's quote of the day (CC BY-SA 4.0) and prints its credit. Feed prints show each feed's own content and name. See [`data/LICENSE.md`](custom_components/tiny_press/data/LICENSE.md) for every source.
 
 ## License
 

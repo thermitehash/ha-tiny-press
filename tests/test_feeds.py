@@ -13,7 +13,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
-from custom_components.tiny_press.const import DOMAIN, PAPER_DOTS
+from custom_components.tiny_press.const import DOMAIN, PAPER_DOTS, bottom_source
 from custom_components.tiny_press.coordinator import render_job
 from custom_components.tiny_press.fetch import FeedConfig, find_feed
 from custom_components.tiny_press.generators.feeds import (
@@ -177,6 +177,26 @@ async def test_live_quote_falls_back_to_page(
     assert store.get_setting("live_quote_cache")["text"] == (
         "Whatever you are, be a good one."
     )
+
+
+def test_bottom_source() -> None:
+    assert bottom_source({}) == "online"
+    assert bottom_source({"live_quote": False}) == "local"  # v0.9.0 toggle
+    assert bottom_source({"live_quote": False, "bottom_source": "online"}) == "online"
+    assert bottom_source({"bottom_source": "local"}) == "local"
+    assert bottom_source({"bottom_source": "nonsense"}) == "online"
+
+
+async def test_local_source_skips_wikiquote(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    printer: FakePrinter,
+    aioclient_mock: AiohttpClientMocker,
+) -> None:
+    await _setup(hass, config_entry, morning_bottom="quote", bottom_source="local")
+    await _call(hass, "print_morning_slip")
+    assert aioclient_mock.call_count == 0  # local: no internet
+    assert len(config_entry.runtime_data.store.recent("quote")) == 1
 
 
 def test_find_feed() -> None:

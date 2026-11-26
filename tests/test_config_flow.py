@@ -178,7 +178,7 @@ async def test_options_settings(
         "calendar_entities": [],
         "todo_entities": [],
         "morning_bottom": "joke",
-        "live_quote": True,
+        "bottom_source": "online",
         "morning_feed": None,
         "quiet_start": None,  # cleared: no quiet hours (the form suggests 9 PM-7 AM)
         "quiet_end": None,

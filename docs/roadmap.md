@@ -36,7 +36,7 @@ Design questions get asked one at a time when this is built.
 - **Themed mazes:** borders or start/finish icons, such as a lantern, a snowflake or a leaf.
 
 ### Quote source setting
-- Wikiquote (default), a feed from the Feeds list (its newest item becomes the quote, credited with the feed's name), or bundled only.
+- Wikiquote (default), a feed from the Feeds list (its newest item becomes the quote, credited with the feed's name), or bundled only. This would extend v0.9.1's Online/Local content source for the slip's bottom.
 
 ## Phase 7: Skylight family calendar (planning only)
 

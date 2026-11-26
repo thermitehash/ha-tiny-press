@@ -33,11 +33,12 @@ from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 import voluptuous as vol
 
 from .const import (
+    BOTTOM_SOURCES,
     CONF_AI_JOKES,
     CONF_AI_TASK,
+    CONF_BOTTOM_SOURCE,
     CONF_CALENDARS,
     CONF_FEEDS,
-    CONF_LIVE_QUOTE,
     CONF_MAX_LENGTH_MM,
     CONF_MORNING_BOTTOM,
     CONF_MORNING_FEED,
@@ -59,6 +60,7 @@ from .const import (
     PAPER_80MM,
     PAPER_DOTS,
     Difficulty,
+    bottom_source,
 )
 from .coordinator import TinyPressConfigEntry
 from .fetch import (
@@ -339,7 +341,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                     CONF_CALENDARS: list(user_input.get(CONF_CALENDARS) or []),
                     CONF_TODOS: list(user_input.get(CONF_TODOS) or []),
                     CONF_MORNING_BOTTOM: user_input.get(CONF_MORNING_BOTTOM, "joke"),
-                    CONF_LIVE_QUOTE: bool(user_input.get(CONF_LIVE_QUOTE, True)),
+                    CONF_BOTTOM_SOURCE: user_input.get(CONF_BOTTOM_SOURCE, "online"),
                     CONF_MORNING_FEED: user_input.get(CONF_MORNING_FEED) or None,
                     CONF_QUIET_START: user_input.get(CONF_QUIET_START) or None,
                     CONF_QUIET_END: user_input.get(CONF_QUIET_END) or None,
@@ -406,8 +408,14 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                     )
                 ),
                 vol.Required(
-                    CONF_LIVE_QUOTE, default=bool(options.get(CONF_LIVE_QUOTE, True))
-                ): BooleanSelector(),
+                    CONF_BOTTOM_SOURCE, default=bottom_source(options)
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=list(BOTTOM_SOURCES),
+                        translation_key=CONF_BOTTOM_SOURCE,
+                        mode=SelectSelectorMode.LIST,
+                    )
+                ),
                 vol.Optional(
                     CONF_QUIET_START,
                     description={

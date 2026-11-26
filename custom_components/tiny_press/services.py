@@ -38,7 +38,6 @@ from .const import (
     ATTR_TITLE,
     ATTR_TYPE,
     CONF_CALENDARS,
-    CONF_LIVE_QUOTE,
     CONF_MORNING_BOTTOM,
     CONF_MORNING_FEED,
     CONF_PAPER_WIDTH,
@@ -55,6 +54,7 @@ from .const import (
     TEXT_SIZES,
     Difficulty,
     PrintType,
+    bottom_source,
 )
 from .coordinator import PrintJob, TinyPressConfigEntry, TinyPressCoordinator
 from .fetch import (
@@ -607,8 +607,8 @@ async def async_print_feed(
 async def _morning_quote(
     hass: HomeAssistant, coordinator: TinyPressCoordinator
 ) -> morning.Quote:
-    """Wikiquote's quote of the day when switched on, else (or on failure) bundled."""
-    if coordinator.config_entry.options.get(CONF_LIVE_QUOTE, True):
+    """Wikiquote's quote of the day when the source is online, else bundled."""
+    if bottom_source(coordinator.config_entry.options) == "online":
         live = await async_live_quote(hass, coordinator.store)
         if live is not None:
             return morning.Quote(live[0], live[1], None, WIKIQUOTE_CREDIT)
