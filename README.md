@@ -206,7 +206,7 @@ data:
 
 ## Dashboard card
 
-Tiny Press includes a dashboard card. It loads automatically; there's nothing extra to install. Edit a dashboard, choose **Add card**, and search for **Tiny Press**.
+Tiny Press includes a dashboard card. It adds itself to your dashboard resources (Settings → Dashboards → ⋮ → Resources), so there's nothing extra to install. Edit a dashboard, choose **Add card**, and find **Tiny Press** under **Custom**, or search for it. If it's missing, restart Home Assistant and refresh the browser. With YAML-mode dashboards, add `/tiny_press/tiny-press-card.js` as a JavaScript module resource yourself.
 
 ```yaml
 type: custom:tiny-press-card
