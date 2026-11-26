@@ -976,6 +976,36 @@
    }
   },
   {
+   "id": "thanksgiving",
+   "group": "heritage",
+   "name": "Thanksgiving",
+   "banner": "Thanksgiving is a US national holiday on the fourth Thursday of November, a day for sharing a meal and saying thank you.",
+   "art": "fruit_basket",
+   "when": {
+    "nth": [
+     11,
+     3,
+     4
+    ]
+   },
+   "words": [
+    "GRATEFUL",
+    "FAMILY",
+    "FRIENDS",
+    "HARVEST",
+    "PUMPKIN",
+    "TABLE",
+    "SHARE",
+    "THANKS"
+   ],
+   "clues": {
+    "HARVEST": "Gathering crops",
+    "TABLE": "Where the meal is served",
+    "SHARE": "Give some to others",
+    "PUMPKIN": "Orange squash"
+   }
+  },
+  {
    "id": "kwanzaa",
    "group": "heritage",
    "name": "Kwanzaa",

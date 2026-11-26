@@ -260,7 +260,7 @@ async def test_card_is_served_yaml_fallback(
         assert await async_setup_component(hass, DOMAIN, {})
         await hass.async_block_till_done()
     add_js.assert_called_once()
-    assert add_js.call_args[0][1] == f"{CARD_URL}?v=0.11.0"
+    assert add_js.call_args[0][1] == f"{CARD_URL}?v=0.11.1"
     client = await hass_client()
     response = await client.get(CARD_URL)
     assert response.status == 200
@@ -323,7 +323,7 @@ async def test_card_added_to_dashboard_resources(
     assert await async_setup_component(hass, DOMAIN, {})
     await hass.async_block_till_done()
     mine = [i for i in resources.async_items() if i["url"].startswith(CARD_URL)]
-    assert [i["url"] for i in mine] == [f"{CARD_URL}?v=0.11.0"]
+    assert [i["url"] for i in mine] == [f"{CARD_URL}?v=0.11.1"]
     assert len(resources.items) == len(mine) + sum(
         1 for i in existing if not i["url"].startswith(CARD_URL)
     )

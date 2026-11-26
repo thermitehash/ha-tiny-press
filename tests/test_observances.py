@@ -397,3 +397,30 @@ def test_ascii_art_is_bold_and_fits(width: int) -> None:
         lines = ob.art(name)
         bold = dark_share(layout.ascii_art(width, lines))
         assert bold > 1.5 * dark_share(thin(lines)), name
+
+
+def test_thanksgiving_heritage_day() -> None:
+    def ids(day: date, **kw) -> list[str]:
+        return [o.id for o in ob.todays(day, to_local=utc, latitude=40, **kw)]
+
+    # Fourth Thursday of November; off unless the heritage group is picked.
+    assert ids(date(2026, 11, 26)) == []
+    assert ids(date(2026, 11, 26), picked_groups={"heritage"}) == ["thanksgiving"]
+    assert ids(date(2027, 11, 25), picked_groups={"heritage"}) == ["thanksgiving"]
+    assert ids(date(2026, 11, 19), picked_groups={"heritage"}) == []
+    thanks = ob.todays(
+        date(2026, 11, 26),
+        to_local=utc,
+        latitude=40,
+        picked_groups={"heritage"},
+    )[0]
+    assert not thanks.theme.jokes  # no jokes on cultural days
+    # The Holidays calendar's copy doesn't print a second banner.
+    assert ids(
+        date(2026, 11, 26),
+        picked_groups={"heritage"},
+        public=["Thanksgiving Day", "Day after Thanksgiving"],
+    ) == ["thanksgiving", "public:Day after Thanksgiving"]
+    assert ids(date(2026, 11, 26), public=["Thanksgiving Day"]) == [
+        "public:Thanksgiving Day"
+    ]
