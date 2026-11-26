@@ -73,10 +73,8 @@ Both build on `print_image`'s existing 1-bit rendering. Like everything else, th
 
 ### Live quote of the day (with the bundled quotes as fallback)
 - A "live" choice for the morning slip's quote: fetch today's quote from a source whose terms allow reuse with attribution. If the fetch fails, times out or returns nothing printable, fall back to the bundled public-domain quotes and print no error.
-- Candidates to check then (not yet verified from the build environment):
-  - **Wikiquote Quote of the Day** feed (MediaWiki `featuredfeed`, `feed=qotd`). The page text is CC BY-SA; print "Wikiquote (CC BY-SA)" and the author.
-  - **ZenQuotes** `today` API: free for low volume, and its terms ask for a visible "Inspirational quotes provided by ZenQuotes API" credit with a link.
-  - Any user-chosen feed through the generic feed support above.
+- **Chosen source: Wikiquote Quote of the Day** (MediaWiki `featuredfeed`, `feed=qotd`, RSS). The page text is CC BY-SA; print the author and "Wikiquote (CC BY-SA)". Send a descriptive User-Agent, as Wikimedia asks. (Not yet tested from the build environment, whose network blocks it.)
+- Considered: **ZenQuotes** `today` API (needs a visible "Inspirational quotes provided by ZenQuotes API" credit; run by one person, so less dependable). Any user-chosen feed will also work through the generic feed support above.
 - Not used: sites whose terms forbid reuse of their quotes (for example BrainyQuote).
 - Cache one quote per day so reprints don't refetch, and filter by length so it fits the slip.
 
