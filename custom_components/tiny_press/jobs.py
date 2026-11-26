@@ -25,6 +25,7 @@ from .generators import (
     word_search,
 )
 from .generators.jokes import Joke
+from .generators.story import Story
 from .generators.weather import WeatherReport
 from .printer import escpos
 from .profiles import Profile, grade_number
@@ -565,4 +566,26 @@ def puzzle_pack_job(
             "quote_index": parts[2].response["quote_index"],
         },
         build=build,
+    )
+
+
+def story_job(story: Story, profile: Profile, length: str) -> PrintJob:
+    """Build a bedtime story (or serial chapter) print."""
+    print_id = layout.make_print_id()
+    label = f"Chapter {story.chapter}" if story.chapter else "Story"
+    footer = layout.Footer(label, print_id, _today(), length)
+    return PrintJob(
+        type=PrintType.STORY,
+        label=label,
+        print_id=print_id,
+        difficulty=length,
+        profile=profile.name,
+        response={
+            "title": story.title,
+            "chapter": story.chapter,
+            "choices": dict(zip("AB", story.choices, strict=False)) or None,
+            "source": story.source,
+            "words": story.words,
+        },
+        build=lambda width: layout.story_page(width, story, footer),
     )

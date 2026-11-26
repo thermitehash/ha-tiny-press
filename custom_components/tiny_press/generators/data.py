@@ -19,6 +19,7 @@ FILES = (
     "facts.json",
     "crossword.json",
     "quotes.json",
+    "stories.json",
 )
 
 

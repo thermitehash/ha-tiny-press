@@ -6,7 +6,7 @@
  * Nothing prints unless someone presses a button.
  */
 
-const CARD_VERSION = "0.4.0";
+const CARD_VERSION = "0.5.0";
 
 const PRINTS = {
   maze: { label: "Maze", icon: "mdi:map-marker-path" },
@@ -22,11 +22,13 @@ const PRINTS = {
   crossword: { label: "Crossword", icon: "mdi:alpha-c-box-outline", adult: true },
   cryptogram: { label: "Cryptogram", icon: "mdi:lock-question", adult: true },
   puzzle_pack: { label: "Puzzle pack", icon: "mdi:puzzle-outline", adult: true },
+  story: { label: "Bedtime story", icon: "mdi:book-open-page-variant-outline", service: "print_story" },
+  next_chapter: { label: "Next chapter", icon: "mdi:book-arrow-right-outline", service: "continue_story" },
   weather: { label: "Weather", icon: "mdi:weather-partly-cloudy" },
 };
 const DEFAULT_BUTTONS = [
   "maze", "word_search", "math", "kid_sudoku", "spelling", "joke", "kid_pack",
-  "sudoku", "crossword", "cryptogram", "puzzle_pack", "weather",
+  "story", "next_chapter", "sudoku", "crossword", "cryptogram", "puzzle_pack", "weather",
 ];
 
 const PAPER = {
@@ -48,6 +50,7 @@ const ROLES = {
   adult_profile: "adultProfile",
   maze_difficulty: "mazeDifficulty",
   sudoku_difficulty: "sudokuDifficulty",
+  story_length: "storyLength",
 };
 
 const esc = (value) =>
@@ -233,9 +236,13 @@ class TinyPressCard extends HTMLElement {
 
   _print(type, seed) {
     const label = PRINTS[type]?.label || type;
+    const service = PRINTS[type]?.service;
     this._run(
       async () => {
-        const res = await this._call("print", this._printData(type, seed), true);
+        const data = service
+          ? (this._config.ignore_limits ? { ignore_limits: true } : {})
+          : this._printData(type, seed);
+        const res = await this._call(service || "print", data, true);
         this._state.preview = null;
         return res?.response;
       },
@@ -262,7 +269,8 @@ class TinyPressCard extends HTMLElement {
   }
 
   _press(type) {
-    if (this._config.show_preview) this._preview(type);
+    // Stories can't be previewed (each one is freshly written).
+    if (this._config.show_preview && !PRINTS[type]?.service) this._preview(type);
     else this._print(type);
   }
 
@@ -388,6 +396,7 @@ class TinyPressCard extends HTMLElement {
         ${this._statusHtml()}
         ${kid ? "" : this._chipsHtml("kidProfile", "Kid")}
         ${kid ? "" : this._chipsHtml("mazeDifficulty", "Maze")}
+        ${kid || !buttons.includes("story") ? "" : this._chipsHtml("storyLength", "Story")}
         ${kid || !hasAdult ? "" : this._chipsHtml("adultProfile", "Adult")}
         ${kid || !hasAdult ? "" : this._chipsHtml("sudokuDifficulty", "Sudoku")}
         ${this._state.preview ? this._previewHtml() : `

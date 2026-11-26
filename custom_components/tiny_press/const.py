@@ -48,6 +48,7 @@ SETTING_MAZE_DIFFICULTY: Final = "maze_difficulty"
 SETTING_KID_PROFILE: Final = "kid_profile"
 SETTING_ADULT_PROFILE: Final = "adult_profile"
 SETTING_SUDOKU_DIFFICULTY: Final = "sudoku_difficulty"
+SETTING_STORY_LENGTH: Final = "story_length"
 
 
 class PrintType(StrEnum):
@@ -64,6 +65,7 @@ class PrintType(StrEnum):
     CROSSWORD = "crossword"
     CRYPTOGRAM = "cryptogram"
     PUZZLE_PACK = "puzzle_pack"
+    STORY = "story"
     KID_SUDOKU = "kid_sudoku"
     SPELLING = "spelling"
     SPELLING_SEARCH = "spelling_search"

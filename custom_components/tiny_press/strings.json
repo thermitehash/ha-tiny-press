@@ -175,7 +175,8 @@
         "sudoku": "Sudoku (9x9)",
         "crossword": "Crossword",
         "cryptogram": "Cryptogram",
-        "puzzle_pack": "Puzzle pack (sudoku, crossword and cryptogram)"
+        "puzzle_pack": "Puzzle pack (sudoku, crossword and cryptogram)",
+        "story": "Bedtime story"
       }
     },
     "text_size": {
@@ -200,6 +201,19 @@
         "easy": "Easy",
         "medium": "Medium",
         "hard": "Hard"
+      }
+    },
+    "story_length": {
+      "options": {
+        "short": "Short (250–350 words)",
+        "medium": "Medium (400–550 words)",
+        "long": "Long (600–750 words)"
+      }
+    },
+    "story_mode": {
+      "options": {
+        "standalone": "One story",
+        "serial": "Choose-your-own-adventure (start a new series)"
       }
     }
   },
@@ -309,6 +323,12 @@
       },
       "puzzle_pack": {
         "name": "Puzzle pack"
+      },
+      "bedtime_story": {
+        "name": "Bedtime story"
+      },
+      "next_chapter": {
+        "name": "Next chapter"
       }
     },
     "select": {
@@ -332,6 +352,14 @@
           "easy": "Easy",
           "medium": "Medium",
           "hard": "Hard"
+        }
+      },
+      "story_length": {
+        "name": "Story length",
+        "state": {
+          "short": "Short",
+          "medium": "Medium",
+          "long": "Long"
         }
       }
     }
@@ -387,6 +415,12 @@
     },
     "all_words_learned": {
       "message": "{profile} has learned every word on the spelling list. Add new words (or uncheck some) to print more practice."
+    },
+    "no_story_in_progress": {
+      "message": "{profile} has no story in progress. Start one with Bedtime story in choose-your-own-adventure mode."
+    },
+    "story_preview": {
+      "message": "Stories can't be previewed. Print one with tiny_press.print_story."
     }
   },
   "services": {
@@ -501,6 +535,66 @@
         "print_id": {
           "name": "Puzzle ID",
           "description": "The 4-character ID printed in the footer. Leave empty for the newest puzzle."
+        }
+      }
+    },
+    "print_story": {
+      "name": "Print bedtime story",
+      "description": "Prints a bedtime story from your AI task entity (or a bundled story if there isn't one), written for the kid's reading grade. Serial mode starts a choose-your-own-adventure.",
+      "fields": {
+        "config_entry_id": {
+          "name": "[%key:component::tiny_press::services::print::fields::config_entry_id::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::config_entry_id::description%]"
+        },
+        "profile": {
+          "name": "Kid",
+          "description": "Kid profile name. Empty uses the Kid profile select. The kid's name is never sent to the AI."
+        },
+        "topic": {
+          "name": "Topic",
+          "description": "Optional theme, for example dragons or a trip to the moon."
+        },
+        "length": {
+          "name": "Length",
+          "description": "Short, medium or long. Empty uses the Story length select."
+        },
+        "mode": {
+          "name": "Mode",
+          "description": "One story, or start a choose-your-own-adventure series."
+        },
+        "ignore_limits": {
+          "name": "[%key:component::tiny_press::services::print::fields::ignore_limits::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::ignore_limits::description%]"
+        }
+      }
+    },
+    "continue_story": {
+      "name": "Continue story",
+      "description": "Prints the next chapter of the kid's choose-your-own-adventure.",
+      "fields": {
+        "config_entry_id": {
+          "name": "[%key:component::tiny_press::services::print::fields::config_entry_id::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::config_entry_id::description%]"
+        },
+        "profile": {
+          "name": "Kid",
+          "description": "[%key:component::tiny_press::services::print_story::fields::profile::description%]"
+        },
+        "choice": {
+          "name": "Choice",
+          "description": "A or B, as circled on the last chapter. Empty: the gentler option."
+        },
+        "final": {
+          "name": "Final chapter",
+          "description": "Wrap the story up with a cozy ending."
+        },
+        "length": {
+          "name": "Length",
+          "description": "[%key:component::tiny_press::services::print_story::fields::length::description%]"
+        },
+        "ignore_limits": {
+          "name": "[%key:component::tiny_press::services::print::fields::ignore_limits::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::ignore_limits::description%]"
         }
       }
     }

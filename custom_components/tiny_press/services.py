@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 from typing import Any
 
+from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import (
@@ -24,7 +25,7 @@ from homeassistant.util import dt as dt_util
 import voluptuous as vol
 
 from . import jobs
-from .ai import async_ai_joke
+from .ai import async_ai_joke, async_ai_story
 from .const import (
     ATTR_CONFIG_ENTRY_ID,
     ATTR_DIFFICULTY,
@@ -42,12 +43,14 @@ from .const import (
     PAPER_80MM,
     PAPER_DOTS,
     SETTING_MAZE_DIFFICULTY,
+    SETTING_STORY_LENGTH,
     SETTING_SUDOKU_DIFFICULTY,
     TEXT_SIZES,
     Difficulty,
     PrintType,
 )
 from .coordinator import PrintJob, TinyPressConfigEntry, TinyPressCoordinator
+from .generators.story import pick_offline
 from .generators.weather import WeatherReport, build_report
 from .limits import KID_TYPES
 
@@ -59,6 +62,7 @@ SERVICE_PRINT_ANSWERS = "print_answers"
 ATTR_IGNORE_LIMITS = "ignore_limits"
 ATTR_PRINT_ID = "print_id"
 ATTR_WORDS = "words"
+STORY_LENGTHS = ("short", "medium", "long")
 SERVICE_PRINT_TEXT = "print_text"
 SERVICE_PRINT_IMAGE = "print_image"
 
@@ -113,6 +117,26 @@ PREVIEW_SCHEMA = vol.Schema(
         vol.Optional(ATTR_DIFFICULTY): cv.string,
         vol.Optional(ATTR_SEED): vol.All(vol.Coerce(int), vol.Range(min=0)),
         vol.Optional(ATTR_WORDS): vol.Any(cv.string, [cv.string]),
+    }
+)
+PRINT_STORY_SCHEMA = vol.Schema(
+    {
+        **ENTRY_FIELD,
+        vol.Optional(ATTR_PROFILE): cv.string,
+        vol.Optional("topic"): vol.All(cv.string, vol.Length(max=120)),
+        vol.Optional("length"): vol.In(STORY_LENGTHS),
+        vol.Optional("mode", default="standalone"): vol.In(("standalone", "serial")),
+        vol.Optional(ATTR_IGNORE_LIMITS, default=False): cv.boolean,
+    }
+)
+CONTINUE_STORY_SCHEMA = vol.Schema(
+    {
+        **ENTRY_FIELD,
+        vol.Optional(ATTR_PROFILE): cv.string,
+        vol.Optional("choice"): vol.All(vol.Upper, vol.In(("A", "B"))),
+        vol.Optional("final", default=False): cv.boolean,
+        vol.Optional("length"): vol.In(STORY_LENGTHS),
+        vol.Optional(ATTR_IGNORE_LIMITS, default=False): cv.boolean,
     }
 )
 PRINT_ANSWERS_SCHEMA = vol.Schema(
@@ -264,6 +288,10 @@ async def async_build_job(
                         adult.name,
                         recent,
                     )
+        case PrintType.STORY:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="story_preview"
+            )
         case PrintType.WEATHER:
             return jobs.weather_job(await async_weather_report(hass, coordinator))
         case _:
@@ -373,6 +401,104 @@ def check_limits(
     )
 
 
+STORY_NOTIFICATION = f"{DOMAIN}_story_fallback"
+
+
+def _story_fallback_notice(hass: HomeAssistant, reason: str, serial: bool) -> None:
+    """Explain (in a notification, never on paper) why a bundled story printed."""
+    why = (
+        "No AI task entity is set (Configure → Settings)"
+        if reason == "not_set"
+        else "The AI task entity didn't return a usable story"
+    )
+    extra = (
+        " Choose-your-own-adventure chapters need the AI, so tonight's chapter "
+        "will wait; the story in progress is kept."
+        if serial
+        else ""
+    )
+    persistent_notification.async_create(
+        hass,
+        f"{why}, so Tiny Press printed one of its bundled stories instead.{extra}",
+        title="Tiny Press bedtime story",
+        notification_id=STORY_NOTIFICATION,
+    )
+
+
+async def async_story(
+    hass: HomeAssistant,
+    coordinator: TinyPressCoordinator,
+    *,
+    profile: str | None = None,
+    topic: str | None = None,
+    length: str | None = None,
+    mode: str = "standalone",
+    continuing: bool = False,
+    choice: str | None = None,
+    final: bool = False,
+    ignore_limits: bool = False,
+) -> dict[str, Any]:
+    """Print a bedtime story, start a serial, or continue one."""
+    kid = coordinator.kid_profile(profile)
+    length = length or coordinator.store.get_setting(SETTING_STORY_LENGTH, "medium")
+    limited = not ignore_limits and coordinator.limiter.enabled
+    if limited:
+        check_limits(hass, coordinator, PrintType.STORY, profile)
+    series = coordinator.store.series(kid.id) if continuing else None
+    if continuing and series is None:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="no_story_in_progress",
+            translation_placeholders={"profile": kid.name},
+        )
+    serial = continuing or mode == "serial"
+    story = None
+    reason = "not_set"
+    if coordinator.ai_task_entity:
+        reason = "failed"
+        story = await async_ai_story(
+            hass,
+            coordinator.ai_task_entity,
+            kid,
+            topic=topic or (series or {}).get("topic"),
+            length=length,
+            series=series,
+            choice=choice,
+            final=final,
+            start_serial=serial and not continuing,
+        )
+    if story is None:
+        story = await hass.async_add_executor_job(
+            pick_offline, length, jobs.new_seed(), coordinator.store.recent("story")
+        )
+        coordinator.store.remember("story", story.title)
+        _story_fallback_notice(hass, reason, serial)
+    elif story.chapter:
+        if final or not story.choices:
+            coordinator.store.set_series(kid.id, None)
+        else:
+            history = [
+                *(series or {}).get("history", []),
+                *([choice] if choice else []),
+            ]
+            coordinator.store.set_series(
+                kid.id,
+                {
+                    "title": (series or {}).get("title") or story.title,
+                    "topic": topic or (series or {}).get("topic"),
+                    "summary": story.summary,
+                    "chapter": story.chapter,
+                    "choices": dict(zip("AB", story.choices, strict=True)),
+                    "history": history[-2:],
+                },
+            )
+    response = await coordinator.async_print(jobs.story_job(story, kid, length))
+    if limited:
+        coordinator.limiter.record(response["length_mm"])
+        coordinator.async_update_listeners()
+    return response
+
+
 async def async_print_type(
     hass: HomeAssistant,
     coordinator: TinyPressCoordinator,
@@ -385,6 +511,10 @@ async def async_print_type(
     words: list[str] | str | None = None,
 ) -> dict[str, Any]:
     """Print one type. Shared by the ``print`` action and the buttons."""
+    if kind is PrintType.STORY:
+        return await async_story(
+            hass, coordinator, profile=profile, ignore_limits=ignore_limits
+        )
     limited = kind in KID_TYPES and not ignore_limits and coordinator.limiter.enabled
     if limited:
         check_limits(hass, coordinator, kind, profile)
@@ -518,6 +648,36 @@ def async_setup_services(hass: HomeAssistant) -> None:
             words=call.data.get(ATTR_WORDS),
         )
 
+    async def _ignore(call: ServiceCall, coordinator: TinyPressCoordinator) -> bool:
+        return bool(call.data.get(ATTR_IGNORE_LIMITS)) or (
+            coordinator.limiter.admins_skip and await _is_admin(hass, call)
+        )
+
+    async def handle_print_story(call: ServiceCall) -> ServiceResponse:
+        coordinator = _coordinator(hass, call)
+        return await async_story(
+            hass,
+            coordinator,
+            profile=call.data.get(ATTR_PROFILE),
+            topic=call.data.get("topic"),
+            length=call.data.get("length"),
+            mode=call.data["mode"],
+            ignore_limits=await _ignore(call, coordinator),
+        )
+
+    async def handle_continue_story(call: ServiceCall) -> ServiceResponse:
+        coordinator = _coordinator(hass, call)
+        return await async_story(
+            hass,
+            coordinator,
+            profile=call.data.get(ATTR_PROFILE),
+            length=call.data.get("length"),
+            continuing=True,
+            choice=call.data.get("choice"),
+            final=call.data["final"],
+            ignore_limits=await _ignore(call, coordinator),
+        )
+
     async def handle_print_answers(call: ServiceCall) -> ServiceResponse:
         coordinator = _coordinator(hass, call)
         entry = coordinator.store.find_answer(call.data.get(ATTR_PRINT_ID))
@@ -555,6 +715,8 @@ def async_setup_services(hass: HomeAssistant) -> None:
     for name, handler, schema in (
         (SERVICE_PRINT, handle_print, PRINT_SCHEMA),
         (SERVICE_PRINT_ANSWERS, handle_print_answers, PRINT_ANSWERS_SCHEMA),
+        ("print_story", handle_print_story, PRINT_STORY_SCHEMA),
+        ("continue_story", handle_continue_story, CONTINUE_STORY_SCHEMA),
         (SERVICE_PRINT_TEXT, handle_print_text, PRINT_TEXT_SCHEMA),
         (SERVICE_PRINT_IMAGE, handle_print_image, PRINT_IMAGE_SCHEMA),
     ):

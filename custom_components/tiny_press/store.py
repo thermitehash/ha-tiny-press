@@ -32,6 +32,7 @@ class TinyPressStore:
             "settings": {},
             "recent": {},
             "limits": {},
+            "series": {},
         }
 
     async def async_load(self) -> None:
@@ -103,6 +104,18 @@ class TinyPressStore:
         """Note a bundled joke or fact so it isn't repeated soon."""
         items = [i for i in self.recent(kind) if i != index]
         self.data["recent"][kind] = [index, *items][:RECENT_JOKES]
+        self._save()
+
+    def series(self, profile_id: str) -> dict[str, Any] | None:
+        """Return the serial story in progress for a kid, if any."""
+        return self.data["series"].get(profile_id)
+
+    def set_series(self, profile_id: str, value: dict[str, Any] | None) -> None:
+        """Save (or clear) a kid's serial story."""
+        if value is None:
+            self.data["series"].pop(profile_id, None)
+        else:
+            self.data["series"][profile_id] = value
         self._save()
 
     def get_setting(self, key: str, default: Any = None) -> Any:

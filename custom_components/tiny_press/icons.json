@@ -73,6 +73,12 @@
       },
       "puzzle_pack": {
         "default": "mdi:puzzle-outline"
+      },
+      "bedtime_story": {
+        "default": "mdi:book-open-page-variant-outline"
+      },
+      "next_chapter": {
+        "default": "mdi:book-arrow-right-outline"
       }
     },
     "select": {
@@ -87,6 +93,9 @@
       },
       "sudoku_difficulty": {
         "default": "mdi:speedometer"
+      },
+      "story_length": {
+        "default": "mdi:book-clock-outline"
       }
     }
   },
@@ -105,6 +114,12 @@
     },
     "print_answers": {
       "service": "mdi:check-decagram-outline"
+    },
+    "print_story": {
+      "service": "mdi:book-open-page-variant-outline"
+    },
+    "continue_story": {
+      "service": "mdi:book-arrow-right-outline"
     }
   }
 }
