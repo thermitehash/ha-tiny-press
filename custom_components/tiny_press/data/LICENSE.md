@@ -92,3 +92,16 @@ Two stories per length (short, medium, long), written for Tiny Press (MIT).
 They print when no AI task entity is set or the AI fails. Planned additions:
 gentle public-domain classics (Thornton W. Burgess, Beatrix Potter, Aesop)
 from Project Gutenberg, each credited.
+
+## `observances.json`: holidays and themes
+
+Banners, ASCII art, word lists, crossword clues and themed jokes were written
+for Tiny Press. Descriptions are short, neutral and factual.
+
+Moving dates (lunar and lunisolar holidays, 2026–2035) were generated with
+`script/build_observances.py` from the calendars in the
+[python-holidays](https://github.com/vacanza/holidays) library (MIT license).
+Islamic dates follow its calculated calendar and can differ by a day where the
+moon is sighted locally; Vesak follows Indonesia's date. Fixed days, Easter
+(Western and Orthodox), "nth weekday" days and the solstices and equinoxes
+(Meeus, *Astronomical Algorithms*) are computed at runtime.

@@ -53,3 +53,36 @@ def pick(kind: str, seed: int, recent: list[int] | None = None) -> Joke:
             JOKE, item["setup"], item["punchline"], "offline", index, item.get("credit")
         )
     return Joke(FACT, item["fact"], None, "offline", index, item.get("source"))
+
+
+def pick_themed(
+    kind: str,
+    seed: int,
+    jokes: tuple[dict[str, str], ...] = (),
+    fact_sources: tuple[str, ...] = (),
+    recent: list[int] | None = None,
+) -> Joke | None:
+    """Pick a joke from a theme's own jokes, or a fact from its sources (or None)."""
+    rng = random.Random(seed)
+    if kind == JOKE:
+        if not jokes:
+            return None
+        item = rng.choice(list(jokes))
+        return Joke(
+            JOKE, item["setup"], item["punchline"], "offline", None, "Tiny Press"
+        )
+    if not fact_sources:
+        return None
+    items: list[dict[str, str]] = load_json("facts.json")
+    matches = [
+        i
+        for i, fact in enumerate(items)
+        if any(src in fact.get("source", "") for src in fact_sources)
+    ]
+    if not matches:
+        return None
+    avoid = set(recent or [])
+    index = rng.choice([i for i in matches if i not in avoid] or matches)
+    return Joke(
+        FACT, items[index]["fact"], None, "offline", index, items[index].get("source")
+    )

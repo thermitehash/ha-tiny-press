@@ -11,12 +11,12 @@
 | — | 0.7.0 ✅ | Sensor history prints (graph, table, timeline) |
 | 6 | 0.8.0 ✅ | Assist voice phrases (blueprint) and print tools for AI agents |
 | — | 0.9.0 ✅ | RSS/Atom feed prints and live quote of the day from Wikiquote |
-| — | 0.10.0 | Holiday-aware morning slip (day of only), seasonal and holiday puzzle themes, quote source setting (planned, below) |
+| — | 0.10.0 ✅ | Holiday-aware morning slip (day of only), seasonal and holiday puzzle themes, quote from a feed |
 | 7 | — | Skylight (planning only, below) |
 | later | — | Selfie prints and AI-generated kid-safe pictures (planning only, below) |
 | later | — | Recipe prints from Tandoor (idea, below) |
 
-## v0.10.0: holidays and themes (planned)
+## v0.10.0: holidays and themes (built)
 
 Design decisions (asked one at a time, answered 2026-11-26):
 1. **On by default:** seasons and solstices, fun science days (Pi Day, Earth Day, World Ocean Day, Space Day and similar), public holidays from a Holidays calendar if one is added, and a first day of school you set.
@@ -55,7 +55,7 @@ Design decisions (asked one at a time, answered 2026-11-26):
 - **Seasonal themes:** word lists for autumn, winter, spring and summer that follow the hemisphere, using Home Assistant's latitude.
 - **Holiday themes:** word-search words, themed crossword clues and a themed joke or fact pool, only for observances the household ticked.
 - **A Theme select:** Auto (season or today's holiday), Off, or a fixed theme. Kid interests still mix in.
-- **Themed mazes:** borders or start/finish icons, such as a lantern, a snowflake or a leaf.
+- **Themed mazes:** borders or start/finish icons, such as a lantern, a snowflake or a leaf. Built as the theme's ASCII art and name above the maze.
 
 ### Quote source setting
 - Wikiquote (default), a feed from the Feeds list (its newest item becomes the quote, credited with the feed's name), or bundled only. This would extend v0.9.1's Online/Local content source for the slip's bottom.

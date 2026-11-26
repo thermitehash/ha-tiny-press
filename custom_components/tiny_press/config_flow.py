@@ -15,6 +15,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import (
     BooleanSelector,
+    DateSelector,
     EntitySelector,
     EntitySelectorConfig,
     NumberSelector,
@@ -38,7 +39,11 @@ from .const import (
     CONF_AI_TASK,
     CONF_BOTTOM_SOURCE,
     CONF_CALENDARS,
+    CONF_CUSTOM_DAYS,
+    CONF_EXCLUDED_DAYS,
     CONF_FEEDS,
+    CONF_HOLIDAY_CALENDARS,
+    CONF_HOLIDAY_GROUPS,
     CONF_MAX_LENGTH_MM,
     CONF_MORNING_BOTTOM,
     CONF_MORNING_FEED,
@@ -48,6 +53,10 @@ from .const import (
     CONF_QUIET_END,
     CONF_QUIET_MODE,
     CONF_QUIET_START,
+    CONF_QUOTE_FEED,
+    CONF_SCHOOL_DAY,
+    CONF_SECULAR_DAYS,
+    CONF_THEME,
     CONF_TODOS,
     CONF_WEATHER,
     DEFAULT_MAX_LENGTH_MM,
@@ -72,6 +81,7 @@ from .fetch import (
     async_fetch_feed,
     feeds_from_options,
 )
+from .generators import observances
 from .generators.feeds import DEFAULT_ITEMS, MAX_ITEMS
 from .generators.morning import BOTTOM_OPTIONS
 from .jobs import test_page_job
@@ -294,6 +304,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
         """Start with nothing selected."""
         self._editing: Profile | None = None
         self._feed_id: str | None = None
+        self._holiday_input: dict[str, Any] = {}
 
     @property
     def _profiles(self) -> list[Profile]:
@@ -324,6 +335,9 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
         menu.append("add_feed")
         if self._feeds:
             menu += ["edit_feed", "remove_feed"]
+        menu += ["holidays", "add_day"]
+        if self.config_entry.options.get(CONF_CUSTOM_DAYS):
+            menu.append("remove_day")
         return self.async_show_menu(step_id="init", menu_options=menu)
 
     async def async_step_settings(
@@ -342,6 +356,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                     CONF_TODOS: list(user_input.get(CONF_TODOS) or []),
                     CONF_MORNING_BOTTOM: user_input.get(CONF_MORNING_BOTTOM, "joke"),
                     CONF_BOTTOM_SOURCE: user_input.get(CONF_BOTTOM_SOURCE, "online"),
+                    CONF_QUOTE_FEED: user_input.get(CONF_QUOTE_FEED) or None,
                     CONF_MORNING_FEED: user_input.get(CONF_MORNING_FEED) or None,
                     CONF_QUIET_START: user_input.get(CONF_QUIET_START) or None,
                     CONF_QUIET_END: user_input.get(CONF_QUIET_END) or None,
@@ -416,6 +431,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                         mode=SelectSelectorMode.LIST,
                     )
                 ),
+                **self._quote_feed_field(options),
                 vol.Optional(
                     CONF_QUIET_START,
                     description={
@@ -663,6 +679,17 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
             ): self._feed_selector()
         }
 
+    def _quote_feed_field(self, options: Any) -> dict[Any, Any]:
+        """Offer a feed for quotes (used when the source is "feed")."""
+        if not self._feeds:
+            return {}
+        return {
+            vol.Optional(
+                CONF_QUOTE_FEED,
+                description={"suggested_value": options.get(CONF_QUOTE_FEED)},
+            ): self._feed_selector()
+        }
+
     @staticmethod
     def _bottom_default(options: Any) -> str:
         bottom = options.get(CONF_MORNING_BOTTOM, "joke")
@@ -821,3 +848,189 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                 {vol.Required("feeds"): self._feed_selector(multiple=True)}
             ),
         )
+
+    async def async_step_holidays(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Theme, secular days, public holiday calendars and holiday groups."""
+        options = self.config_entry.options
+        if user_input is not None:
+            self._holiday_input = {
+                CONF_THEME: user_input.get(CONF_THEME, "auto"),
+                CONF_SECULAR_DAYS: list(user_input.get(CONF_SECULAR_DAYS) or []),
+                CONF_HOLIDAY_CALENDARS: list(
+                    user_input.get(CONF_HOLIDAY_CALENDARS) or []
+                ),
+                CONF_SCHOOL_DAY: user_input.get(CONF_SCHOOL_DAY) or None,
+                CONF_HOLIDAY_GROUPS: list(user_input.get(CONF_HOLIDAY_GROUPS) or []),
+            }
+            if self._holiday_input[CONF_HOLIDAY_GROUPS]:
+                return await self.async_step_holiday_days()
+            return self._save(**self._holiday_input)
+        groups = observances.groups()
+        secular = [g["id"] for g in groups if g.get("secular")]
+        cultural = [g["id"] for g in groups if not g.get("secular")]
+        theme_options = [
+            SelectOptionDict(
+                value="auto", label="Auto: today's holiday, else the season"
+            ),
+            SelectOptionDict(value="off", label="Off"),
+        ] + [
+            SelectOptionDict(value=key, label=key.replace("_", " ").title())
+            for key in observances.fixed_themes()
+        ]
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_THEME, default=options.get(CONF_THEME, "auto")
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=theme_options, mode=SelectSelectorMode.DROPDOWN
+                    )
+                ),
+                vol.Optional(
+                    CONF_SECULAR_DAYS,
+                    default=list(options.get(CONF_SECULAR_DAYS, secular)),
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=secular,
+                        multiple=True,
+                        translation_key="holiday_group",
+                        mode=SelectSelectorMode.LIST,
+                    )
+                ),
+                vol.Optional(
+                    CONF_HOLIDAY_CALENDARS,
+                    description={
+                        "suggested_value": options.get(CONF_HOLIDAY_CALENDARS)
+                    },
+                ): EntitySelector(
+                    EntitySelectorConfig(domain="calendar", multiple=True)
+                ),
+                vol.Optional(
+                    CONF_SCHOOL_DAY,
+                    description={"suggested_value": options.get(CONF_SCHOOL_DAY)},
+                ): DateSelector(),
+                vol.Optional(
+                    CONF_HOLIDAY_GROUPS,
+                    default=list(options.get(CONF_HOLIDAY_GROUPS, [])),
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=cultural,
+                        multiple=True,
+                        translation_key="holiday_group",
+                        mode=SelectSelectorMode.LIST,
+                    )
+                ),
+            }
+        )
+        return self.async_show_form(step_id="holidays", data_schema=schema)
+
+    async def async_step_holiday_days(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Untick single days inside the picked groups."""
+        picked = set(self._holiday_input[CONF_HOLIDAY_GROUPS])
+        days = [o for o in observances.all_observances() if o["group"] in picked]
+        in_groups = {o["id"] for o in days}
+        excluded = set(self.config_entry.options.get(CONF_EXCLUDED_DAYS) or [])
+        if user_input is not None:
+            kept = set(user_input.get("days") or [])
+            excluded = (excluded - in_groups) | (in_groups - kept)
+            return self._save(
+                **self._holiday_input, **{CONF_EXCLUDED_DAYS: sorted(excluded)}
+            )
+        names = {g["id"]: g["name"] for g in observances.groups()}
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    "days", default=[o["id"] for o in days if o["id"] not in excluded]
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=[
+                            SelectOptionDict(
+                                value=o["id"],
+                                label=f"{o['name']} ({names.get(o['group'], o['group'])})",
+                            )
+                            for o in days
+                        ],
+                        multiple=True,
+                        mode=SelectSelectorMode.LIST,
+                    )
+                ),
+            }
+        )
+        return self.async_show_form(step_id="holiday_days", data_schema=schema)
+
+    async def async_step_add_day(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Add a family day (every year on the same date)."""
+        errors: dict[str, str] = {}
+        days = list(self.config_entry.options.get(CONF_CUSTOM_DAYS) or [])
+        if user_input is not None:
+            name = user_input[CONF_NAME].strip()
+            if not name:
+                errors[CONF_NAME] = "name_required"
+            else:
+                base = slugify(name) or "day"
+                taken = {d.get("id") for d in days}
+                day_id, n = base, 2
+                while day_id in taken:
+                    day_id, n = f"{base}_{n}", n + 1
+                chosen_art = user_input.get("art") or "celebrate"
+                days.append(
+                    {
+                        "id": day_id,
+                        "name": name,
+                        "date": str(user_input["date"])[5:10],
+                        "banner": (user_input.get("banner") or "").strip()
+                        or f"Today is {name}!",
+                        "art": None if chosen_art == "none" else chosen_art,
+                    }
+                )
+                return self._save(**{CONF_CUSTOM_DAYS: days})
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_NAME): str,
+                vol.Required("date"): DateSelector(),
+                vol.Optional("banner"): str,
+                vol.Required("art", default="celebrate"): SelectSelector(
+                    SelectSelectorConfig(
+                        options=["none", *observances.art_names()],
+                        mode=SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+            }
+        )
+        return self.async_show_form(
+            step_id="add_day", data_schema=schema, errors=errors
+        )
+
+    async def async_step_remove_day(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Remove family days."""
+        days = list(self.config_entry.options.get(CONF_CUSTOM_DAYS) or [])
+        if user_input is not None:
+            gone = set(user_input.get("days") or [])
+            return self._save(
+                **{CONF_CUSTOM_DAYS: [d for d in days if d["id"] not in gone]}
+            )
+        schema = vol.Schema(
+            {
+                vol.Required("days"): SelectSelector(
+                    SelectSelectorConfig(
+                        options=[
+                            SelectOptionDict(
+                                value=d["id"], label=f"{d['name']} ({d['date']})"
+                            )
+                            for d in days
+                        ],
+                        multiple=True,
+                        mode=SelectSelectorMode.LIST,
+                    )
+                )
+            }
+        )
+        return self.async_show_form(step_id="remove_day", data_schema=schema)

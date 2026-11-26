@@ -21,6 +21,7 @@ FILES = (
     "quotes.json",
     "stories.json",
     "vocab.json",
+    "observances.json",
 )
 
 

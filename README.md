@@ -11,7 +11,7 @@ A Home Assistant integration that turns an Epson receipt printer into a househol
 - **Home Assistant:** 2026.11.0 or newer
 - **Nothing prints automatically.** Tiny Press ships no schedules or time-based automations.
 
-> **Status: v0.9.0.** Kid prints (maze, word search, math, kid sudoku, spelling, jokes, facts, kid pack), adult puzzles, bedtime stories, the morning slip, weather, sensor history, a dashboard card with kid mode, and kid-mode limits, Assist voice phrases, AI-agent print tools, feed prints and a live quote of the day. See [docs/releases](docs/releases) for each version and the [roadmap](docs/roadmap.md) for what's next.
+> **Status: v0.10.0.** Kid prints (maze, word search, math, kid sudoku, spelling, jokes, facts, kid pack), adult puzzles, bedtime stories, the morning slip, weather, sensor history, a dashboard card with kid mode, and kid-mode limits, Assist voice phrases, AI-agent print tools, feed prints, a live quote of the day, and holidays and themes. See [docs/releases](docs/releases) for each version and the [roadmap](docs/roadmap.md) for what's next.
 
 <!-- Screenshot placeholders -->
 <!-- ![Device page](docs/images/device.png) -->
@@ -46,7 +46,7 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 | Morning slip to-do lists | none | Optional: unchecked items print as checkboxes |
 | Morning slip headlines | none | A feed whose 3 newest headlines print on the morning slip, above its bottom. Leave empty for none |
 | Bottom of the morning slip | joke | Joke, fun fact, quote of the day, vocabulary word, small sudoku or nothing |
-| Bottom of the slip: content source | Online | **Online** uses live sources where one exists, falling back to the bundled content. Today that's Wikiquote's quote of the day for the Quote bottom, credited. **Local** uses bundled content only, with no internet |
+| Bottom of the slip: content source | Online | **Online** uses live sources where one exists (today: Wikiquote's quote of the day for the Quote bottom, credited), falling back to the bundled content. **A feed** takes the quote from the Quote feed (newest item: summary as the quote, title as the author). **Local** uses bundled content only, with no internet |
 | Auto-print quiet hours | 9 PM–7 AM, skip | No feed auto-prints during these hours. Items that arrive then are skipped, or printed when quiet hours end (up to 3 per feed) |
 | Use AI for jokes and fun facts | off | Off: jokes and facts come from bundled, human-written lists (facts from NOAA, NASA and the National Park Service, with credits). On: the AI is asked first. |
 
@@ -62,6 +62,27 @@ Configure → **Add a feed**: a name (used on the print and by voice), the feed'
 - **QR code on auto slips:** optional.
 - **Printer off:** if a slip can't print, it waits for the next check (up to 3).
 - **Limits:** auto slips never count toward kid-mode limits.
+
+### Holidays and themes
+
+Configure → **Holidays and themes**:
+- **Everyday celebrations** (on by default): seasons and solstices, which follow your hemisphere; fun science days, such as Pi Day, Earth Day and Moon Day; public holidays from the Holidays integration calendars you pick; and the first day of school.
+- **Holiday groups** (off by default, all treated the same way):
+  - East Asian festivals
+  - Jewish, Muslim, Hindu, Sikh, Buddhist and Christian holidays
+  - Persian New Year
+  - Cultural and heritage days
+  - Fun days
+
+  After picking groups, untick any single day you don't want.
+- **Family days** (Configure → **Add a family day**): yearly days with your own banner text and art.
+- **Puzzle theme:** Auto (today's holiday, else the season), Off, or a fixed theme such as Space or Ocean.
+
+On a recognized day, the morning slip prints a small piece of ASCII art and a one-line description under the date. That day only, with no countdowns. Themes also reach:
+- word searches (some words from the theme; kid interests still mix in)
+- crosswords (a few themed answers)
+- mazes (the theme's art and name)
+- jokes and facts, on recognized days that have their own
 
 ### Profiles
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from functools import partial
 import logging
 from pathlib import Path
@@ -38,9 +38,17 @@ from .const import (
     ATTR_TITLE,
     ATTR_TYPE,
     CONF_CALENDARS,
+    CONF_CUSTOM_DAYS,
+    CONF_EXCLUDED_DAYS,
+    CONF_HOLIDAY_CALENDARS,
+    CONF_HOLIDAY_GROUPS,
     CONF_MORNING_BOTTOM,
     CONF_MORNING_FEED,
     CONF_PAPER_WIDTH,
+    CONF_QUOTE_FEED,
+    CONF_SCHOOL_DAY,
+    CONF_SECULAR_DAYS,
+    CONF_THEME,
     CONF_TODOS,
     CONF_WEATHER,
     DOMAIN,
@@ -64,8 +72,9 @@ from .fetch import (
     feeds_from_options,
     find_feed,
 )
-from .generators import history, morning, sudoku as sudoku_gen
+from .generators import history, morning, observances, sudoku as sudoku_gen
 from .generators.feeds import MAX_ITEMS, WIKIQUOTE_CREDIT
+from .generators.jokes import Joke, pick_themed
 from .generators.story import pick_offline
 from .generators.weather import WeatherReport, build_report
 from .limits import KID_TYPES
@@ -238,6 +247,72 @@ def maze_difficulty(coordinator: TinyPressCoordinator, value: str | None) -> Dif
     return normalize_difficulty(value, default)
 
 
+def recognized_days(
+    hass: HomeAssistant,
+    coordinator: TinyPressCoordinator,
+    day: date,
+    public: list[str] | None = None,
+) -> list[observances.Observance]:
+    """Days recognized today, from the Holidays and themes settings."""
+    options = coordinator.config_entry.options
+    return observances.todays(
+        day,
+        to_local=dt_util.as_local,
+        latitude=hass.config.latitude,
+        secular=set(options.get(CONF_SECULAR_DAYS, observances.SECULAR_DEFAULT)),
+        picked_groups=set(options.get(CONF_HOLIDAY_GROUPS) or []),
+        excluded=set(options.get(CONF_EXCLUDED_DAYS) or []),
+        school_day=options.get(CONF_SCHOOL_DAY),
+        custom=list(options.get(CONF_CUSTOM_DAYS) or []),
+        public=public,
+    )
+
+
+def current_theme(
+    hass: HomeAssistant, coordinator: TinyPressCoordinator
+) -> tuple[observances.Theme | None, bool]:
+    """Today's theme and whether it's a recognized day (not just the season).
+
+    Auto: today's recognized day with a theme, else the season. Off: none.
+    Anything else is a fixed theme.
+    """
+    choice = coordinator.config_entry.options.get(CONF_THEME, "auto")
+    if choice == "off":
+        return None, False
+    if choice != "auto":
+        return observances.theme(choice), False
+    today = dt_util.now().date()
+    for found in recognized_days(hass, coordinator, today):
+        if found.theme is not None and found.group != "seasons":
+            return found.theme, True
+    season = observances.season_of(today, dt_util.as_local, hass.config.latitude)
+    return observances.theme(season), False
+
+
+async def async_themed_joke(
+    hass: HomeAssistant,
+    coordinator: TinyPressCoordinator,
+    kind: str,
+    theme: observances.Theme | None,
+    recognized: bool,
+) -> Joke | None:
+    """Pick a recognized day's own joke or fact (None in a plain season).
+
+    Seasons theme puzzles only: their small joke pools would repeat all season.
+    """
+    if theme is None or not recognized or not (theme.jokes or theme.fact_sources):
+        return None
+    seed = jobs.new_seed()
+    return await hass.async_add_executor_job(
+        pick_themed,
+        kind,
+        seed,
+        theme.jokes,
+        theme.fact_sources,
+        coordinator.store.recent(kind),
+    )
+
+
 async def async_build_job(
     hass: HomeAssistant,
     coordinator: TinyPressCoordinator,
@@ -249,20 +324,25 @@ async def async_build_job(
     words: list[str] | str | None = None,
 ) -> PrintJob | Callable[[], PrintJob]:
     """Return the job (or a builder to run in the executor) for one print type."""
+    theme = current_theme(hass, coordinator)
     match kind:
         case PrintType.MAZE:
             level = maze_difficulty(coordinator, difficulty)
-            return partial(jobs.maze_job, level, seed, profile)
+            return partial(jobs.maze_job, level, seed, profile, theme[0])
         case PrintType.WORD_SEARCH:
-            return partial(jobs.word_search_job, coordinator.kid_profile(profile), seed)
+            return partial(
+                jobs.word_search_job, coordinator.kid_profile(profile), seed, theme[0]
+            )
         case PrintType.MATH:
             return partial(jobs.math_job, coordinator.kid_profile(profile), seed)
         case PrintType.JOKE | PrintType.FACT:
             kid = coordinator.kid_profile(profile)
             joke = None
+            if seed is None:
+                joke = await async_themed_joke(hass, coordinator, kind.value, *theme)
             # Bundled human-written lists unless AI jokes are switched on;
             # a seed asks for a repeatable (bundled) pick.
-            if seed is None and coordinator.use_ai_jokes:
+            if joke is None and seed is None and coordinator.use_ai_jokes:
                 joke = await async_ai_joke(
                     hass, coordinator.ai_task_entity, kind.value, kid
                 )
@@ -278,7 +358,7 @@ async def async_build_job(
         case PrintType.KID_PACK:
             kid = coordinator.kid_profile(profile)
             level = maze_difficulty(coordinator, difficulty)
-            return partial(jobs.kid_pack_job, kid, level, seed)
+            return partial(jobs.kid_pack_job, kid, level, seed, theme[0])
         case PrintType.KID_SUDOKU:
             kid = coordinator.kid_profile(profile)
             level = (
@@ -327,7 +407,9 @@ async def async_build_job(
                 case PrintType.SUDOKU:
                     return partial(jobs.sudoku_job, sudoku_level, seed, adult.name)
                 case PrintType.CROSSWORD:
-                    return partial(jobs.crossword_job, level, seed, adult.name)
+                    return partial(
+                        jobs.crossword_job, level, seed, adult.name, theme[0]
+                    )
                 case PrintType.CRYPTOGRAM:
                     return partial(jobs.cryptogram_job, level, seed, adult.name, recent)
                 case _:
@@ -338,6 +420,7 @@ async def async_build_job(
                         seed,
                         adult.name,
                         recent,
+                        theme=theme[0],
                     )
         case PrintType.MORNING_SLIP:
             raise ServiceValidationError(
@@ -607,11 +690,29 @@ async def async_print_feed(
 async def _morning_quote(
     hass: HomeAssistant, coordinator: TinyPressCoordinator
 ) -> morning.Quote:
-    """Wikiquote's quote of the day when the source is online, else bundled."""
-    if bottom_source(coordinator.config_entry.options) == "online":
+    """Get the quote from the bottom's source (Wikiquote or a feed), else bundled."""
+    options = coordinator.config_entry.options
+    source = bottom_source(options)
+    if source == "online":
         live = await async_live_quote(hass, coordinator.store)
         if live is not None:
             return morning.Quote(live[0], live[1], None, WIKIQUOTE_CREDIT)
+    elif source == "feed":
+        chosen = find_feed(
+            feeds_from_options(options), options.get(CONF_QUOTE_FEED) or ""
+        )
+        if chosen is not None and options.get(CONF_QUOTE_FEED):
+            try:
+                parsed = await async_fetch_feed(hass, chosen.url, 1)
+            except FetchError as err:
+                _LOGGER.info("Couldn't read %s for a quote: %s", chosen.name, err)
+            else:
+                if parsed.items:
+                    item = parsed.items[0]
+                    text = item.summary or item.title
+                    author = item.title if item.summary else ""
+                    if text:
+                        return morning.Quote(text, author, None, chosen.name)
     picked = await hass.async_add_executor_job(
         morning.pick_quote, jobs.new_seed(), coordinator.store.recent("quote")
     )
@@ -636,6 +737,44 @@ async def _morning_headlines(
         _LOGGER.info("Couldn't read %s for the morning slip: %s", chosen.name, err)
         return None
     return chosen.name, parsed.items[: morning.MORNING_HEADLINES]
+
+
+async def _async_public_holidays(
+    hass: HomeAssistant, coordinator: TinyPressCoordinator, today: date
+) -> list[str]:
+    """All-day events today on the chosen Holidays calendars."""
+    options = coordinator.config_entry.options
+    if "public" not in options.get(CONF_SECULAR_DAYS, observances.SECULAR_DEFAULT):
+        return []
+    calendars = [
+        c for c in options.get(CONF_HOLIDAY_CALENDARS) or [] if hass.states.get(c)
+    ]
+    if not calendars:
+        return []
+    start, end = morning.day_bounds(today, dt_util.get_default_time_zone())
+    try:
+        response = await hass.services.async_call(
+            "calendar",
+            "get_events",
+            {
+                "entity_id": calendars,
+                "start_date_time": start.isoformat(),
+                "end_date_time": end.isoformat(),
+            },
+            blocking=True,
+            return_response=True,
+        )
+    except HomeAssistantError as err:
+        _LOGGER.info("Couldn't read holiday calendars: %s", err)
+        return []
+    names: dict[str, None] = {}
+    for data in (response or {}).values():
+        for event in (data or {}).get("events") or []:
+            start_value = str(event.get("start") or "")
+            summary = " ".join(str(event.get("summary") or "").split())
+            if summary and "T" not in start_value and start_value == today.isoformat():
+                names.setdefault(summary, None)
+    return list(names)
 
 
 async def async_morning_slip(
@@ -702,6 +841,12 @@ async def async_morning_slip(
             items,
         )
 
+    public = await _async_public_holidays(hass, coordinator, today)
+    found = recognized_days(hass, coordinator, today, public)
+    banner = found[0] if found else None
+    also = tuple(o.name for o in found[1:3])
+    theme = current_theme(hass, coordinator)
+
     bottom = options.get(CONF_MORNING_BOTTOM, "joke")
     if bottom == "feed":  # v0.9.0's headlines bottom: headlines are their own part now
         bottom = "quote"
@@ -714,7 +859,9 @@ async def async_morning_slip(
     if bottom in ("joke", "fact"):
         kind = PrintType.JOKE if bottom == "joke" else PrintType.FACT
         kid = coordinator.kid_profile()
-        if coordinator.use_ai_jokes:
+        if theme[1]:  # a recognized day: its own joke or fact, when it has one
+            joke = await async_themed_joke(hass, coordinator, kind.value, *theme)
+        if joke is None and coordinator.use_ai_jokes:
             joke = await async_ai_joke(
                 hass, coordinator.ai_task_entity, kind.value, kid
             )
@@ -749,6 +896,8 @@ async def async_morning_slip(
         word=word,
         headlines=headlines,
         calendars_set=bool(calendars),
+        banner=banner,
+        also=also,
     )
     response = await coordinator.async_print(jobs.morning_job(slip))
     if kid_mode:

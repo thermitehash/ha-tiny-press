@@ -1,0 +1,2138 @@
+{
+ "source_note": "Banners, art, word lists, clues and jokes were written for Tiny Press. Moving dates come from the 'dates' table (see script/build_observances.py).",
+ "art": {
+  "lantern": [
+   "     |",
+   "   .-+-.",
+   "  /=====\\",
+   " |  ~~~  |",
+   " |  ~~~  |",
+   "  \\=====/",
+   "   '-+-'",
+   "     |"
+  ],
+  "mooncake": [
+   "      .-~~-.",
+   "     /      \\",
+   "     \\      /    ___",
+   "      '-..-'    (:::)",
+   "                 ~~~"
+  ],
+  "harvest_moon": [
+   "       .-~-.",
+   "      (     )",
+   "       '-~-'",
+   "  \\|/ \\|/ \\|/ \\|/",
+   "  ~~~~~~~~~~~~~~~"
+  ],
+  "floating_lanterns": [
+   "   [~]     [~]     [~]",
+   "   | |     | |     | |",
+   " ~~~~~~~~~~~~~~~~~~~~~~",
+   "   ~~~~~~~~~~~~~~~~~~"
+  ],
+  "apple_honey": [
+   "     ,           ___",
+   "   .-'-.        |~~~|",
+   "  /     \\       |   |",
+   "  \\     /       |___|",
+   "   '---'"
+  ],
+  "candle": [
+   "     (",
+   "     )",
+   "    |~|",
+   "    | |",
+   "    | |",
+   "   _|_|_"
+  ],
+  "harvest_hut": [
+   "    /\\/\\/\\/\\/\\",
+   "   /__________\\",
+   "   |  o    o  |",
+   "   |   (__)   |",
+   "   |__________|"
+  ],
+  "dreidel": [
+   "     |",
+   "   .-+-.",
+   "   |   |",
+   "   | ~ |",
+   "    \\ /",
+   "     V"
+  ],
+  "masks": [
+   "   .---.   .---.",
+   "  ( o o ) ( ^ ^ )",
+   "   \\ - /   \\ o /",
+   "    '-'     '-'"
+  ],
+  "flatbread": [
+   " +----------------+",
+   " | . . . . . . .  |",
+   " |  . . . . . . . |",
+   " | . . . . . . .  |",
+   " +----------------+"
+  ],
+  "night_lantern": [
+   "  *      /\\       *",
+   "        /  \\    *",
+   "   *   |~~~~|",
+   "       | ** |    *",
+   "       |~~~~|",
+   "        \\__/"
+  ],
+  "sweets": [
+   "    .----------.",
+   "   /  o   o   o \\",
+   "  |  o   o   o   |",
+   "   \\____________/"
+  ],
+  "shared_meal": [
+   "     ( )  ( )  ( )",
+   "   .-------------.",
+   "   \\  ~  ~  ~  ~ /",
+   "    '-----------'"
+  ],
+  "sun_pot": [
+   "   \\  |  /",
+   "  -- (_) --     ~~~",
+   "   /  |  \\     (   )",
+   "             .-'---'-.",
+   "             '-------'"
+  ],
+  "color_splash": [
+   "  *  .  o  *  .  o",
+   "   o  *  .  o  *",
+   "  .  o  *  .  o  *",
+   "   *  .  o  *  ."
+  ],
+  "fireworks": [
+   "   \\ | /     \\ | /",
+   "  -- * --   -- * --",
+   "   / | \\     / | \\",
+   "       \\ | /",
+   "      -- * --",
+   "       / | \\"
+  ],
+  "diya": [
+   "        (",
+   "       ) )",
+   "      ( (",
+   "   .___)__.",
+   "   \\~~~~~~/",
+   "    `----'"
+  ],
+  "flower_carpet": [
+   "   @ * @ * @ * @",
+   "   * @ * @ * @ *",
+   "   @ * @ * @ * @"
+  ],
+  "wheat": [
+   "   \\|/   \\|/   \\|/",
+   "   \\|/   \\|/   \\|/",
+   "    |     |     |",
+   "    |     |     |",
+   " ~~~~~~~~~~~~~~~~~~~"
+  ],
+  "lamps": [
+   "   (     (     (",
+   "  .).   .).   .).",
+   "  \\_/   \\_/   \\_/"
+  ],
+  "mountain_sun": [
+   "        \\ | /",
+   "      -- (_) --",
+   "    /\\   / | \\  /\\",
+   "   /  \\/\\      /  \\",
+   "  /      \\/\\  /    \\"
+  ],
+  "lotus_lantern": [
+   "     .-.     .-.",
+   "    (   )   (   )",
+   "     '-'     '-'",
+   "   ~~~|~~~~~~~|~~~"
+  ],
+  "tree_leaf": [
+   "      .-~~~-.",
+   "     (  ~ ~  )",
+   "    (  ~ ~ ~  )",
+   "     '-.   .-'",
+   "        | |",
+   "       _|_|_"
+  ],
+  "egg": [
+   "      .-.",
+   "     / ~ \\",
+   "    | ^^^ |",
+   "    | ~~~ |",
+   "     \\___/"
+  ],
+  "fir_tree": [
+   "       *",
+   "      /o\\",
+   "     /o o\\",
+   "    /o o o\\",
+   "   /_______\\",
+   "      | |"
+  ],
+  "fruit_basket": [
+   "    (o) (o) (o)",
+   "   .-----------.",
+   "   \\ | | | | | /",
+   "    '---------'"
+  ],
+  "sunrise": [
+   "        \\  |  /",
+   "     --  .-~-.  --",
+   "  ______(     )______",
+   "  ~~~~~~~~~~~~~~~~~~~"
+  ],
+  "land_river": [
+   "      /\\        /\\",
+   "     /  \\  /\\  /  \\",
+   "    /    \\/  \\/    \\",
+   "   ~~~~~~~~~~~~~~~~~~"
+  ],
+  "marigold": [
+   "     .-@@@-.",
+   "    @@ @@@ @@",
+   "     '-@@@-'",
+   "        |",
+   "       \\|/"
+  ],
+  "heart": [
+   "   .--.  .--.",
+   "  (    \\/    )",
+   "   \\        /",
+   "    \\      /",
+   "     '.  .'",
+   "       \\/"
+  ],
+  "pumpkin": [
+   "        |",
+   "    .--'-'--.",
+   "   /  ^   ^  \\",
+   "  |     ^     |",
+   "   \\  \\___/  /",
+   "    '-------'"
+  ],
+  "confetti": [
+   "   *  .  '  *  .  '",
+   "  .  '  *  .  '  *",
+   "     \\  \\ | /  /",
+   "      \\  \\|/  /"
+  ],
+  "celebrate": [
+   "   \\  *  /   .   *",
+   "    \\ | /  *    .",
+   "  --- * ---   .",
+   "    / | \\   *"
+  ],
+  "cake": [
+   "     i  i  i",
+   "    |~~|~~|~~|",
+   "   .----------.",
+   "   |~~~~~~~~~~|",
+   "   '----------'"
+  ],
+  "star": [
+   "       .",
+   "      /:\\",
+   " '----   ----'",
+   "   '.     .'",
+   "   /  .'.  \\",
+   "  /.'     '.\\"
+  ],
+  "apple": [
+   "      ,(",
+   "    .-'-.",
+   "   /     \\",
+   "   \\     /",
+   "    '-.-'"
+  ],
+  "pi": [
+   "   ____________",
+   "  '--.    .--'",
+   "     |    |",
+   "     |    |",
+   "     /    \\___"
+  ],
+  "globe": [
+   "      .-~~~-.",
+   "    .'  ~  ~ '.",
+   "   (  ~~   ~   )",
+   "    '.  ~ ~~ .'",
+   "      '-~~~-'"
+  ],
+  "wave": [
+   "      .-~~-.",
+   "    .'      '.  .-~",
+   "  ~~           ~",
+   "  ~~~~~~~~~~~~~~~~~"
+  ],
+  "rocket": [
+   "       /\\",
+   "      |  |",
+   "      |()|",
+   "     /|  |\\",
+   "    /_|__|_\\",
+   "      /||\\"
+  ],
+  "drop": [
+   "       .",
+   "      / \\",
+   "     /   \\",
+   "    |     |",
+   "     \\___/"
+  ],
+  "bee": [
+   "     __     __",
+   "    (  \\ .-/  )",
+   "     \\ (o o) /",
+   "      |=====|",
+   "       \\___/"
+  ],
+  "moon": [
+   "       .-~~-.",
+   "      ( o    )",
+   "     (    o   )",
+   "      ( o  o )",
+   "       '-~~-'"
+  ],
+  "paw": [
+   "     o   o",
+   "   o       o",
+   "      .-.",
+   "     (   )",
+   "      '-'"
+  ],
+  "atom": [
+   "     .--.--.",
+   "    ( ( * ) )",
+   "     '--'--'"
+  ],
+  "asteroid": [
+   "          .-~-.",
+   "   * *   ( o  o)",
+   "  * * *   '-~-'"
+  ],
+  "flower": [
+   "      _ _",
+   "    _(_)_(_)",
+   "   (_)(@)(_)",
+   "     (_)(_)",
+   "       |",
+   "      \\|/"
+  ],
+  "sun": [
+   "     \\   |   /",
+   "      .-~~~-.",
+   "  -- (       ) --",
+   "      '-~~~-'",
+   "     /   |   \\"
+  ],
+  "leaf": [
+   "        .-.",
+   "      .'   '.",
+   "     /  \\ |  \\",
+   "     \\   \\|  /",
+   "      '.  | .'",
+   "        '-|'"
+  ],
+  "snowflake": [
+   "     \\  |  /",
+   "   -- \\ | / --",
+   "  ----- * -----",
+   "   -- / | \\ --",
+   "     /  |  \\"
+  ]
+ },
+ "groups": [
+  {
+   "id": "seasons",
+   "name": "Seasons and solstices",
+   "secular": true
+  },
+  {
+   "id": "science",
+   "name": "Fun science days",
+   "secular": true
+  },
+  {
+   "id": "public",
+   "name": "Public holidays (from a Holidays calendar)",
+   "secular": true
+  },
+  {
+   "id": "school",
+   "name": "First day of school",
+   "secular": true
+  },
+  {
+   "id": "east_asian",
+   "name": "East Asian festivals"
+  },
+  {
+   "id": "jewish",
+   "name": "Jewish holidays"
+  },
+  {
+   "id": "muslim",
+   "name": "Muslim holidays"
+  },
+  {
+   "id": "hindu",
+   "name": "Hindu festivals"
+  },
+  {
+   "id": "sikh",
+   "name": "Sikh holidays"
+  },
+  {
+   "id": "buddhist",
+   "name": "Buddhist holidays"
+  },
+  {
+   "id": "christian",
+   "name": "Christian holidays"
+  },
+  {
+   "id": "persian",
+   "name": "Persian New Year"
+  },
+  {
+   "id": "heritage",
+   "name": "Cultural and heritage days"
+  },
+  {
+   "id": "fun",
+   "name": "Fun days"
+  }
+ ],
+ "observances": [
+  {
+   "id": "pi_day",
+   "group": "science",
+   "name": "Pi Day",
+   "banner": "Pi Day: 3.14, the number that links a circle's width to the distance around it.",
+   "art": "pi",
+   "when": {
+    "fixed": "03-14"
+   },
+   "words": [
+    "CIRCLE",
+    "NUMBER",
+    "RADIUS",
+    "DIGITS",
+    "MATH",
+    "ROUND",
+    "PIE",
+    "DIAMETER"
+   ],
+   "clues": {
+    "RADIUS": "Center-to-edge distance",
+    "CIRCLE": "Shape whose area uses pi",
+    "DIGIT": "3, 1 or 4, in pi's start",
+    "ROUND": "Like a wheel"
+   },
+   "jokes": [
+    {
+     "setup": "Why should you never talk to pi?",
+     "punchline": "It goes on and on forever!"
+    },
+    {
+     "setup": "What do you get when you cut a jack-o'-lantern by its diameter?",
+     "punchline": "Pumpkin pi!"
+    }
+   ]
+  },
+  {
+   "id": "women_in_science",
+   "group": "science",
+   "name": "Day of Women and Girls in Science",
+   "banner": "International Day of Women and Girls in Science celebrates women's work in science and encourages girls to explore it.",
+   "art": "atom",
+   "when": {
+    "fixed": "02-11"
+   },
+   "words": [
+    "SCIENCE",
+    "EXPERIMENT",
+    "INVENTOR",
+    "MICROSCOPE",
+    "DISCOVER",
+    "LAB",
+    "TEST",
+    "IDEA"
+   ],
+   "clues": {
+    "LAB": "Place for experiments",
+    "IDEA": "Light bulb moment",
+    "TEST": "Try it out",
+    "DISCOVER": "Find for the first time"
+   }
+  },
+  {
+   "id": "wildlife_day",
+   "group": "science",
+   "name": "World Wildlife Day",
+   "banner": "World Wildlife Day celebrates the animals and plants that share our planet.",
+   "art": "paw",
+   "when": {
+    "fixed": "03-03"
+   },
+   "words": [
+    "WILDLIFE",
+    "HABITAT",
+    "FOREST",
+    "JUNGLE",
+    "TIGER",
+    "ELEPHANT",
+    "NEST",
+    "BURROW"
+   ],
+   "clues": {
+    "NEST": "Bird's home",
+    "HABITAT": "Where an animal lives",
+    "BURROW": "Rabbit's tunnel",
+    "TIGER": "Striped big cat"
+   },
+   "fact_sources": [
+    "National Park Service"
+   ]
+  },
+  {
+   "id": "water_day",
+   "group": "science",
+   "name": "World Water Day",
+   "banner": "World Water Day is about clean, fresh water for everyone.",
+   "art": "drop",
+   "when": {
+    "fixed": "03-22"
+   },
+   "words": [
+    "WATER",
+    "RIVER",
+    "RAIN",
+    "CLOUD",
+    "LAKE",
+    "DROP",
+    "SPLASH",
+    "STREAM"
+   ],
+   "clues": {
+    "RAIN": "Water from clouds",
+    "LAKE": "Body of fresh water",
+    "RIVER": "It flows to the sea",
+    "DROP": "Tiny bit of water"
+   },
+   "fact_sources": [
+    "NOAA"
+   ]
+  },
+  {
+   "id": "earth_day",
+   "group": "science",
+   "name": "Earth Day",
+   "banner": "Earth Day is a day to care for our planet's air, land and water.",
+   "art": "globe",
+   "when": {
+    "fixed": "04-22"
+   },
+   "words": [
+    "PLANET",
+    "RECYCLE",
+    "NATURE",
+    "TREE",
+    "OCEAN",
+    "GARDEN",
+    "SOIL",
+    "EARTH"
+   ],
+   "clues": {
+    "RECYCLE": "Give a can a second life",
+    "SOIL": "Garden dirt",
+    "PLANET": "Earth, for one",
+    "TREE": "Oak or maple"
+   },
+   "jokes": [
+    {
+     "setup": "What did the tree say on Earth Day?",
+     "punchline": "Leaf the planet better than you found it!"
+    },
+    {
+     "setup": "Why did the student plant a light bulb?",
+     "punchline": "To grow a power plant!"
+    }
+   ],
+   "fact_sources": [
+    "NOAA",
+    "NASA"
+   ]
+  },
+  {
+   "id": "arbor_day",
+   "group": "science",
+   "name": "Arbor Day",
+   "banner": "Arbor Day is a day for planting trees and caring for them.",
+   "art": "tree_leaf",
+   "when": {
+    "nth": [
+     4,
+     4,
+     -1
+    ]
+   },
+   "words": [
+    "TREE",
+    "ACORN",
+    "BRANCH",
+    "LEAF",
+    "ROOTS",
+    "SHADE",
+    "FOREST",
+    "SEED"
+   ],
+   "clues": {
+    "ACORN": "Oak's beginning",
+    "ROOTS": "Tree parts underground",
+    "SHADE": "Cool spot under a tree",
+    "SEED": "Plant starter"
+   }
+  },
+  {
+   "id": "space_day",
+   "group": "science",
+   "name": "Space Day",
+   "banner": "Space Day celebrates space exploration and the people who make it happen.",
+   "art": "rocket",
+   "when": {
+    "nth": [
+     5,
+     4,
+     1
+    ]
+   },
+   "words": [
+    "ROCKET",
+    "PLANET",
+    "COMET",
+    "ORBIT",
+    "ASTRONAUT",
+    "GALAXY",
+    "STAR",
+    "MOON"
+   ],
+   "clues": {
+    "ORBIT": "Path around a planet",
+    "COMET": "Icy space traveler with a tail",
+    "STAR": "The Sun, for one",
+    "MOON": "Earth's companion"
+   },
+   "jokes": [
+    {
+     "setup": "How do you throw a party in space?",
+     "punchline": "You planet!"
+    },
+    {
+     "setup": "Why did the sun go to school?",
+     "punchline": "To get brighter!"
+    }
+   ],
+   "fact_sources": [
+    "NASA"
+   ]
+  },
+  {
+   "id": "bee_day",
+   "group": "science",
+   "name": "World Bee Day",
+   "banner": "World Bee Day celebrates bees and the flowers and food they help grow.",
+   "art": "bee",
+   "when": {
+    "fixed": "05-20"
+   },
+   "words": [
+    "BEE",
+    "HONEY",
+    "FLOWER",
+    "POLLEN",
+    "HIVE",
+    "BUZZ",
+    "GARDEN",
+    "NECTAR"
+   ],
+   "clues": {
+    "HIVE": "Bee's home",
+    "POLLEN": "Yellow flower dust",
+    "HONEY": "Sweet bee treat",
+    "BUZZ": "Bee's sound"
+   },
+   "jokes": [
+    {
+     "setup": "What do bees chew?",
+     "punchline": "Bumble gum!"
+    },
+    {
+     "setup": "Why do bees have sticky hair?",
+     "punchline": "They use honeycombs!"
+    }
+   ]
+  },
+  {
+   "id": "ocean_day",
+   "group": "science",
+   "name": "World Oceans Day",
+   "banner": "World Oceans Day celebrates the ocean, which covers most of our planet.",
+   "art": "wave",
+   "when": {
+    "fixed": "06-08"
+   },
+   "words": [
+    "OCEAN",
+    "WHALE",
+    "CORAL",
+    "WAVE",
+    "SHELL",
+    "TIDE",
+    "FISH",
+    "REEF"
+   ],
+   "clues": {
+    "TIDE": "Ocean's daily rise and fall",
+    "CORAL": "Reef builder",
+    "WHALE": "Huge sea mammal",
+    "SHELL": "Beach find"
+   },
+   "jokes": [
+    {
+     "setup": "What did the ocean say to the beach?",
+     "punchline": "Nothing, it just waved!"
+    },
+    {
+     "setup": "Why are fish so smart?",
+     "punchline": "They live in schools!"
+    }
+   ],
+   "fact_sources": [
+    "NOAA"
+   ]
+  },
+  {
+   "id": "asteroid_day",
+   "group": "science",
+   "name": "Asteroid Day",
+   "banner": "International Asteroid Day is about learning what asteroids are and how scientists watch them.",
+   "art": "asteroid",
+   "when": {
+    "fixed": "06-30"
+   },
+   "words": [
+    "ASTEROID",
+    "CRATER",
+    "ROCK",
+    "ORBIT",
+    "METEOR",
+    "SPACE",
+    "COMET",
+    "TELESCOPE"
+   ],
+   "clues": {
+    "CRATER": "Hole left by an impact",
+    "METEOR": "Shooting star",
+    "ROCK": "Asteroid, basically",
+    "ORBIT": "Path around the Sun"
+   },
+   "fact_sources": [
+    "NASA"
+   ]
+  },
+  {
+   "id": "moon_day",
+   "group": "science",
+   "name": "Moon Day",
+   "banner": "On July 20, 1969, Apollo 11 astronauts became the first people to walk on the Moon.",
+   "art": "moon",
+   "when": {
+    "fixed": "07-20"
+   },
+   "words": [
+    "MOON",
+    "CRATER",
+    "ROCKET",
+    "ASTRONAUT",
+    "FOOTPRINT",
+    "LUNAR",
+    "ORBIT",
+    "LANDING"
+   ],
+   "clues": {
+    "LUNAR": "Of the Moon",
+    "CRATER": "Moon dent",
+    "ORBIT": "Circle around",
+    "ROCKET": "Launch vehicle"
+   },
+   "jokes": [
+    {
+     "setup": "How does the Moon cut its hair?",
+     "punchline": "Eclipse it!"
+    },
+    {
+     "setup": "Why did the cow go to space?",
+     "punchline": "To see the moooon!"
+    }
+   ],
+   "fact_sources": [
+    "NASA"
+   ]
+  },
+  {
+   "id": "animal_day",
+   "group": "science",
+   "name": "World Animal Day",
+   "banner": "World Animal Day celebrates animals and how we care for them.",
+   "art": "paw",
+   "when": {
+    "fixed": "10-04"
+   },
+   "words": [
+    "ANIMAL",
+    "PUPPY",
+    "KITTEN",
+    "PONY",
+    "RABBIT",
+    "TURTLE",
+    "PARROT",
+    "HAMSTER"
+   ],
+   "clues": {
+    "PUPPY": "Young dog",
+    "KITTEN": "Young cat",
+    "PONY": "Small horse",
+    "TURTLE": "Shelled reptile"
+   }
+  },
+  {
+   "id": "valentines",
+   "group": "fun",
+   "name": "Valentine's Day",
+   "banner": "Valentine's Day is a day to share kind notes and treats with friends and family.",
+   "art": "heart",
+   "when": {
+    "fixed": "02-14"
+   },
+   "words": [
+    "HEART",
+    "CARD",
+    "FRIEND",
+    "HUG",
+    "KIND",
+    "ROSE",
+    "CANDY",
+    "NOTE"
+   ],
+   "clues": {
+    "HUG": "Warm squeeze",
+    "ROSE": "Red flower",
+    "CARD": "It may say 'Be mine'",
+    "KIND": "Nice and caring"
+   },
+   "jokes": [
+    {
+     "setup": "What did the stamp say to the envelope?",
+     "punchline": "I'm stuck on you!"
+    },
+    {
+     "setup": "What did one pickle say to the other?",
+     "punchline": "You mean a great dill to me!"
+    }
+   ]
+  },
+  {
+   "id": "halloween",
+   "group": "fun",
+   "name": "Halloween",
+   "banner": "Halloween means costumes, carved pumpkins and trick-or-treating.",
+   "art": "pumpkin",
+   "when": {
+    "fixed": "10-31"
+   },
+   "words": [
+    "PUMPKIN",
+    "COSTUME",
+    "CANDY",
+    "MASK",
+    "BAT",
+    "SPIDER",
+    "MOON",
+    "LANTERN"
+   ],
+   "clues": {
+    "BAT": "Night flyer",
+    "MASK": "Costume face cover",
+    "CANDY": "Trick-or-treat haul",
+    "SPIDER": "Web spinner"
+   },
+   "jokes": [
+    {
+     "setup": "Why didn't the skeleton go to the party?",
+     "punchline": "He had no body to go with!"
+    },
+    {
+     "setup": "What room does a ghost not need?",
+     "punchline": "A living room!"
+    }
+   ]
+  },
+  {
+   "id": "new_years_eve",
+   "group": "fun",
+   "name": "New Year's Eve",
+   "banner": "New Year's Eve is the last day of the year, often celebrated with a countdown at midnight.",
+   "art": "confetti",
+   "when": {
+    "fixed": "12-31"
+   },
+   "words": [
+    "MIDNIGHT",
+    "CONFETTI",
+    "COUNTDOWN",
+    "PARTY",
+    "CLOCK",
+    "CHEER",
+    "YEAR",
+    "WISH"
+   ],
+   "clues": {
+    "CLOCK": "It strikes twelve",
+    "WISH": "Hope for the year",
+    "YEAR": "Twelve months",
+    "CHEER": "Hooray!"
+   },
+   "jokes": [
+    {
+     "setup": "What do you call a dog on New Year's Eve?",
+     "punchline": "A party pooch!"
+    },
+    {
+     "setup": "What did the calendar say on New Year's Eve?",
+     "punchline": "My days are numbered!"
+    }
+   ]
+  },
+  {
+   "id": "juneteenth",
+   "group": "heritage",
+   "name": "Juneteenth",
+   "banner": "Juneteenth marks June 19, 1865, when news that enslaved people were free reached Galveston, Texas.",
+   "art": "sunrise",
+   "when": {
+    "fixed": "06-19"
+   },
+   "words": [
+    "FREEDOM",
+    "HISTORY",
+    "FAMILY",
+    "MUSIC",
+    "PARADE",
+    "PICNIC",
+    "COMMUNITY",
+    "CELEBRATE"
+   ],
+   "clues": {
+    "PARADE": "Street procession",
+    "PICNIC": "Meal in the park",
+    "HISTORY": "Story of the past",
+    "MUSIC": "Songs and rhythm"
+   }
+  },
+  {
+   "id": "indigenous_peoples",
+   "group": "heritage",
+   "name": "Indigenous Peoples' Day",
+   "banner": "Indigenous Peoples' Day honors the histories and cultures of Native peoples.",
+   "art": "land_river",
+   "when": {
+    "nth": [
+     10,
+     0,
+     2
+    ]
+   },
+   "words": [
+    "CULTURE",
+    "HISTORY",
+    "LANGUAGE",
+    "STORY",
+    "RIVER",
+    "LAND",
+    "COMMUNITY",
+    "HERITAGE"
+   ],
+   "clues": {
+    "STORY": "Tale to pass on",
+    "RIVER": "It flows to the sea",
+    "LAND": "Ground we live on",
+    "HERITAGE": "What we inherit"
+   }
+  },
+  {
+   "id": "dia_de_los_muertos",
+   "group": "heritage",
+   "name": "Día de los Muertos",
+   "banner": "Día de los Muertos is a Mexican tradition of remembering loved ones with marigolds, food and music.",
+   "art": "marigold",
+   "when": {
+    "fixed": [
+     "11-01",
+     "11-02"
+    ]
+   },
+   "words": [
+    "MARIGOLD",
+    "CANDLE",
+    "FAMILY",
+    "MUSIC",
+    "MEMORY",
+    "FLOWERS",
+    "BREAD",
+    "COLORS"
+   ],
+   "clues": {
+    "MARIGOLD": "Bright orange flower",
+    "BREAD": "Bakery loaf",
+    "MEMORY": "Something remembered",
+    "CANDLE": "Wax light"
+   }
+  },
+  {
+   "id": "kwanzaa",
+   "group": "heritage",
+   "name": "Kwanzaa",
+   "banner": "Kwanzaa is a week-long celebration of African American culture, from December 26 to January 1.",
+   "art": "fruit_basket",
+   "when": {
+    "fixed": "12-26"
+   },
+   "words": [
+    "HARVEST",
+    "FAMILY",
+    "UNITY",
+    "CANDLES",
+    "CORN",
+    "GIFTS",
+    "COMMUNITY",
+    "CULTURE"
+   ],
+   "clues": {
+    "UNITY": "Togetherness",
+    "CORN": "Harvest crop",
+    "HARVEST": "Gathering crops",
+    "GIFTS": "Presents"
+   }
+  },
+  {
+   "id": "lunar_new_year",
+   "group": "east_asian",
+   "name": "Lunar New Year",
+   "banner": "Lunar New Year starts the new year on the lunar calendar, with lanterns, dumplings and red envelopes.",
+   "art": "lantern",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "LANTERN",
+    "DRAGON",
+    "DUMPLING",
+    "FAMILY",
+    "FIREWORK",
+    "PARADE",
+    "ENVELOPE",
+    "DRUM"
+   ],
+   "clues": {
+    "DRAGON": "Parade creature",
+    "LANTERN": "Paper light",
+    "DRUM": "Parade beat-maker",
+    "DUMPLING": "Filled festive bite"
+   }
+  },
+  {
+   "id": "mid_autumn",
+   "group": "east_asian",
+   "name": "Mid-Autumn Festival",
+   "banner": "The Mid-Autumn Festival celebrates the harvest and the full moon, with mooncakes and lanterns.",
+   "art": "mooncake",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "MOON",
+    "MOONCAKE",
+    "LANTERN",
+    "HARVEST",
+    "FAMILY",
+    "TEA",
+    "RABBIT",
+    "AUTUMN"
+   ],
+   "clues": {
+    "MOON": "Full one tonight",
+    "TEA": "Hot drink with mooncakes",
+    "HARVEST": "Autumn gathering",
+    "RABBIT": "Animal some see in the moon"
+   }
+  },
+  {
+   "id": "chuseok",
+   "group": "east_asian",
+   "name": "Chuseok",
+   "banner": "Chuseok is Korea's autumn harvest festival, a time for family, rice cakes and the full moon.",
+   "art": "harvest_moon",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "HARVEST",
+    "FAMILY",
+    "MOON",
+    "RICE",
+    "PERSIMMON",
+    "AUTUMN",
+    "VISIT",
+    "FEAST"
+   ],
+   "clues": {
+    "RICE": "Grain for rice cakes",
+    "FEAST": "Big meal",
+    "MOON": "It's full at Chuseok",
+    "VISIT": "Drop by"
+   }
+  },
+  {
+   "id": "obon",
+   "group": "east_asian",
+   "name": "Obon",
+   "banner": "Obon is a Japanese summer festival for remembering family, with lanterns and dancing.",
+   "art": "floating_lanterns",
+   "when": {
+    "fixed": "08-15"
+   },
+   "words": [
+    "LANTERN",
+    "DANCE",
+    "DRUM",
+    "SUMMER",
+    "FAMILY",
+    "FESTIVAL",
+    "RIVER",
+    "MEMORY"
+   ],
+   "clues": {
+    "DANCE": "Move to music",
+    "DRUM": "Taiko, for one",
+    "SUMMER": "Hot season",
+    "RIVER": "Where lanterns float"
+   }
+  },
+  {
+   "id": "rosh_hashanah",
+   "group": "jewish",
+   "name": "Rosh Hashanah",
+   "banner": "Rosh Hashanah is the Jewish New Year, often marked with apples dipped in honey for a sweet year.",
+   "art": "apple_honey",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "APPLE",
+    "HONEY",
+    "SHOFAR",
+    "NEWYEAR",
+    "ROUND",
+    "BREAD",
+    "SWEET",
+    "FAMILY"
+   ],
+   "clues": {
+    "APPLE": "Fruit dipped in honey",
+    "HONEY": "Sweet bee product",
+    "SWEET": "Like a good new year",
+    "BREAD": "Round loaf"
+   }
+  },
+  {
+   "id": "yom_kippur",
+   "group": "jewish",
+   "name": "Yom Kippur",
+   "banner": "Yom Kippur is a Jewish day of reflection and fasting.",
+   "art": "candle",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "REFLECT",
+    "QUIET",
+    "SORRY",
+    "PROMISE",
+    "FAST",
+    "CALM",
+    "HOPE",
+    "KIND"
+   ],
+   "clues": {
+    "CALM": "Peaceful",
+    "QUIET": "Not loud",
+    "HOPE": "Wish for good things",
+    "KIND": "Caring"
+   }
+  },
+  {
+   "id": "sukkot",
+   "group": "jewish",
+   "name": "Sukkot",
+   "banner": "Sukkot is a Jewish harvest festival when families build and decorate a sukkah, a small hut.",
+   "art": "harvest_hut",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "HARVEST",
+    "HUT",
+    "BRANCHES",
+    "FRUIT",
+    "DECORATE",
+    "AUTUMN",
+    "OUTDOORS",
+    "STARS"
+   ],
+   "clues": {
+    "HUT": "Simple shelter",
+    "FRUIT": "Harvest treat",
+    "STARS": "Seen through the roof",
+    "BRANCHES": "Tree limbs"
+   }
+  },
+  {
+   "id": "hanukkah",
+   "group": "jewish",
+   "name": "Hanukkah",
+   "banner": "Hanukkah is the Jewish festival of lights, celebrated for eight nights with candles, dreidels and latkes.",
+   "art": "dreidel",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "CANDLES",
+    "DREIDEL",
+    "LATKES",
+    "LIGHTS",
+    "EIGHT",
+    "GELT",
+    "NIGHTS",
+    "SPIN"
+   ],
+   "clues": {
+    "SPIN": "What a dreidel does",
+    "EIGHT": "Number of nights",
+    "LATKES": "Potato pancakes",
+    "GELT": "Chocolate coins"
+   }
+  },
+  {
+   "id": "purim",
+   "group": "jewish",
+   "name": "Purim",
+   "banner": "Purim is a joyful Jewish holiday with costumes, treats and gifts of food to friends.",
+   "art": "masks",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "COSTUME",
+    "MASK",
+    "TREAT",
+    "COOKIE",
+    "PARADE",
+    "GIFT",
+    "MUSIC",
+    "JOY"
+   ],
+   "clues": {
+    "MASK": "Costume piece",
+    "COOKIE": "Baked treat",
+    "GIFT": "Present",
+    "JOY": "Happiness"
+   }
+  },
+  {
+   "id": "passover",
+   "group": "jewish",
+   "name": "Passover",
+   "banner": "Passover is a spring Jewish holiday that retells the story of the Exodus at a festive meal called a seder.",
+   "art": "flatbread",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "MATZAH",
+    "SEDER",
+    "SPRING",
+    "FAMILY",
+    "STORY",
+    "MEAL",
+    "SONGS",
+    "FREEDOM"
+   ],
+   "clues": {
+    "SEDER": "Passover meal",
+    "STORY": "Tale retold",
+    "SPRING": "Season of Passover",
+    "MEAL": "Family dinner"
+   }
+  },
+  {
+   "id": "ramadan_start",
+   "group": "muslim",
+   "name": "Start of Ramadan",
+   "banner": "Ramadan begins: a month when many Muslims fast from dawn to sunset and share evening meals.",
+   "art": "night_lantern",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "LANTERN",
+    "MOON",
+    "DATES",
+    "SUNSET",
+    "FAMILY",
+    "SHARE",
+    "STARS",
+    "KIND"
+   ],
+   "clues": {
+    "DATES": "Sweet fruit for breaking a fast",
+    "SUNSET": "End of the day",
+    "SHARE": "Give some to others",
+    "STARS": "Night lights"
+   }
+  },
+  {
+   "id": "eid_al_fitr",
+   "group": "muslim",
+   "name": "Eid al-Fitr",
+   "banner": "Eid al-Fitr is a Muslim holiday at the end of Ramadan, with prayers, new clothes, sweets and family visits.",
+   "art": "sweets",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "SWEETS",
+    "FAMILY",
+    "GIFTS",
+    "FEAST",
+    "VISIT",
+    "CELEBRATE",
+    "CLOTHES",
+    "SHARE"
+   ],
+   "clues": {
+    "FEAST": "Big festive meal",
+    "GIFTS": "Presents",
+    "VISIT": "Drop in",
+    "SWEETS": "Treats"
+   }
+  },
+  {
+   "id": "eid_al_adha",
+   "group": "muslim",
+   "name": "Eid al-Adha",
+   "banner": "Eid al-Adha is a Muslim holiday of prayer, sharing food with others and family gatherings.",
+   "art": "shared_meal",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "SHARE",
+    "FAMILY",
+    "FEAST",
+    "GATHER",
+    "KIND",
+    "GIVE",
+    "VISIT",
+    "MEAL"
+   ],
+   "clues": {
+    "GIVE": "Share with others",
+    "MEAL": "Family dinner",
+    "GATHER": "Come together",
+    "KIND": "Generous"
+   }
+  },
+  {
+   "id": "makar_sankranti",
+   "group": "hindu",
+   "name": "Makar Sankranti and Pongal",
+   "banner": "Makar Sankranti and Pongal are January harvest festivals in India, with kites, sweets and rice cooked until it boils over.",
+   "art": "sun_pot",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "KITE",
+    "HARVEST",
+    "RICE",
+    "SUN",
+    "SUGARCANE",
+    "SWEETS",
+    "POT",
+    "FESTIVAL"
+   ],
+   "clues": {
+    "KITE": "It flies on a string",
+    "RICE": "Pongal grain",
+    "SUN": "Our star",
+    "POT": "Cooking vessel"
+   }
+  },
+  {
+   "id": "holi",
+   "group": "hindu",
+   "name": "Holi",
+   "banner": "Holi is the Hindu festival of colors, welcoming spring with colored powder, music and sweets.",
+   "art": "color_splash",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "COLORS",
+    "POWDER",
+    "SPRING",
+    "MUSIC",
+    "SPLASH",
+    "FRIENDS",
+    "SWEETS",
+    "DANCE"
+   ],
+   "clues": {
+    "COLORS": "Red, yellow, blue...",
+    "SPRING": "Season Holi welcomes",
+    "SPLASH": "Spray of color",
+    "DANCE": "Move to music"
+   }
+  },
+  {
+   "id": "dussehra",
+   "group": "hindu",
+   "name": "Dussehra",
+   "banner": "Dussehra is a Hindu festival celebrating good over evil, often with plays, fairs and fireworks.",
+   "art": "fireworks",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "FAIR",
+    "PLAY",
+    "STORY",
+    "FIREWORKS",
+    "BOW",
+    "ARROW",
+    "GOOD",
+    "FESTIVAL"
+   ],
+   "clues": {
+    "FAIR": "Rides and games",
+    "BOW": "Arrow launcher",
+    "STORY": "Tale",
+    "GOOD": "Opposite of evil"
+   }
+  },
+  {
+   "id": "diwali",
+   "group": "hindu",
+   "name": "Diwali",
+   "banner": "Diwali is the festival of lights, celebrated by Hindus, Sikhs, Jains and some Buddhists with lamps, sweets and fireworks.",
+   "art": "diya",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "LAMP",
+    "LIGHT",
+    "SWEETS",
+    "RANGOLI",
+    "FAMILY",
+    "FIREWORKS",
+    "CANDLE",
+    "GLOW"
+   ],
+   "clues": {
+    "LAMP": "Diwali diya",
+    "GLOW": "Soft light",
+    "RANGOLI": "Colorful floor pattern",
+    "LIGHT": "Diwali brings it"
+   }
+  },
+  {
+   "id": "onam",
+   "group": "hindu",
+   "name": "Onam",
+   "banner": "Onam is a harvest festival in Kerala, India, with flower carpets, boat races and a big shared meal.",
+   "art": "flower_carpet",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "FLOWERS",
+    "BOAT",
+    "RACE",
+    "FEAST",
+    "HARVEST",
+    "CARPET",
+    "BANANA",
+    "DANCE"
+   ],
+   "clues": {
+    "BOAT": "Race vessel at Onam",
+    "FEAST": "Big meal",
+    "FLOWERS": "Petals for a pookalam",
+    "RACE": "Speed contest"
+   }
+  },
+  {
+   "id": "vaisakhi",
+   "group": "sikh",
+   "name": "Vaisakhi",
+   "banner": "Vaisakhi is a spring harvest festival in Punjab and an important day for Sikhs, with parades, music and dancing.",
+   "art": "wheat",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "HARVEST",
+    "WHEAT",
+    "PARADE",
+    "DANCE",
+    "DRUM",
+    "SPRING",
+    "MUSIC",
+    "FESTIVAL"
+   ],
+   "clues": {
+    "WHEAT": "Golden grain",
+    "DRUM": "Dhol, for one",
+    "PARADE": "Street procession",
+    "SPRING": "Vaisakhi's season"
+   }
+  },
+  {
+   "id": "guru_nanak",
+   "group": "sikh",
+   "name": "Guru Nanak's birthday",
+   "banner": "Guru Nanak Gurpurab celebrates the birthday of Guru Nanak, the first Sikh Guru, with lights and shared meals.",
+   "art": "lamps",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "LIGHTS",
+    "SHARE",
+    "MEAL",
+    "MUSIC",
+    "KIND",
+    "COMMUNITY",
+    "LAMPS",
+    "EQUAL"
+   ],
+   "clues": {
+    "SHARE": "Give some",
+    "MEAL": "Langar, for one",
+    "EQUAL": "The same for all",
+    "KIND": "Caring"
+   }
+  },
+  {
+   "id": "losar",
+   "group": "buddhist",
+   "name": "Losar",
+   "banner": "Losar is the Tibetan New Year, with family gatherings, special foods and prayer flags.",
+   "art": "mountain_sun",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "MOUNTAIN",
+    "NEWYEAR",
+    "FLAGS",
+    "FAMILY",
+    "FEAST",
+    "SNOW",
+    "DANCE",
+    "BELLS"
+   ],
+   "clues": {
+    "FLAGS": "They flutter in the wind",
+    "SNOW": "Mountain cap",
+    "FEAST": "Big meal",
+    "BELLS": "Ringing things"
+   }
+  },
+  {
+   "id": "vesak",
+   "group": "buddhist",
+   "name": "Vesak",
+   "banner": "Vesak, or Buddha Day, is a Buddhist festival with lanterns, flowers and acts of kindness. Its date varies by country.",
+   "art": "lotus_lantern",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "LANTERN",
+    "LOTUS",
+    "FLOWER",
+    "KIND",
+    "PEACE",
+    "LIGHT",
+    "CALM",
+    "SHARE"
+   ],
+   "clues": {
+    "LOTUS": "Water flower",
+    "PEACE": "Calm and quiet",
+    "LIGHT": "Lantern glow",
+    "CALM": "Relaxed"
+   }
+  },
+  {
+   "id": "bodhi_day",
+   "group": "buddhist",
+   "name": "Bodhi Day",
+   "banner": "Bodhi Day is a Buddhist day of reflection, often marked with a decorated tree.",
+   "art": "tree_leaf",
+   "when": {
+    "fixed": "12-08"
+   },
+   "words": [
+    "TREE",
+    "LEAF",
+    "QUIET",
+    "CALM",
+    "THINK",
+    "PEACE",
+    "SIT",
+    "BREATHE"
+   ],
+   "clues": {
+    "LEAF": "Green tree part",
+    "CALM": "Peaceful",
+    "SIT": "Take a seat",
+    "THINK": "Use your brain"
+   }
+  },
+  {
+   "id": "easter",
+   "group": "christian",
+   "name": "Easter",
+   "banner": "Easter is a Christian holiday in spring, often celebrated with painted eggs and family meals.",
+   "art": "egg",
+   "when": {
+    "easter": "western"
+   },
+   "words": [
+    "EGG",
+    "SPRING",
+    "BUNNY",
+    "BASKET",
+    "FLOWERS",
+    "CHICK",
+    "PAINT",
+    "HUNT"
+   ],
+   "clues": {
+    "EGG": "Painted spring treat",
+    "HUNT": "Search",
+    "CHICK": "Baby bird",
+    "BASKET": "Egg carrier"
+   }
+  },
+  {
+   "id": "orthodox_easter",
+   "group": "christian",
+   "name": "Orthodox Easter",
+   "banner": "Orthodox Easter is celebrated by Orthodox Christians in spring, often with red-dyed eggs and family feasts.",
+   "art": "egg",
+   "when": {
+    "easter": "orthodox"
+   },
+   "words": [
+    "EGG",
+    "SPRING",
+    "BREAD",
+    "FAMILY",
+    "FEAST",
+    "RED",
+    "CANDLE",
+    "BASKET"
+   ],
+   "clues": {
+    "RED": "Color of dyed eggs",
+    "FEAST": "Big meal",
+    "BREAD": "Sweet Easter loaf",
+    "SPRING": "Season of Easter"
+   }
+  },
+  {
+   "id": "christmas",
+   "group": "christian",
+   "name": "Christmas",
+   "banner": "Christmas is celebrated on December 25 by Christians and many others, often with lights, gifts and family meals.",
+   "art": "fir_tree",
+   "when": {
+    "fixed": "12-25"
+   },
+   "words": [
+    "TREE",
+    "LIGHTS",
+    "GIFTS",
+    "SNOW",
+    "COOKIES",
+    "FAMILY",
+    "STAR",
+    "BELLS"
+   ],
+   "clues": {
+    "GIFTS": "Presents",
+    "BELLS": "They jingle",
+    "SNOW": "Winter white",
+    "STAR": "Tree topper"
+   }
+  },
+  {
+   "id": "nowruz",
+   "group": "persian",
+   "name": "Nowruz",
+   "banner": "Nowruz is the Persian New Year, celebrated on the first day of spring with new beginnings, family visits and sprouted greens.",
+   "art": "flower",
+   "when": {
+    "table": true
+   },
+   "words": [
+    "SPRING",
+    "NEWYEAR",
+    "SPROUTS",
+    "FAMILY",
+    "VISIT",
+    "FLOWERS",
+    "CLEAN",
+    "GOLDFISH"
+   ],
+   "clues": {
+    "SPROUTS": "New green shoots",
+    "SPRING": "Nowruz's season",
+    "VISIT": "Drop by",
+    "CLEAN": "Spick and span"
+   }
+  }
+ ],
+ "seasons": {
+  "spring": {
+   "art": "flower",
+   "words": [
+    "flower",
+    "rain",
+    "sprout",
+    "bud",
+    "nest",
+    "tulip",
+    "puddle",
+    "bloom",
+    "robin",
+    "green"
+   ],
+   "clues": {
+    "bloom": "Flower's big moment",
+    "tulip": "Spring bulb flower",
+    "puddle": "Rain leftover",
+    "sprout": "New shoot"
+   }
+  },
+  "summer": {
+   "art": "sun",
+   "words": [
+    "sun",
+    "beach",
+    "swim",
+    "picnic",
+    "shade",
+    "sandal",
+    "melon",
+    "camp",
+    "waves",
+    "shell"
+   ],
+   "clues": {
+    "swim": "Pool activity",
+    "shade": "Cool spot",
+    "melon": "Juicy summer fruit",
+    "beach": "Sandy shore"
+   }
+  },
+  "autumn": {
+   "art": "leaf",
+   "words": [
+    "leaf",
+    "acorn",
+    "harvest",
+    "apple",
+    "pumpkin",
+    "rake",
+    "scarf",
+    "squirrel",
+    "orange",
+    "crisp"
+   ],
+   "clues": {
+    "rake": "Leaf gatherer",
+    "acorn": "Squirrel snack",
+    "scarf": "Neck warmer",
+    "crisp": "Like fall air"
+   }
+  },
+  "winter": {
+   "art": "snowflake",
+   "words": [
+    "snow",
+    "mitten",
+    "sled",
+    "scarf",
+    "cocoa",
+    "icicle",
+    "frost",
+    "winter",
+    "boots",
+    "cozy"
+   ],
+   "clues": {
+    "sled": "Downhill rider",
+    "frost": "Morning ice crystals",
+    "cocoa": "Hot chocolate",
+    "icicle": "Hanging ice spike"
+   }
+  }
+ },
+ "special": {
+  "school": {
+   "name": "First day of school",
+   "banner": "First day of school! Have a wonderful year.",
+   "art": "apple",
+   "words": [
+    "school",
+    "teacher",
+    "pencil",
+    "friends",
+    "backpack",
+    "lunch",
+    "recess",
+    "books",
+    "learn",
+    "class"
+   ],
+   "clues": {
+    "pencil": "Writing tool",
+    "recess": "Playground break",
+    "lunch": "Midday meal",
+    "learn": "Gain knowledge"
+   }
+  },
+  "public": {
+   "art": "celebrate"
+  },
+  "custom": {
+   "art": "celebrate"
+  }
+ },
+ "dates": {
+  "chuseok": [
+   "2026-09-25",
+   "2027-09-15",
+   "2028-10-03",
+   "2029-09-22",
+   "2030-09-12",
+   "2031-10-01",
+   "2032-09-19",
+   "2033-09-08",
+   "2034-09-27",
+   "2035-09-16",
+   "2036-10-04"
+  ],
+  "diwali": [
+   "2026-11-08",
+   "2027-10-29",
+   "2028-10-17",
+   "2029-11-05",
+   "2030-10-26",
+   "2031-11-14",
+   "2032-11-02",
+   "2033-10-22",
+   "2034-11-10",
+   "2035-10-30"
+  ],
+  "dussehra": [
+   "2026-10-20",
+   "2027-10-09",
+   "2028-09-27",
+   "2029-10-16",
+   "2030-10-06",
+   "2031-10-25",
+   "2032-10-14",
+   "2033-10-03",
+   "2034-10-22",
+   "2035-10-11"
+  ],
+  "eid_al_adha": [
+   "2026-05-27",
+   "2027-05-16",
+   "2028-05-05",
+   "2029-04-24",
+   "2030-04-13",
+   "2031-04-02",
+   "2032-03-22",
+   "2033-03-11",
+   "2034-03-01",
+   "2035-02-18",
+   "2036-02-07"
+  ],
+  "eid_al_fitr": [
+   "2026-03-20",
+   "2027-03-09",
+   "2028-02-26",
+   "2029-02-14",
+   "2030-02-04",
+   "2031-01-24",
+   "2032-01-14",
+   "2033-01-02",
+   "2033-12-23",
+   "2034-12-12",
+   "2035-12-01",
+   "2036-11-19"
+  ],
+  "guru_nanak": [
+   "2026-11-24",
+   "2027-11-14",
+   "2028-11-02",
+   "2029-11-21",
+   "2030-11-10",
+   "2031-11-28",
+   "2032-11-17",
+   "2033-11-06",
+   "2034-11-25",
+   "2035-11-15"
+  ],
+  "hanukkah": [
+   "2026-12-05",
+   "2027-12-25",
+   "2028-01-01",
+   "2029-12-02",
+   "2030-12-21",
+   "2031-12-10",
+   "2032-11-28",
+   "2033-12-17",
+   "2034-12-07",
+   "2035-12-26",
+   "2036-01-01"
+  ],
+  "holi": [
+   "2026-03-04",
+   "2027-03-22",
+   "2028-03-11",
+   "2029-03-01",
+   "2030-03-20",
+   "2031-03-09",
+   "2032-03-27",
+   "2033-03-16",
+   "2034-03-05",
+   "2035-03-24"
+  ],
+  "losar": [
+   "2026-02-18",
+   "2027-02-07",
+   "2028-02-26",
+   "2029-02-14",
+   "2030-02-03",
+   "2031-02-22",
+   "2032-02-12",
+   "2033-03-02",
+   "2034-02-19",
+   "2035-02-09",
+   "2036-02-28"
+  ],
+  "lunar_new_year": [
+   "2026-02-17",
+   "2027-02-06",
+   "2028-01-26",
+   "2029-02-13",
+   "2030-02-03",
+   "2031-01-23",
+   "2032-02-11",
+   "2033-01-31",
+   "2034-02-19",
+   "2035-02-08",
+   "2036-01-28"
+  ],
+  "makar_sankranti": [
+   "2026-01-14",
+   "2027-01-15",
+   "2028-01-15",
+   "2029-01-14",
+   "2030-01-14",
+   "2031-01-15",
+   "2032-01-15",
+   "2033-01-14",
+   "2034-01-14",
+   "2035-01-15"
+  ],
+  "mid_autumn": [
+   "2026-09-25",
+   "2027-09-15",
+   "2028-10-03",
+   "2029-09-22",
+   "2030-09-12",
+   "2031-10-01",
+   "2032-09-19",
+   "2033-09-08",
+   "2034-09-27",
+   "2035-09-16",
+   "2036-10-04"
+  ],
+  "nowruz": [
+   "2026-03-21",
+   "2027-03-21",
+   "2028-03-20",
+   "2029-03-20",
+   "2030-03-21",
+   "2031-03-21",
+   "2032-03-20",
+   "2033-03-20",
+   "2034-03-21",
+   "2035-03-21",
+   "2036-03-20"
+  ],
+  "onam": [
+   "2026-08-26",
+   "2027-09-12",
+   "2028-09-01",
+   "2029-08-22",
+   "2030-09-09",
+   "2031-08-30",
+   "2032-08-20",
+   "2033-09-06",
+   "2034-08-28",
+   "2035-09-14"
+  ],
+  "passover": [
+   "2026-04-02",
+   "2027-04-22",
+   "2028-04-11",
+   "2029-03-31",
+   "2030-04-18",
+   "2031-04-08",
+   "2032-03-27",
+   "2033-04-14",
+   "2034-04-04",
+   "2035-04-24",
+   "2036-04-12"
+  ],
+  "purim": [
+   "2026-03-03",
+   "2027-03-23",
+   "2028-03-12",
+   "2029-03-01",
+   "2030-03-19",
+   "2031-03-09",
+   "2032-02-26",
+   "2033-03-15",
+   "2034-03-05",
+   "2035-03-25",
+   "2036-03-13"
+  ],
+  "ramadan_start": [
+   "2026-02-18",
+   "2027-02-08",
+   "2028-01-28",
+   "2029-01-16",
+   "2030-01-05",
+   "2030-12-26",
+   "2031-12-15",
+   "2032-12-04",
+   "2033-11-23",
+   "2034-11-12",
+   "2035-11-01",
+   "2036-10-20"
+  ],
+  "rosh_hashanah": [
+   "2026-09-12",
+   "2027-10-02",
+   "2028-09-21",
+   "2029-09-10",
+   "2030-09-28",
+   "2031-09-18",
+   "2032-09-06",
+   "2033-09-24",
+   "2034-09-14",
+   "2035-10-04",
+   "2036-09-22"
+  ],
+  "sukkot": [
+   "2026-09-26",
+   "2027-10-16",
+   "2028-10-05",
+   "2029-09-24",
+   "2030-10-12",
+   "2031-10-02",
+   "2032-09-20",
+   "2033-10-08",
+   "2034-09-28",
+   "2035-10-18",
+   "2036-10-06"
+  ],
+  "vaisakhi": [
+   "2026-04-14",
+   "2027-04-14",
+   "2028-04-13",
+   "2029-04-14",
+   "2030-04-14",
+   "2031-04-14",
+   "2032-04-13",
+   "2033-04-14",
+   "2034-04-14",
+   "2035-04-14"
+  ],
+  "vesak": [
+   "2026-05-31",
+   "2027-05-20",
+   "2028-05-09",
+   "2029-05-27",
+   "2030-05-16",
+   "2031-06-04",
+   "2032-05-23",
+   "2033-05-13",
+   "2034-06-01",
+   "2035-05-22",
+   "2036-05-10"
+  ],
+  "yom_kippur": [
+   "2026-09-21",
+   "2027-10-11",
+   "2028-09-30",
+   "2029-09-19",
+   "2030-10-07",
+   "2031-09-27",
+   "2032-09-15",
+   "2033-10-03",
+   "2034-09-23",
+   "2035-10-13",
+   "2036-10-01"
+  ]
+ }
+}

@@ -15,6 +15,7 @@ from typing import Any
 from .data import load_json
 from .feeds import FeedItem
 from .jokes import Joke
+from .observances import Observance
 from .sudoku import Sudoku
 from .weather import WeatherReport
 
@@ -95,6 +96,8 @@ class MorningSlip:
     headlines: tuple[str, tuple[FeedItem, ...]] | None = None  # (feed, items)
     calendars_set: bool = True
     notes: tuple[str, ...] = field(default=())
+    banner: Observance | None = None  # today's recognized day
+    also: tuple[str, ...] = ()  # other days recognized today
 
 
 def _time_label(moment: datetime) -> str:
