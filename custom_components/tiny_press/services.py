@@ -214,8 +214,11 @@ async def async_build_job(
             return partial(jobs.kid_sudoku_job, kid, level, seed)
         case PrintType.SPELLING | PrintType.SPELLING_SEARCH:
             kid = coordinator.kid_profile(profile)
+            todo_words = None
+            if not words and kid.spelling_todo:
+                todo_words = await async_todo_words(hass, kid.spelling_todo, kid.name)
             try:
-                found = jobs.spelling_words_for(kid, words)
+                found = jobs.spelling_words_for(kid, words, todo_words)
             except ValueError as err:
                 raise ServiceValidationError(
                     translation_domain=DOMAIN,
@@ -311,6 +314,36 @@ async def async_weather_report(
         forecast,
         to_local=dt_util.as_local,
     )
+
+
+async def async_todo_words(
+    hass: HomeAssistant, entity_id: str, name: str
+) -> list[str] | None:
+    """Words still to learn from a to-do list (unchecked items).
+
+    Checked-off items count as learned. Returns None if the list can't be
+    read (the typed list is used instead); raises if every word is learned.
+    """
+    try:
+        response = await hass.services.async_call(
+            "todo",
+            "get_items",
+            {"entity_id": entity_id},
+            blocking=True,
+            return_response=True,
+        )
+    except HomeAssistantError as err:
+        _LOGGER.info("Can't read spelling list %s: %s", entity_id, err)
+        return None
+    items = ((response or {}).get(entity_id) or {}).get("items") or []
+    todo = [i.get("summary", "") for i in items if i.get("status") != "completed"]
+    if items and not todo:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="all_words_learned",
+            translation_placeholders={"profile": name},
+        )
+    return todo
 
 
 def check_limits(

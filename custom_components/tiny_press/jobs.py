@@ -389,9 +389,17 @@ def kid_sudoku_job(
     )
 
 
-def spelling_words_for(profile: Profile, words: list[str] | str | None) -> list[str]:
-    """Words from the action, else the profile's list; raise if there are none."""
-    found = spelling.parse_words(words) or spelling.parse_words(profile.spelling_words)
+def spelling_words_for(
+    profile: Profile,
+    words: list[str] | str | None,
+    todo_words: list[str] | None = None,
+) -> list[str]:
+    """Words from the action, else the to-do list, else the typed list."""
+    found = (
+        spelling.parse_words(words)
+        or spelling.parse_words(todo_words)
+        or spelling.parse_words(profile.spelling_words)
+    )
     if not found:
         raise ValueError("no spelling words")
     return found
@@ -404,7 +412,7 @@ def spelling_job(
     seed = new_seed() if seed is None else seed
     print_id = _id("spelling", seed)
     sheet = spelling.generate(words, seed)
-    footer = layout.Footer("Spelling", print_id, _today(), f"{len(words)} words")
+    footer = layout.Footer("Spelling", print_id, _today(), f"{len(sheet.words)} words")
     return PrintJob(
         type=PrintType.SPELLING,
         label="Spelling",
@@ -428,7 +436,9 @@ def spelling_search_job(
     seed = new_seed() if seed is None else seed
     print_id = _id("spelling_search", seed)
     grade = profile.puzzle_grade
-    puzzle = word_search.generate_from_words(grade, seed, words)
+    puzzle = word_search.generate_from_words(
+        grade, seed, spelling.pick_words(words, seed)
+    )
     footer = layout.Footer("Spelling search", print_id, _today(), f"Grade {grade}")
     return PrintJob(
         type=PrintType.SPELLING_SEARCH,

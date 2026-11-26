@@ -54,7 +54,8 @@ Open **Settings → Devices & services → Tiny Press → Configure** to add, ed
 | Reading grade | K–5 (default 3). Sets word lists, grid size and math level. |
 | Interests | Free text such as `dinosaurs, space, horses`. Themed words appear in word searches (and in AI jokes if switched on). |
 | Stretch | Makes puzzles one grade harder (reading stays at their grade) |
-| Spelling words | Optional: this week's school list (commas or new lines). Used by the spelling prints. |
+| Spelling list (to-do list) | Optional: a `todo` list, one word per item. Check a word off when it's learned; prints use the unchecked words. Add words by voice: "Add *because* to Rosie's spelling list". |
+| Spelling words | Optional typed list (commas or new lines), used when no to-do list is set |
 
 An adult profile has a name and a default puzzle difficulty (used by the adult puzzles). Add as many profiles as you like, for example a younger sibling later.
 

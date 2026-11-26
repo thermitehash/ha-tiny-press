@@ -47,6 +47,7 @@ class Profile:
     interests: str = ""  # kids
     stretch: bool = False  # kids: +1 grade on puzzles
     spelling_words: str = ""  # kids: this week's list, comma or line separated
+    spelling_todo: str = ""  # kids: a todo entity holding the list (one word per item)
     difficulty: str = Difficulty.MEDIUM.value  # adults
 
     @property
@@ -74,6 +75,7 @@ class Profile:
             interests=str(data.get("interests") or ""),
             stretch=bool(data.get("stretch", False)),
             spelling_words=str(data.get("spelling_words") or ""),
+            spelling_todo=str(data.get("spelling_todo") or ""),
             difficulty=str(data.get("difficulty") or Difficulty.MEDIUM.value),
         )
 

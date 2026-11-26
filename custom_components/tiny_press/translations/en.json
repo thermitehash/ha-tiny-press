@@ -75,13 +75,15 @@
           "grade": "Reading grade",
           "interests": "Interests",
           "stretch": "Stretch",
-          "spelling_words": "Spelling words"
+          "spelling_words": "Spelling words",
+          "spelling_todo": "Spelling list (to-do list)"
         },
         "data_description": {
           "grade": "The grade they read and do math at.",
           "interests": "Free text, for example: dinosaurs, space, horses.",
           "stretch": "Make puzzles one grade harder.",
-          "spelling_words": "Optional. This week's school list, separated by commas or new lines. Used by Spelling practice and Spelling word search."
+          "spelling_words": "Optional. Typed list (commas or new lines), used when no to-do list is chosen or it can't be read.",
+          "spelling_todo": "Optional. A to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words."
         }
       },
       "edit_kid": {
@@ -91,13 +93,15 @@
           "grade": "Reading grade",
           "interests": "Interests",
           "stretch": "Stretch",
-          "spelling_words": "Spelling words"
+          "spelling_words": "Spelling words",
+          "spelling_todo": "Spelling list (to-do list)"
         },
         "data_description": {
           "grade": "The grade they read and do math at.",
           "interests": "Free text, for example: dinosaurs, space, horses.",
           "stretch": "Make puzzles one grade harder.",
-          "spelling_words": "Optional. This week's school list, separated by commas or new lines. Used by Spelling practice and Spelling word search."
+          "spelling_words": "Optional. Typed list (commas or new lines), used when no to-do list is chosen or it can't be read.",
+          "spelling_todo": "Optional. A to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words."
         }
       },
       "add_adult": {
@@ -379,7 +383,10 @@
       "message": "Choose a weather entity under Configure → Settings to print the weather."
     },
     "no_spelling_words": {
-      "message": "{profile} has no spelling words yet. Add them under Configure → Edit a profile, or pass words to the action."
+      "message": "{profile} has no spelling words yet. Add them to the spelling to-do list or under Configure → Edit a profile, or pass words to the action."
+    },
+    "all_words_learned": {
+      "message": "{profile} has learned every word on the spelling list. Add new words (or uncheck some) to print more practice."
     }
   },
   "services": {
@@ -413,7 +420,7 @@
         },
         "words": {
           "name": "Spelling words",
-          "description": "For spelling prints: words to practice. Leave empty to use the kid profile's spelling list."
+          "description": "For spelling prints: words to practice. Empty uses the kid's spelling to-do list (unchecked words), then the typed list."
         }
       }
     },
@@ -479,7 +486,7 @@
         },
         "words": {
           "name": "Spelling words",
-          "description": "For spelling prints: words to practice. Leave empty to use the kid profile's spelling list."
+          "description": "For spelling prints: words to practice. Empty uses the kid's spelling to-do list (unchecked words), then the typed list."
         }
       }
     },
