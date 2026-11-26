@@ -4,13 +4,14 @@ Every minute, each feed with auto-print on whose check interval has passed is
 fetched. The first check only remembers what's already there, so turning
 auto-print on never prints a backlog. After that, each new item gets its own
 slip, at most ``MAX_PER_CHECK`` per check, oldest first. Items older than
-``MAX_AGE`` are never auto-printed. During a feed's quiet hours new items are
-either skipped or kept (up to ``MAX_PER_CHECK``) and printed once quiet hours
-end. Auto slips are not kid prints, so kid-mode limits never apply.
+``MAX_AGE`` are never auto-printed. During quiet hours (one setting for all
+feeds) new items are either skipped or kept (up to ``MAX_PER_CHECK`` per feed)
+and printed once quiet hours end. Auto slips are not kid prints, so kid-mode limits never apply.
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime, time, timedelta
 import logging
 from typing import Any
@@ -21,8 +22,17 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import dt as dt_util
 
 from . import jobs
+from .const import CONF_QUIET_END, CONF_QUIET_MODE, CONF_QUIET_START
 from .coordinator import TinyPressCoordinator
-from .fetch import FeedConfig, FetchError, async_fetch_feed, feeds_from_options
+from .fetch import (
+    DEFAULT_QUIET_END,
+    DEFAULT_QUIET_START,
+    QUIET_MODES,
+    FeedConfig,
+    FetchError,
+    async_fetch_feed,
+    feeds_from_options,
+)
 from .generators.feeds import MAX_ITEMS, Feed, FeedItem
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,9 +61,28 @@ def _parse_time(value: str | None) -> time | None:
         return None
 
 
-def in_quiet_hours(feed: FeedConfig, now: datetime) -> bool:
-    """Say whether ``now`` (local) is inside the feed's quiet hours."""
-    start, end = _parse_time(feed.quiet_start), _parse_time(feed.quiet_end)
+@dataclass(frozen=True, slots=True)
+class QuietHours:
+    """The global quiet hours for auto-print."""
+
+    start: str | None = DEFAULT_QUIET_START  # "HH:MM"; None: no quiet hours
+    end: str | None = DEFAULT_QUIET_END
+    mode: str = "skip"
+
+    @classmethod
+    def from_options(cls, options: dict[str, Any]) -> QuietHours:
+        """Read from the entry's options (defaults: 9 PM to 7 AM, skip)."""
+        mode = options.get(CONF_QUIET_MODE) or "skip"
+        return cls(
+            options.get(CONF_QUIET_START, DEFAULT_QUIET_START) or None,
+            options.get(CONF_QUIET_END, DEFAULT_QUIET_END) or None,
+            mode if mode in QUIET_MODES else "skip",
+        )
+
+
+def in_quiet_hours(quiet: QuietHours, now: datetime) -> bool:
+    """Say whether ``now`` (local) is inside quiet hours."""
+    start, end = _parse_time(quiet.start), _parse_time(quiet.end)
     if start is None or end is None or start == end:
         return False
     current = now.time()
@@ -175,11 +204,12 @@ class FeedWatcher:
         ]
         fresh.reverse()  # oldest first
         pending = [_from_store(p) for p in entry.get("pending") or []]
-        quiet = in_quiet_hours(feed, dt_util.as_local(now))
+        hours = QuietHours.from_options(self.coordinator.config_entry.options)
+        quiet = in_quiet_hours(hours, dt_util.as_local(now))
 
         to_print: list[FeedItem] = []
         if quiet:
-            if feed.quiet_mode == "morning":
+            if hours.mode == "morning":
                 pending = (pending + fresh)[-MAX_PER_CHECK:]
         else:
             to_print = (pending + fresh)[-MAX_PER_CHECK:]

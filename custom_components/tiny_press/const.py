@@ -21,6 +21,10 @@ CONF_MORNING_BOTTOM: Final = "morning_bottom"
 CONF_FEEDS: Final = "feeds"
 CONF_LIVE_QUOTE: Final = "live_quote"  # morning slip quote from Wikiquote first
 CONF_MORNING_FEED: Final = "morning_feed"
+# Quiet hours for feed auto-print (one setting for all feeds).
+CONF_QUIET_START: Final = "quiet_start"
+CONF_QUIET_END: Final = "quiet_end"
+CONF_QUIET_MODE: Final = "quiet_mode"
 CONF_AI_JOKES: Final = "ai_jokes"  # off: bundled, human-written jokes and facts
 
 DEFAULT_PORT: Final = 9100

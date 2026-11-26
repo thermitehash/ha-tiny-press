@@ -331,9 +331,6 @@ async def test_feed_options(
             "items": 3,
             "auto_print": False,  # off by default
             "check_minutes": 15,
-            "quiet_start": "21:00",
-            "quiet_end": "07:00",
-            "quiet_mode": "skip",
             "auto_qr": False,
         }
     ]

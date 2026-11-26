@@ -20,6 +20,7 @@ from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClien
 from custom_components.tiny_press.feed_watch import (
     SETTING_FEED_WATCH,
     FeedWatcher,
+    QuietHours,
     in_quiet_hours,
     item_key,
 )
@@ -42,13 +43,10 @@ def rss(*items: tuple[str, datetime]) -> bytes:
 
 
 def feed(**changes: Any) -> dict[str, Any]:
-    return {
-        **FeedConfig("news", "News", URL).as_dict(),
-        "auto_print": True,
-        "quiet_start": None,
-        "quiet_end": None,
-        **changes,
-    }
+    return {**FeedConfig("news", "News", URL).as_dict(), "auto_print": True, **changes}
+
+
+NO_QUIET = {"quiet_start": None, "quiet_end": None}
 
 
 class Harness:
@@ -93,11 +91,16 @@ async def _harness(
     hass: HomeAssistant,
     entry: MockConfigEntry,
     mock: AiohttpClientMocker,
+    quiet: dict[str, Any] | None = None,
     **feed_changes: Any,
 ) -> Harness:
     await hass.config.async_set_time_zone("UTC")
     hass.config_entries.async_update_entry(
-        entry, options={"feeds": [feed(**feed_changes)]}
+        entry,
+        options={
+            "feeds": [feed(**feed_changes)],
+            **(NO_QUIET if quiet is None else quiet),
+        },
     )
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
@@ -105,9 +108,13 @@ async def _harness(
 
 
 def test_quiet_hours_and_keys() -> None:
-    night = FeedConfig("a", "A", URL, quiet_start="21:00", quiet_end="07:00")
-    day = FeedConfig("a", "A", URL, quiet_start="09:00:00", quiet_end="17:00:00")
-    never = FeedConfig("a", "A", URL, quiet_start=None, quiet_end=None)
+    night = QuietHours.from_options({})  # default 9 PM to 7 AM, skip
+    assert night == QuietHours("21:00", "07:00", "skip")
+    day = QuietHours.from_options(
+        {"quiet_start": "09:00:00", "quiet_end": "17:00:00", "quiet_mode": "x"}
+    )
+    assert day.mode == "skip"
+    never = QuietHours.from_options(NO_QUIET)
     at = lambda h, m=0: datetime(2026, 11, 26, h, m, tzinfo=UTC)  # noqa: E731
     assert in_quiet_hours(night, at(23)) and in_quiet_hours(night, at(6, 59))
     assert not in_quiet_hours(night, at(7)) and not in_quiet_hours(night, at(12))
@@ -116,7 +123,7 @@ def test_quiet_hours_and_keys() -> None:
     assert item_key(FeedItem("t", "https://x/1")) == "https://x/1"
     assert item_key(FeedItem("t", None, NOON)) == f"t|{NOON.isoformat()}"
     loaded = FeedConfig.from_dict({"id": "a", "name": "A", "url": URL})
-    assert loaded.auto_print is False and loaded.quiet_start == "21:00"
+    assert loaded.auto_print is False and loaded.check_minutes == 15
     assert (
         FeedConfig.from_dict({**loaded.as_dict(), "check_minutes": 1}).check_minutes
         == 5
@@ -158,8 +165,8 @@ async def test_quiet_hours_skip(
     aioclient_mock: AiohttpClientMocker,
 ) -> None:
     h = await _harness(
-        hass, config_entry, aioclient_mock, quiet_start="21:00", quiet_end="07:00"
-    )
+        hass, config_entry, aioclient_mock, quiet={"quiet_mode": "skip"}
+    )  # the default quiet hours, 9 PM to 7 AM
     night = datetime(2026, 11, 26, 22, 0, tzinfo=UTC)
     h.serve(("a", night - timedelta(hours=1)))
     await h.check(night)
@@ -181,9 +188,11 @@ async def test_quiet_hours_morning(
         hass,
         config_entry,
         aioclient_mock,
-        quiet_start="21:00:00",
-        quiet_end="07:00:00",
-        quiet_mode="morning",
+        quiet={
+            "quiet_start": "21:00:00",
+            "quiet_end": "07:00:00",
+            "quiet_mode": "morning",
+        },
     )
     night = datetime(2026, 11, 26, 22, 0, tzinfo=UTC)
     h.serve(("a", night - timedelta(hours=1)))
@@ -233,12 +242,14 @@ async def test_off_by_default_and_fresh_restart(
     assert await h.check(NOON) == 0
     assert aioclient_mock.call_count == 0 and h.state == {}
 
-    hass.config_entries.async_update_entry(config_entry, options={"feeds": [feed()]})
+    hass.config_entries.async_update_entry(
+        config_entry, options={"feeds": [feed()], **NO_QUIET}
+    )
     await hass.async_block_till_done()
     await h.check(NOON)
     assert "news" in h.state
     hass.config_entries.async_update_entry(
-        config_entry, options={"feeds": [feed(auto_print=False)]}
+        config_entry, options={"feeds": [feed(auto_print=False)], **NO_QUIET}
     )
     await hass.async_block_till_done()
     await h.check(NOON + timedelta(hours=1))
@@ -255,7 +266,9 @@ async def test_runs_every_minute(
     freezer.move_to(NOON)
     aioclient_mock.get(URL, content=rss(("a", NOON)))
     await hass.config.async_set_time_zone("UTC")
-    hass.config_entries.async_update_entry(config_entry, options={"feeds": [feed()]})
+    hass.config_entries.async_update_entry(
+        config_entry, options={"feeds": [feed()], **NO_QUIET}
+    )
     assert await hass.config_entries.async_setup(config_entry.entry_id)
     await hass.async_block_till_done()
     freezer.tick(timedelta(minutes=1))
@@ -292,9 +305,6 @@ async def test_edit_feed_options(
             "items": 4,
             "auto_print": True,
             "check_minutes": 30,
-            "quiet_start": "22:00:00",
-            "quiet_end": "06:30:00",
-            "quiet_mode": "morning",
             "auto_qr": True,
         },
     )
@@ -302,5 +312,5 @@ async def test_edit_feed_options(
     await hass.async_block_till_done()
     saved = config_entry.options["feeds"][0]
     assert saved["auto_print"] is True and saved["check_minutes"] == 30
-    assert saved["quiet_start"] == "22:00:00" and saved["quiet_mode"] == "morning"
+    assert "quiet_start" not in saved  # quiet hours are global (Settings)
     assert saved["auto_qr"] is True and saved["items"] == 4

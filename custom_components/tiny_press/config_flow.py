@@ -44,6 +44,9 @@ from .const import (
     CONF_PAPER_WIDTH,
     CONF_POLL_INTERVAL,
     CONF_PRINT_TEST_PAGE,
+    CONF_QUIET_END,
+    CONF_QUIET_MODE,
+    CONF_QUIET_START,
     CONF_TODOS,
     CONF_WEATHER,
     DEFAULT_MAX_LENGTH_MM,
@@ -59,6 +62,8 @@ from .const import (
 )
 from .coordinator import TinyPressConfigEntry
 from .fetch import (
+    DEFAULT_QUIET_END,
+    DEFAULT_QUIET_START,
     QUIET_MODES,
     FeedConfig,
     FetchError,
@@ -336,6 +341,9 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                     CONF_MORNING_BOTTOM: user_input.get(CONF_MORNING_BOTTOM, "joke"),
                     CONF_LIVE_QUOTE: bool(user_input.get(CONF_LIVE_QUOTE, True)),
                     CONF_MORNING_FEED: user_input.get(CONF_MORNING_FEED) or None,
+                    CONF_QUIET_START: user_input.get(CONF_QUIET_START) or None,
+                    CONF_QUIET_END: user_input.get(CONF_QUIET_END) or None,
+                    CONF_QUIET_MODE: user_input.get(CONF_QUIET_MODE, "skip"),
                 }
             )
         options = self.config_entry.options
@@ -399,6 +407,31 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                 vol.Required(
                     CONF_LIVE_QUOTE, default=bool(options.get(CONF_LIVE_QUOTE, True))
                 ): BooleanSelector(),
+                vol.Optional(
+                    CONF_QUIET_START,
+                    description={
+                        "suggested_value": options.get(
+                            CONF_QUIET_START, DEFAULT_QUIET_START
+                        )
+                    },
+                ): TimeSelector(),
+                vol.Optional(
+                    CONF_QUIET_END,
+                    description={
+                        "suggested_value": options.get(
+                            CONF_QUIET_END, DEFAULT_QUIET_END
+                        )
+                    },
+                ): TimeSelector(),
+                vol.Required(
+                    CONF_QUIET_MODE, default=options.get(CONF_QUIET_MODE, "skip")
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=list(QUIET_MODES),
+                        translation_key=CONF_QUIET_MODE,
+                        mode=SelectSelectorMode.LIST,
+                    )
+                ),
             }
         )
         if self._feeds:
@@ -702,7 +735,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
     async def async_step_feed_settings(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Items per print, and auto-print with quiet hours."""
+        """Items per print, and auto-print."""
         feeds = self._feeds
         current = next(f for f in feeds if f["id"] == self._feed_id)
         if user_input is not None:
@@ -712,9 +745,6 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                     "items": int(user_input["items"]),
                     "auto_print": bool(user_input["auto_print"]),
                     "check_minutes": int(user_input["check_minutes"]),
-                    "quiet_start": user_input.get("quiet_start") or None,
-                    "quiet_end": user_input.get("quiet_end") or None,
-                    "quiet_mode": user_input["quiet_mode"],
                     "auto_qr": bool(user_input["auto_qr"]),
                 }
             ).as_dict()
@@ -744,22 +774,6 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                         step=5,
                         unit_of_measurement="min",
                         mode=NumberSelectorMode.BOX,
-                    )
-                ),
-                vol.Optional(
-                    "quiet_start",
-                    description={"suggested_value": current["quiet_start"]},
-                ): TimeSelector(),
-                vol.Optional(
-                    "quiet_end", description={"suggested_value": current["quiet_end"]}
-                ): TimeSelector(),
-                vol.Required(
-                    "quiet_mode", default=current["quiet_mode"]
-                ): SelectSelector(
-                    SelectSelectorConfig(
-                        options=list(QUIET_MODES),
-                        translation_key="quiet_mode",
-                        mode=SelectSelectorMode.LIST,
                     )
                 ),
                 vol.Required("auto_qr", default=current["auto_qr"]): BooleanSelector(),

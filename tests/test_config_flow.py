@@ -180,6 +180,9 @@ async def test_options_settings(
         "morning_bottom": "joke",
         "live_quote": True,
         "morning_feed": None,
+        "quiet_start": None,  # cleared: no quiet hours (the form suggests 9 PM-7 AM)
+        "quiet_end": None,
+        "quiet_mode": "skip",
     }
     coordinator = loaded_entry.runtime_data
     assert coordinator.max_length_mm == 450

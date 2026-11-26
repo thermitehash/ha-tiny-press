@@ -47,6 +47,7 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 | Bottom of the morning slip | joke | Joke, fun fact, quote of the day, vocabulary word, headlines from a feed, small sudoku or nothing |
 | Live quote of the day | on | For the Quote bottom: Wikiquote's quote of the day first (credited), bundled public-domain quotes if it can't be read |
 | Morning slip feed | first feed | For the Headlines bottom: which feed |
+| Auto-print quiet hours | 9 PM–7 AM, skip | No feed auto-prints during these hours. Items that arrive then are skipped, or printed when quiet hours end (up to 3 per feed) |
 | Use AI for jokes and fun facts | off | Off: jokes and facts come from bundled, human-written lists (facts from NOAA, NASA and the National Park Service, with credits). On: the AI is asked first. |
 
 ### Feeds
@@ -57,7 +58,7 @@ Configure → **Add a feed**: a name (used on the print and by voice), the feed'
 - **Check every:** 15 minutes by default (5–1440).
 - **First check:** only notes what's already in the feed, so turning auto-print on never prints a backlog.
 - **Bursts:** at most 3 slips print per check (the newest, oldest first). Items older than 12 hours never auto-print, so a printer that was off overnight doesn't wake up to old news.
-- **Quiet hours:** set per feed, 9 PM–7 AM by default. Choose **Skip them** to drop items that arrive during quiet hours, or **Print them when quiet hours end** for up to 3. Clear both times to print at any hour.
+- **Quiet hours:** one setting for all feeds, under Configure → Settings, 9 PM–7 AM by default. Choose **Skip them** to drop items that arrive during quiet hours, or **Print them when quiet hours end** for up to 3 per feed. Clear both times to print at any hour.
 - **QR code on auto slips:** optional.
 - **Printer off:** if a slip can't print, it waits for the next check (up to 3).
 - **Limits:** auto slips never count toward kid-mode limits.

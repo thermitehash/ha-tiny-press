@@ -44,7 +44,7 @@ class FetchError(Exception):
 DEFAULT_CHECK_MINUTES = 15
 DEFAULT_QUIET_START = "21:00"
 DEFAULT_QUIET_END = "07:00"
-QUIET_MODES = ("skip", "morning")
+QUIET_MODES = ("skip", "morning")  # skip: drop quiet-hours items; morning: print after
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,9 +58,6 @@ class FeedConfig:
     # Auto-print a slip for each new item (off by default).
     auto_print: bool = False
     check_minutes: int = DEFAULT_CHECK_MINUTES
-    quiet_start: str | None = DEFAULT_QUIET_START  # "HH:MM"; None: no quiet hours
-    quiet_end: str | None = DEFAULT_QUIET_END
-    quiet_mode: str = "skip"  # skip: drop quiet-hours items; morning: print after
     auto_qr: bool = False
 
     @classmethod
@@ -68,7 +65,6 @@ class FeedConfig:
         """Build from stored options."""
         items = int(data.get("items") or DEFAULT_ITEMS)
         minutes = int(data.get("check_minutes") or DEFAULT_CHECK_MINUTES)
-        mode = data.get("quiet_mode") or "skip"
         return cls(
             str(data["id"]),
             str(data["name"]),
@@ -76,9 +72,6 @@ class FeedConfig:
             max(1, min(MAX_ITEMS, items)),
             bool(data.get("auto_print", False)),
             max(5, min(1440, minutes)),
-            data.get("quiet_start", DEFAULT_QUIET_START) or None,
-            data.get("quiet_end", DEFAULT_QUIET_END) or None,
-            mode if mode in QUIET_MODES else "skip",
             bool(data.get("auto_qr", False)),
         )
 
@@ -91,9 +84,6 @@ class FeedConfig:
             "items": self.items,
             "auto_print": self.auto_print,
             "check_minutes": self.check_minutes,
-            "quiet_start": self.quiet_start,
-            "quiet_end": self.quiet_end,
-            "quiet_mode": self.quiet_mode,
             "auto_qr": self.auto_qr,
         }
 
