@@ -6,7 +6,7 @@
  * Nothing prints unless someone presses a button.
  */
 
-const CARD_VERSION = "0.3.0";
+const CARD_VERSION = "0.4.0";
 
 const PRINTS = {
   maze: { label: "Maze", icon: "mdi:map-marker-path" },
@@ -15,12 +15,19 @@ const PRINTS = {
   joke: { label: "Joke", icon: "mdi:emoticon-happy-outline" },
   fact: { label: "Fun fact", icon: "mdi:lightbulb-on-outline" },
   kid_pack: { label: "Kid pack", icon: "mdi:package-variant-closed" },
-  kid_sudoku: { label: "Sudoku", icon: "mdi:grid" },
+  kid_sudoku: { label: "Kid sudoku", icon: "mdi:grid" },
   spelling: { label: "Spelling", icon: "mdi:alphabetical-variant" },
   spelling_search: { label: "Spelling search", icon: "mdi:text-box-search-outline" },
+  sudoku: { label: "Sudoku", icon: "mdi:grid", adult: true },
+  crossword: { label: "Crossword", icon: "mdi:alpha-c-box-outline", adult: true },
+  cryptogram: { label: "Cryptogram", icon: "mdi:lock-question", adult: true },
+  puzzle_pack: { label: "Puzzle pack", icon: "mdi:puzzle-outline", adult: true },
   weather: { label: "Weather", icon: "mdi:weather-partly-cloudy" },
 };
-const DEFAULT_BUTTONS = ["maze", "word_search", "math", "kid_sudoku", "spelling", "joke", "kid_pack", "weather"];
+const DEFAULT_BUTTONS = [
+  "maze", "word_search", "math", "kid_sudoku", "spelling", "joke", "kid_pack",
+  "sudoku", "crossword", "cryptogram", "puzzle_pack", "weather",
+];
 
 const PAPER = {
   ok: { label: "Paper OK", tone: "ok", icon: "mdi:paper-roll-outline" },
@@ -38,7 +45,9 @@ const ROLES = {
   last_print: "lastPrint",
   prints_left: "printsLeft",
   kid_profile: "kidProfile",
+  adult_profile: "adultProfile",
   maze_difficulty: "mazeDifficulty",
+  sudoku_difficulty: "sudokuDifficulty",
 };
 
 const esc = (value) =>
@@ -369,14 +378,18 @@ class TinyPressCard extends HTMLElement {
     const limits = hass ? this._limits() : { enabled: false };
     const blocked = hass ? this._blocked() : false;
     const disabled = this._state.busy || blocked || missing;
-    const buttons = this._config.buttons.filter((t) => PRINTS[t]);
+    // Kid mode never shows adult puzzles.
+    const buttons = this._config.buttons.filter((t) => PRINTS[t] && !(kid && PRINTS[t].adult));
+    const hasAdult = buttons.some((t) => PRINTS[t].adult);
 
     const body = missing
       ? `<div class="empty">No Tiny Press printer found. Add the Tiny Press integration first.</div>`
       : `
         ${this._statusHtml()}
-        ${kid ? "" : this._chipsHtml("kidProfile", "For")}
+        ${kid ? "" : this._chipsHtml("kidProfile", "Kid")}
         ${kid ? "" : this._chipsHtml("mazeDifficulty", "Maze")}
+        ${kid || !hasAdult ? "" : this._chipsHtml("adultProfile", "Adult")}
+        ${kid || !hasAdult ? "" : this._chipsHtml("sudokuDifficulty", "Sudoku")}
         ${this._state.preview ? this._previewHtml() : `
           <div class="grid ${kid ? "kid" : ""}">
             ${buttons

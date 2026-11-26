@@ -42,6 +42,7 @@ from .const import (
     PAPER_80MM,
     PAPER_DOTS,
     SETTING_MAZE_DIFFICULTY,
+    SETTING_SUDOKU_DIFFICULTY,
     TEXT_SIZES,
     Difficulty,
     PrintType,
@@ -213,8 +214,11 @@ async def async_build_job(
             return partial(jobs.kid_sudoku_job, kid, level, seed)
         case PrintType.SPELLING | PrintType.SPELLING_SEARCH:
             kid = coordinator.kid_profile(profile)
+            todo_words = None
+            if not words and kid.spelling_todo:
+                todo_words = await async_todo_words(hass, kid.spelling_todo, kid.name)
             try:
-                found = jobs.spelling_words_for(kid, words)
+                found = jobs.spelling_words_for(kid, words, todo_words)
             except ValueError as err:
                 raise ServiceValidationError(
                     translation_domain=DOMAIN,
@@ -227,6 +231,39 @@ async def async_build_job(
                 else jobs.spelling_search_job
             )
             return partial(build, kid, found, seed)
+        case (
+            PrintType.SUDOKU
+            | PrintType.CROSSWORD
+            | PrintType.CRYPTOGRAM
+            | PrintType.PUZZLE_PACK
+        ):
+            adult = coordinator.adult_profile(profile)
+            base = Difficulty(adult.difficulty)
+            level = normalize_difficulty(difficulty, base)
+            sudoku_level = (
+                level
+                if difficulty
+                else Difficulty(
+                    coordinator.store.get_setting(SETTING_SUDOKU_DIFFICULTY, base)
+                )
+            )
+            recent = [] if seed is not None else coordinator.store.recent("cryptogram")
+            match kind:
+                case PrintType.SUDOKU:
+                    return partial(jobs.sudoku_job, sudoku_level, seed, adult.name)
+                case PrintType.CROSSWORD:
+                    return partial(jobs.crossword_job, level, seed, adult.name)
+                case PrintType.CRYPTOGRAM:
+                    return partial(jobs.cryptogram_job, level, seed, adult.name, recent)
+                case _:
+                    return partial(
+                        jobs.puzzle_pack_job,
+                        level,
+                        sudoku_level,
+                        seed,
+                        adult.name,
+                        recent,
+                    )
         case PrintType.WEATHER:
             return jobs.weather_job(await async_weather_report(hass, coordinator))
         case _:
@@ -277,6 +314,36 @@ async def async_weather_report(
         forecast,
         to_local=dt_util.as_local,
     )
+
+
+async def async_todo_words(
+    hass: HomeAssistant, entity_id: str, name: str
+) -> list[str] | None:
+    """Words still to learn from a to-do list (unchecked items).
+
+    Checked-off items count as learned. Returns None if the list can't be
+    read (the typed list is used instead); raises if every word is learned.
+    """
+    try:
+        response = await hass.services.async_call(
+            "todo",
+            "get_items",
+            {"entity_id": entity_id},
+            blocking=True,
+            return_response=True,
+        )
+    except HomeAssistantError as err:
+        _LOGGER.info("Can't read spelling list %s: %s", entity_id, err)
+        return None
+    items = ((response or {}).get(entity_id) or {}).get("items") or []
+    todo = [i.get("summary", "") for i in items if i.get("status") != "completed"]
+    if items and not todo:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="all_words_learned",
+            translation_placeholders={"profile": name},
+        )
+    return todo
 
 
 def check_limits(
@@ -331,6 +398,8 @@ async def async_print_type(
         words=words,
     )
     response = await coordinator.async_print(job)
+    if seed is None and response.get("quote_index") is not None:
+        coordinator.store.remember("cryptogram", response["quote_index"])
     if limited:
         coordinator.limiter.record(response["length_mm"])
         coordinator.async_update_listeners()

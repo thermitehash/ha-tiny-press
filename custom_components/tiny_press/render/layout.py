@@ -13,6 +13,8 @@ import random
 
 from PIL import Image, ImageDraw
 
+from ..generators.crossword import Crossword
+from ..generators.cryptogram import Cryptogram
 from ..generators.jokes import Joke
 from ..generators.math_strip import MathStrip, Problem
 from ..generators.maze import Maze
@@ -741,6 +743,130 @@ def spelling_page(
             ]
         )
     )
+    canvas.space(6)
+    canvas.footer(*footer.fields())
+    return canvas
+
+
+def crossword_drawing(
+    width: int, puzzle: Crossword, *, show_answers: bool = False
+) -> Image.Image:
+    """Draw letter boxes for each answer, numbered in the corner."""
+    inner = width - 2 * MARGIN
+    cell = min(inner // puzzle.cols, 52)
+    x0 = (width - cell * puzzle.cols) // 2
+    img = Image.new("L", (width, cell * puzzle.rows + 6), 255)
+    draw = ImageDraw.Draw(img)
+    num_font = font("sans", max(12, cell // 3), True)
+    letter_font = font("mono", int(cell * 0.6), True)
+    numbers = puzzle.numbers()
+    for (r, c), ch in puzzle.letters().items():
+        x, y = x0 + c * cell, 3 + r * cell
+        draw.rectangle((x, y, x + cell, y + cell), outline=0, width=2)
+        if (r, c) in numbers:
+            draw.text((x + 3, y + 1), str(numbers[(r, c)]), font=num_font, fill=0)
+        if show_answers:
+            draw.text(
+                (x + cell / 2, y + cell * 0.58),
+                ch,
+                font=letter_font,
+                fill=0,
+                anchor="mm",
+            )
+    return img
+
+
+def crossword_page(
+    width: int, puzzle: Crossword, footer: Footer, *, answer: bool = False
+) -> Canvas:
+    """Lay out a criss-cross crossword with Across and Down clues."""
+    canvas = Canvas(width)
+    canvas.title("Crossword answers" if answer else "Crossword")
+    canvas.space(6)
+    canvas.drawing(crossword_drawing(width, puzzle, show_answers=answer))
+    canvas.space(6)
+    for heading, direction in (("Across", "across"), ("Down", "down")):
+        items = [e for e in puzzle.entries if e.direction == direction]
+        if not items:
+            continue
+        canvas.text(heading, px=26, bold=True)
+        for entry in sorted(items, key=lambda e: e.number):
+            extra = f"  ({len(entry.word)})"
+            line = f"{entry.number}. {entry.clue}{extra}"
+            if answer:
+                line += f"  {entry.word}"
+            canvas.text(line, px=22)
+        canvas.space(6)
+    canvas.footer(*footer.fields())
+    return canvas
+
+
+def cryptogram_page(
+    width: int, puzzle: Cryptogram, footer: Footer, *, answer: bool = False
+) -> Canvas:
+    """Lay out a cryptogram: code letters with a blank line under each."""
+    canvas = Canvas(width)
+    canvas.title("Cryptogram answer" if answer else "Cryptogram")
+    canvas.text("Each letter stands for a different letter.", px=22, align="center")
+    canvas.space(8)
+    inner = width - 2 * MARGIN
+    px = 30 if width >= 500 else 26
+    face = font("mono", px, True)
+    small = font("mono", int(px * 0.8), False)
+    adv = int(face.getlength("M") + 4)
+    per_line = max(8, inner // adv)
+    hints = {c: p for c, p in puzzle.hint_pairs()}
+    plain_upper = puzzle.plain.upper()
+    # Wrap by words so no word splits across lines.
+    lines: list[list[tuple[str, str]]] = [[]]
+    for word_c, word_p in zip(
+        puzzle.cipher.split(" "), plain_upper.split(" "), strict=True
+    ):
+        pairs = list(zip(word_c, word_p, strict=True))
+        if lines[-1] and len(lines[-1]) + 1 + len(pairs) > per_line:
+            lines.append([])
+        if lines[-1]:
+            lines[-1].append((" ", " "))
+        lines[-1].extend(pairs)
+    row_h = int(px * 2.6)
+    img = Image.new("L", (width, row_h * len(lines) + 4), 255)
+    draw = ImageDraw.Draw(img)
+    for li, line in enumerate(lines):
+        y = li * row_h
+        x = MARGIN + (inner - adv * len(line)) // 2
+        for code, plain in line:
+            if code.isalpha():
+                draw.text(
+                    (x + adv / 2, y + px * 0.6), code, font=face, fill=0, anchor="mm"
+                )
+                draw.line(
+                    (x + 3, y + px * 2.1, x + adv - 3, y + px * 2.1), fill=0, width=2
+                )
+                shown = plain if answer else hints.get(code)
+                if shown:
+                    draw.text(
+                        (x + adv / 2, y + px * 1.65),
+                        shown,
+                        font=small,
+                        fill=0,
+                        anchor="mm",
+                    )
+            elif code != " ":
+                draw.text(
+                    (x + adv / 2, y + px * 1.6), code, font=face, fill=0, anchor="mm"
+                )
+            x += adv
+    canvas.drawing(img)
+    if hints and not answer:
+        canvas.text(
+            "Hints: " + ", ".join(f"{c} = {p}" for c, p in hints.items()),
+            px=22,
+            align="center",
+        )
+    if answer:
+        canvas.space(4)
+        canvas.text(f"\u201c{puzzle.plain}\u201d", px=24, align="center")
+    canvas.text(f"\u2014 {puzzle.author}", px=22, align="right")
     canvas.space(6)
     canvas.footer(*footer.fields())
     return canvas

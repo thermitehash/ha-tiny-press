@@ -209,6 +209,7 @@ async def test_profiles_add_edit_remove(
             "interests": "dinosaurs, space",
             "stretch": False,
             "spelling_words": "",
+            "spelling_todo": "",
             "difficulty": "medium",
         }
     ]

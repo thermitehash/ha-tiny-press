@@ -61,6 +61,18 @@
       },
       "spelling_search": {
         "default": "mdi:text-box-search-outline"
+      },
+      "sudoku": {
+        "default": "mdi:grid"
+      },
+      "crossword": {
+        "default": "mdi:alpha-c-box-outline"
+      },
+      "cryptogram": {
+        "default": "mdi:lock-question"
+      },
+      "puzzle_pack": {
+        "default": "mdi:puzzle-outline"
       }
     },
     "select": {
@@ -69,6 +81,12 @@
       },
       "kid_profile": {
         "default": "mdi:account-child"
+      },
+      "adult_profile": {
+        "default": "mdi:account"
+      },
+      "sudoku_difficulty": {
+        "default": "mdi:speedometer"
       }
     }
   },

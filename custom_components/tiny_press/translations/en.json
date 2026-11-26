@@ -75,13 +75,15 @@
           "grade": "Reading grade",
           "interests": "Interests",
           "stretch": "Stretch",
-          "spelling_words": "Spelling words"
+          "spelling_words": "Spelling words",
+          "spelling_todo": "Spelling list (to-do list)"
         },
         "data_description": {
           "grade": "The grade they read and do math at.",
           "interests": "Free text, for example: dinosaurs, space, horses.",
           "stretch": "Make puzzles one grade harder.",
-          "spelling_words": "Optional. This week's school list, separated by commas or new lines. Used by Spelling practice and Spelling word search."
+          "spelling_words": "Optional. Typed list (commas or new lines), used when no to-do list is chosen or it can't be read.",
+          "spelling_todo": "Optional. A to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words."
         }
       },
       "edit_kid": {
@@ -91,13 +93,15 @@
           "grade": "Reading grade",
           "interests": "Interests",
           "stretch": "Stretch",
-          "spelling_words": "Spelling words"
+          "spelling_words": "Spelling words",
+          "spelling_todo": "Spelling list (to-do list)"
         },
         "data_description": {
           "grade": "The grade they read and do math at.",
           "interests": "Free text, for example: dinosaurs, space, horses.",
           "stretch": "Make puzzles one grade harder.",
-          "spelling_words": "Optional. This week's school list, separated by commas or new lines. Used by Spelling practice and Spelling word search."
+          "spelling_words": "Optional. Typed list (commas or new lines), used when no to-do list is chosen or it can't be read.",
+          "spelling_todo": "Optional. A to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words."
         }
       },
       "add_adult": {
@@ -167,7 +171,11 @@
         "weather": "Weather and forecast",
         "kid_sudoku": "Kid sudoku (4x4 or 6x6)",
         "spelling": "Spelling practice",
-        "spelling_search": "Spelling word search"
+        "spelling_search": "Spelling word search",
+        "sudoku": "Sudoku (9x9)",
+        "crossword": "Crossword",
+        "cryptogram": "Cryptogram",
+        "puzzle_pack": "Puzzle pack (sudoku, crossword and cryptogram)"
       }
     },
     "text_size": {
@@ -289,6 +297,18 @@
       },
       "spelling_search": {
         "name": "Spelling word search"
+      },
+      "sudoku": {
+        "name": "Sudoku"
+      },
+      "crossword": {
+        "name": "Crossword"
+      },
+      "cryptogram": {
+        "name": "Cryptogram"
+      },
+      "puzzle_pack": {
+        "name": "Puzzle pack"
       }
     },
     "select": {
@@ -302,6 +322,17 @@
       },
       "kid_profile": {
         "name": "Kid profile"
+      },
+      "adult_profile": {
+        "name": "Adult profile"
+      },
+      "sudoku_difficulty": {
+        "name": "Sudoku difficulty",
+        "state": {
+          "easy": "Easy",
+          "medium": "Medium",
+          "hard": "Hard"
+        }
       }
     }
   },
@@ -352,7 +383,10 @@
       "message": "Choose a weather entity under Configure → Settings to print the weather."
     },
     "no_spelling_words": {
-      "message": "{profile} has no spelling words yet. Add them under Configure → Edit a profile, or pass words to the action."
+      "message": "{profile} has no spelling words yet. Add them to the spelling to-do list or under Configure → Edit a profile, or pass words to the action."
+    },
+    "all_words_learned": {
+      "message": "{profile} has learned every word on the spelling list. Add new words (or uncheck some) to print more practice."
     }
   },
   "services": {
@@ -370,11 +404,11 @@
         },
         "profile": {
           "name": "Profile",
-          "description": "Kid profile name for word searches, math, jokes and kid packs. Leave empty to use the Kid profile select."
+          "description": "Kid profile for kid prints, adult profile for sudoku, crossword, cryptogram and puzzle pack. Empty uses the profile selects."
         },
         "difficulty": {
           "name": "Difficulty",
-          "description": "For mazes and kid sudoku. Loose words work: easy, medium, hard, harder, tricky. Kid sudoku: easy is 4x4, medium and hard are 6x6. Empty uses the select (mazes) or the kid's grade (sudoku)."
+          "description": "Loose words work: easy, medium, hard, harder, tricky. Empty uses the difficulty selects or the adult profile's default (kid sudoku: the kid's grade)."
         },
         "seed": {
           "name": "Seed",
@@ -386,7 +420,7 @@
         },
         "words": {
           "name": "Spelling words",
-          "description": "For spelling prints: words to practice. Leave empty to use the kid profile's spelling list."
+          "description": "For spelling prints: words to practice. Empty uses the kid's spelling to-do list (unchecked words), then the typed list."
         }
       }
     },
@@ -440,11 +474,11 @@
         },
         "profile": {
           "name": "Profile",
-          "description": "Kid profile name for word searches, math, jokes and kid packs. Leave empty to use the Kid profile select."
+          "description": "Kid profile for kid prints, adult profile for sudoku, crossword, cryptogram and puzzle pack. Empty uses the profile selects."
         },
         "difficulty": {
           "name": "Difficulty",
-          "description": "For mazes and kid sudoku. Loose words work: easy, medium, hard, harder, tricky. Kid sudoku: easy is 4x4, medium and hard are 6x6. Empty uses the select (mazes) or the kid's grade (sudoku)."
+          "description": "Loose words work: easy, medium, hard, harder, tricky. Empty uses the difficulty selects or the adult profile's default (kid sudoku: the kid's grade)."
         },
         "seed": {
           "name": "Seed",
@@ -452,7 +486,7 @@
         },
         "words": {
           "name": "Spelling words",
-          "description": "For spelling prints: words to practice. Leave empty to use the kid profile's spelling list."
+          "description": "For spelling prints: words to practice. Empty uses the kid's spelling to-do list (unchecked words), then the typed list."
         }
       }
     },

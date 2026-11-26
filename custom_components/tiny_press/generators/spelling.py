@@ -15,7 +15,8 @@ from dataclasses import dataclass
 import random
 import re
 
-MAX_WORDS = 15
+MAX_WORDS = 15  # per sheet
+MAX_PARSED = 50  # a longer list is sampled per sheet
 
 
 def parse_words(text: str | list[str] | None) -> list[str]:
@@ -28,7 +29,7 @@ def parse_words(text: str | list[str] | None) -> list[str]:
         word = re.sub(r"[^A-Za-z]", "", str(item)).lower()
         if len(word) >= 2:
             seen.setdefault(word, None)
-    return list(seen)[:MAX_WORDS]
+    return list(seen)[:MAX_PARSED]
 
 
 def scramble(word: str, rng: random.Random) -> str:
@@ -73,12 +74,19 @@ class SpellingSheet:
         }
 
 
+def pick_words(words: list[str], seed: int) -> list[str]:
+    """Up to ``MAX_WORDS`` words; a longer list is sampled differently per seed."""
+    if len(words) <= MAX_WORDS:
+        return list(words)
+    return random.Random(f"pick-{seed}").sample(words, MAX_WORDS)
+
+
 def generate(words: list[str], seed: int) -> SpellingSheet:
     """Build the unscramble and missing-letter activities."""
     if not words:
         raise ValueError("no spelling words")
     rng = random.Random(seed)
-    order = list(words)
+    order = pick_words(words, seed)
     rng.shuffle(order)
     return SpellingSheet(
         tuple(order),

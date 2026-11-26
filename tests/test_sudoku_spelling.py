@@ -6,7 +6,7 @@ from datetime import date
 import random
 from typing import Any
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -55,7 +55,12 @@ def test_parse_words() -> None:
     ]
     assert spelling.parse_words(["Cat", "a", "dog"]) == ["cat", "dog"]
     assert spelling.parse_words("") == []
-    assert len(spelling.parse_words(",".join(f"w{i}ord" for i in range(30)))) <= 15
+    many = spelling.parse_words(",".join("word" + "x" * i for i in range(60)))
+    assert len(many) == spelling.MAX_PARSED
+    picked = spelling.pick_words(many, 1)
+    assert len(picked) == spelling.MAX_WORDS and set(picked) <= set(many)
+    assert picked != spelling.pick_words(many, 2)
+    assert len(spelling.generate(many, 3).words) == spelling.MAX_WORDS
 
 
 @pytest.mark.parametrize("seed", range(10))
@@ -176,3 +181,81 @@ async def test_prints_through_action(
             blocking=True,
         )
     assert res["type"] == "spelling_search"
+
+
+def _todo(hass: HomeAssistant, items: list[dict[str, str]] | Exception) -> list[str]:
+    calls: list[str] = []
+
+    async def get_items(call):
+        calls.append(call.data["entity_id"])
+        if isinstance(items, Exception):
+            raise items
+        return {call.data["entity_id"]: {"items": items}}
+
+    hass.services.async_register(
+        "todo", "get_items", get_items, supports_response=SupportsResponse.ONLY
+    )
+    return calls
+
+
+TODO_KID = {**KID, "spelling_todo": "todo.rosie_spelling", "spelling_words": "typed"}
+
+
+async def _setup_todo_kid(hass: HomeAssistant, entry: MockConfigEntry) -> None:
+    hass.config_entries.async_update_entry(entry, options={"profiles": [TODO_KID]})
+    assert await hass.config_entries.async_setup(entry.entry_id)
+
+
+async def test_spelling_from_todo_list(
+    hass: HomeAssistant, config_entry: MockConfigEntry, printer: FakePrinter
+) -> None:
+    calls = _todo(
+        hass,
+        [
+            {"summary": "because", "status": "needs_action"},
+            {"summary": "Friend!", "status": "needs_action"},
+            {"summary": "said", "status": "completed"},
+        ],
+    )
+    await _setup_todo_kid(hass, config_entry)
+    await _print(hass, type="spelling", seed=1)
+    store = config_entry.runtime_data.store
+    assert sorted(store.history[0]["answer"]["words"]) == ["because", "friend"]
+    assert calls == ["todo.rosie_spelling"]
+    await _print(hass, type="spelling_search", seed=1)
+    words = sorted(p[0] for p in store.history[0]["answer"]["placements"])
+    assert words == ["BECAUSE", "FRIEND"]
+    # Words passed to the action win over the list.
+    await _print(hass, type="spelling", words="moon", seed=2)
+    assert store.history[0]["answer"]["words"] == ["moon"]
+    assert len(calls) == 2
+
+
+async def test_all_words_learned(
+    hass: HomeAssistant, config_entry: MockConfigEntry, printer: FakePrinter
+) -> None:
+    _todo(hass, [{"summary": "said", "status": "completed"}])
+    await _setup_todo_kid(hass, config_entry)
+    with pytest.raises(ServiceValidationError, match="learned every word"):
+        await _print(hass, type="spelling")
+
+
+async def test_unreadable_todo_falls_back_to_typed(
+    hass: HomeAssistant, config_entry: MockConfigEntry, printer: FakePrinter
+) -> None:
+    from homeassistant.exceptions import HomeAssistantError
+
+    _todo(hass, HomeAssistantError("gone"))
+    await _setup_todo_kid(hass, config_entry)
+    await _print(hass, type="spelling", seed=1)
+    store = config_entry.runtime_data.store
+    assert store.history[0]["answer"]["words"] == ["typed"]
+
+
+async def test_empty_todo_falls_back_to_typed(
+    hass: HomeAssistant, config_entry: MockConfigEntry, printer: FakePrinter
+) -> None:
+    _todo(hass, [])
+    await _setup_todo_kid(hass, config_entry)
+    await _print(hass, type="spelling", seed=1)
+    assert config_entry.runtime_data.store.history[0]["answer"]["words"] == ["typed"]

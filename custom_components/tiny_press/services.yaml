@@ -20,6 +20,10 @@ print:
             - kid_sudoku
             - spelling
             - spelling_search
+            - sudoku
+            - crossword
+            - cryptogram
+            - puzzle_pack
             - weather
             - test_page
     profile:
@@ -107,6 +111,10 @@ preview:
             - kid_sudoku
             - spelling
             - spelling_search
+            - sudoku
+            - crossword
+            - cryptogram
+            - puzzle_pack
             - weather
             - test_page
     profile:

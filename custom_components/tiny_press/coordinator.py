@@ -32,6 +32,7 @@ from .const import (
     OFFLINE_REPAIR_AFTER_HOURS,
     PAPER_80MM,
     PAPER_DOTS,
+    SETTING_ADULT_PROFILE,
     SETTING_KID_PROFILE,
     PaperState,
 )
@@ -40,7 +41,7 @@ from .printer import escpos
 from .printer.escpos import PrinterStatus
 from .printer.queue import PrintQueue
 from .printer.transport import PrinterError, PrinterTransport
-from .profiles import KID, Profile, find_profile
+from .profiles import ADULT, KID, Profile, find_profile
 from .render.canvas import Canvas
 from .repairs import async_clear_offline_issue, async_raise_offline_issue
 from .store import TinyPressStore
@@ -182,6 +183,15 @@ class TinyPressCoordinator(DataUpdateCoordinator[PrinterState]):
     def limiter(self) -> RateLimiter:
         """Kid-mode limits (settings from the options, counts from the store)."""
         return RateLimiter(self.store, dict(self.config_entry.options))
+
+    def adult_profile(self, wanted: str | None = None) -> Profile:
+        """Return an adult profile by name/ID, else the one chosen in the select."""
+        return find_profile(
+            self.config_entry.options,
+            ADULT,
+            wanted,
+            self.store.get_setting(SETTING_ADULT_PROFILE),
+        )
 
     async def async_preview(
         self, job: PrintJob | Callable[[], PrintJob]
