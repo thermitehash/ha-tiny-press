@@ -129,7 +129,7 @@
         "data_description": {
           "grade": "Used by word searches, spelling and stories.",
           "interests": "[%key:component::tiny_press::options::step::add_kid::data_description::interests%]",
-          "stretch": "[%key:component::tiny_press::options::step::add_kid::data_description::stretch%] (reading and math).",
+          "stretch": "[%key:component::tiny_press::options::step::add_kid::data_description::stretch%]",
           "spelling_words": "[%key:component::tiny_press::options::step::add_kid::data_description::spelling_words%]",
           "spelling_todo": "[%key:component::tiny_press::options::step::add_kid::data_description::spelling_todo%]",
           "math_grade": "Used by math strips and kid sudoku. Grade 1 is single-digit addition and subtraction.",
