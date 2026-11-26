@@ -72,6 +72,12 @@ kid-friendly control instead of a grid of separate button entities.
 - **Preview before printing:** a rendered preview of the next print (the same 1-bit image the printer gets), with Print and Shuffle buttons. This needs a small preview endpoint or action that returns a PNG without printing.
 - **Busy state:** buttons disable while a job is printing, and errors show as a friendly message, not a stack trace.
 - **Kid mode:** an option to hide settings and adult puzzles, and to require a hold-to-print press so a toddler can't empty the roll.
+  - **Rate limiter:** a cooldown between prints (e.g. 2 minutes), a cap on prints per hour and per day (e.g. 4 and 10), and a daily paper budget in mm.
+    - The card shows "Next print in 1:30" or "3 prints left today", and a friendly "That's enough printing for today!" when the limit is reached.
+  - **Enforced in the integration, not just the card**, so the same limits apply to buttons, voice phrases and Siri. Kid-facing entry points count toward the limit.
+    - Adults can bypass it: an "adult" flag on the action call, and actions run by admin users.
+    - Limits are set in the options flow and reset at local midnight.
+    - Blocked attempts fire `tiny_press_rate_limited`, so a parent can be notified if they want.
 - **Packaging:**
   - Ship the card's JavaScript inside the integration and register it as a frontend resource automatically, so there's no separate HACS "Dashboard" repository to install.
   - Configure it in the visual card editor (the printer device, and which buttons to show).
