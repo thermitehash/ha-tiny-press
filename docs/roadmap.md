@@ -11,7 +11,7 @@
 | — | 0.7.0 ✅ | Sensor history prints (graph, table, timeline) |
 | 6 | 0.8.0 ✅ | Assist voice phrases (blueprint) and print tools for AI agents |
 | — | 0.9.0 ✅ | RSS/Atom feed prints and live quote of the day from Wikiquote |
-| — | 0.10.0 | Holiday-aware morning slip, seasonal and holiday puzzle themes, quote source setting (planned, below) |
+| — | 0.10.0 | Holiday-aware morning slip (day of only), seasonal and holiday puzzle themes, quote source setting (planned, below) |
 | 7 | — | Skylight (planning only, below) |
 | later | — | Selfie prints and AI-generated kid-safe pictures (planning only, below) |
 
@@ -21,8 +21,8 @@ Design questions get asked one at a time when this is built.
 
 ### Holiday-aware morning slip
 - **Banner under the date** on a holiday: "Today is Diwali, the festival of lights". The one-line description is neutral and factual (what the day is), sourced and credited (for example Library of Congress or Smithsonian educational pages), never devotional.
-- **Optional countdowns** for chosen days: "3 days until Lunar New Year."
-- **Optional themed fun:** on a holiday, the slip's bottom and that day's kid puzzles use its theme.
+- **Day of only:** a holiday is recognized only on the day itself, with no countdowns or reminders beforehand.
+- **Themed fun:** on a holiday, the slip's bottom and that day's puzzles use its theme.
 - **Dates:** Home Assistant's Holidays integration calendars (country and region), plus a bundled, sourced table of moving lunar and lunisolar dates for about ten years.
 
 ### Not centered on any one tradition
