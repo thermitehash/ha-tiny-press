@@ -836,17 +836,7 @@
     "ROSE": "Red flower",
     "CARD": "It may say 'Be mine'",
     "KIND": "Nice and caring"
-   },
-   "jokes": [
-    {
-     "setup": "What did the stamp say to the envelope?",
-     "punchline": "I'm stuck on you!"
-    },
-    {
-     "setup": "What did one pickle say to the other?",
-     "punchline": "You mean a great dill to me!"
-    }
-   ]
+   }
   },
   {
    "id": "halloween",
@@ -872,17 +862,7 @@
     "MASK": "Costume face cover",
     "CANDY": "Trick-or-treat haul",
     "SPIDER": "Web spinner"
-   },
-   "jokes": [
-    {
-     "setup": "Why didn't the skeleton go to the party?",
-     "punchline": "He had no body to go with!"
-    },
-    {
-     "setup": "What room does a ghost not need?",
-     "punchline": "A living room!"
-    }
-   ]
+   }
   },
   {
    "id": "new_years_eve",
@@ -908,17 +888,7 @@
     "WISH": "Hope for the year",
     "YEAR": "Twelve months",
     "CHEER": "Hooray!"
-   },
-   "jokes": [
-    {
-     "setup": "What do you call a dog on New Year's Eve?",
-     "punchline": "A party pooch!"
-    },
-    {
-     "setup": "What did the calendar say on New Year's Eve?",
-     "punchline": "My days are numbered!"
-    }
-   ]
+   }
   },
   {
    "id": "juneteenth",

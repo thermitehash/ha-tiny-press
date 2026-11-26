@@ -107,6 +107,17 @@ def test_todays_groups_and_order() -> None:
     )
 
 
+def test_no_religious_or_cultural_jokes() -> None:
+    """Themed jokes only come from science days, in the data and in code."""
+    for item in ob.all_observances():
+        if item["group"] != "science":
+            assert "jokes" not in item, item["id"]
+            assert ob.theme(item["id"]).jokes == (), item["id"]
+    sneaky = {"id": "x", "group": "fun", "jokes": [{"setup": "a", "punchline": "b"}]}
+    assert ob._theme_from(sneaky, "x", "X").jokes == ()
+    assert ob.theme("pi_day").jokes  # science days keep theirs
+
+
 def test_review_fixes() -> None:
     """Fixes from the cultural-sensitivity review."""
 

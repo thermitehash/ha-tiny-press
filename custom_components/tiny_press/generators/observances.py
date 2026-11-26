@@ -198,14 +198,20 @@ class Observance:
     solemn: bool = False  # no jokes on this day
 
 
+# Themed jokes only ever come from science days: never jokes about any
+# religious or cultural observance (including fun days such as Halloween).
+JOKE_GROUPS = frozenset({"science"})
+
+
 def _theme_from(item: dict[str, Any], theme_id: str, name: str) -> Theme:
+    jokes = item.get("jokes") if item.get("group") in JOKE_GROUPS else None
     return Theme(
         theme_id,
         name,
         tuple(item.get("words") or ()),
         dict(item.get("clues") or {}),
         art(item.get("art")),
-        tuple(item.get("jokes") or ()),
+        tuple(jokes or ()),
         tuple(item.get("fact_sources") or ()),
     )
 
