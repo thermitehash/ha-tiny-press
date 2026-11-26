@@ -24,6 +24,7 @@ print:
             - crossword
             - cryptogram
             - puzzle_pack
+            - story
             - weather
             - test_page
     profile:
@@ -148,3 +149,72 @@ print_answers:
       example: K7Q2
       selector:
         text:
+
+print_story:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: tiny_press
+    profile:
+      example: Rosie
+      selector:
+        text:
+    topic:
+      example: a dragon who is afraid of the dark
+      selector:
+        text:
+    length:
+      selector:
+        select:
+          translation_key: story_length
+          options:
+            - short
+            - medium
+            - long
+    mode:
+      default: standalone
+      selector:
+        select:
+          translation_key: story_mode
+          options:
+            - standalone
+            - serial
+    ignore_limits:
+      default: false
+      selector:
+        boolean:
+
+continue_story:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: tiny_press
+    profile:
+      example: Rosie
+      selector:
+        text:
+    choice:
+      example: A
+      selector:
+        select:
+          options:
+            - A
+            - B
+    final:
+      default: false
+      selector:
+        boolean:
+    length:
+      selector:
+        select:
+          translation_key: story_length
+          options:
+            - short
+            - medium
+            - long
+    ignore_limits:
+      default: false
+      selector:
+        boolean:

@@ -71,3 +71,10 @@ Written for Tiny Press (MIT). Each word has a straight clue and a wordplay
 ("NYT-style") clue. There is no openly licensed collection of NYT-style clues
 to draw on, so these clues are original. Words are everyday vocabulary, with
 no obscure "crosswordese". No clue contains its own answer.
+
+## `stories.json`: offline bedtime stories (6)
+
+Two stories per length (short, medium, long), written for Tiny Press (MIT).
+They print when no AI task entity is set or the AI fails. Planned additions:
+gentle public-domain classics (Thornton W. Burgess, Beatrix Potter, Aesop)
+from Project Gutenberg, each credited.

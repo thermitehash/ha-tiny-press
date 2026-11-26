@@ -15,7 +15,7 @@ from .const import DOMAIN, PrintType
 from .coordinator import TinyPressConfigEntry, TinyPressCoordinator
 from .entity import TinyPressEntity
 from .jobs import answer_job
-from .services import async_print_type
+from .services import async_print_type, async_story
 
 PARALLEL_UPDATES = 1
 
@@ -24,7 +24,7 @@ PARALLEL_UPDATES = 1
 class TinyPressButtonDescription(ButtonEntityDescription):
     """Describes a print button."""
 
-    print_type: PrintType | None  # None: answers for the newest puzzle
+    print_type: PrintType | None  # None: answers or next chapter (by key)
 
 
 BUTTONS: tuple[TinyPressButtonDescription, ...] = (
@@ -42,6 +42,8 @@ BUTTONS: tuple[TinyPressButtonDescription, ...] = (
     TinyPressButtonDescription(key="crossword", print_type=PrintType.CROSSWORD),
     TinyPressButtonDescription(key="cryptogram", print_type=PrintType.CRYPTOGRAM),
     TinyPressButtonDescription(key="puzzle_pack", print_type=PrintType.PUZZLE_PACK),
+    TinyPressButtonDescription(key="bedtime_story", print_type=PrintType.STORY),
+    TinyPressButtonDescription(key="next_chapter", print_type=None),
     TinyPressButtonDescription(key="weather", print_type=PrintType.WEATHER),
     TinyPressButtonDescription(key="answers", print_type=None),
     TinyPressButtonDescription(
@@ -78,6 +80,9 @@ class TinyPressButton(TinyPressEntity, ButtonEntity):
     async def async_press(self) -> None:
         """Print."""
         kind = self.entity_description.print_type
+        if self.entity_description.key == "next_chapter":
+            await async_story(self.hass, self.coordinator, continuing=True)
+            return
         if kind is None:
             entry = self.coordinator.store.find_answer(None)
             if entry is None:

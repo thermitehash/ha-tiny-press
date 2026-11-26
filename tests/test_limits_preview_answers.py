@@ -259,7 +259,7 @@ async def test_card_is_served(
         assert await async_setup_component(hass, DOMAIN, {})
         await hass.async_block_till_done()
     add_js.assert_called_once()
-    assert add_js.call_args[0][1] == f"{CARD_URL}?v=0.4.0"
+    assert add_js.call_args[0][1] == f"{CARD_URL}?v=0.5.0"
     client = await hass_client()
     response = await client.get(CARD_URL)
     assert response.status == 200

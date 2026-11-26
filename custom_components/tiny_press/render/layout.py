@@ -19,10 +19,11 @@ from ..generators.jokes import Joke
 from ..generators.math_strip import MathStrip, Problem
 from ..generators.maze import Maze
 from ..generators.spelling import SpellingSheet
+from ..generators.story import Story
 from ..generators.sudoku import Sudoku
 from ..generators.weather import WeatherReport, condition_label
 from ..generators.word_search import WordSearch
-from .canvas import MARGIN, Canvas, font
+from .canvas import MARGIN, Canvas, font, wrap
 
 # No 0/O, 1/I/L, 5/S, 2/Z, 8/B: the ID is read off paper by a person.
 ID_ALPHABET = "ACDEFGHJKMNPQRTUVWXY34679"
@@ -867,6 +868,41 @@ def cryptogram_page(
         canvas.space(4)
         canvas.text(f"\u201c{puzzle.plain}\u201d", px=24, align="center")
     canvas.text(f"\u2014 {puzzle.author}", px=22, align="right")
+    canvas.space(6)
+    canvas.footer(*footer.fields())
+    return canvas
+
+
+def story_page(width: int, story: Story, footer: Footer) -> Canvas:
+    """Lay out a bedtime story or chapter, with choices for serials."""
+    canvas = Canvas(width)
+    canvas.title(story.title, px=38)
+    if story.chapter:
+        canvas.text(f"Chapter {story.chapter}", px=24, align="center")
+    canvas.space(10)
+    for para in story.paragraphs:
+        canvas.text(para, px=26, line_gap=0.3)
+        canvas.space(10)
+    if story.choices:
+        canvas.rule(dashed=True)
+        canvas.text("What happens next? Circle one:", px=24, bold=True)
+        canvas.space(4)
+        for letter, choice in zip("AB", story.choices, strict=False):
+            face = font("sans", 24, False)
+            letter_face = font("sans", 26, True)
+            inner = width - 2 * MARGIN
+            lines = wrap(choice, face, inner - 56)
+            line_h = int(24 * 1.35)
+            block = Image.new("L", (width, max(44, line_h * len(lines)) + 8), 255)
+            draw = ImageDraw.Draw(block)
+            draw.ellipse((MARGIN + 2, 2, MARGIN + 40, 40), outline=0, width=3)
+            draw.text((MARGIN + 21, 21), letter, font=letter_face, fill=0, anchor="mm")
+            for i, line in enumerate(lines):
+                draw.text((MARGIN + 54, 6 + i * line_h), line, font=face, fill=0)
+            canvas.drawing(block)
+            canvas.space(6)
+    if story.credit:
+        canvas.text(story.credit, px=18, align="right")
     canvas.space(6)
     canvas.footer(*footer.fields())
     return canvas

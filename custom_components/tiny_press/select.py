@@ -1,4 +1,4 @@
-"""Selects: active kid and adult profiles, maze and sudoku difficulty."""
+"""Selects: kid and adult profiles, maze and sudoku difficulty, story length."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from .const import (
     SETTING_ADULT_PROFILE,
     SETTING_KID_PROFILE,
     SETTING_MAZE_DIFFICULTY,
+    SETTING_STORY_LENGTH,
     SETTING_SUDOKU_DIFFICULTY,
     Difficulty,
 )
@@ -34,6 +35,7 @@ async def async_setup_entry(
             TinyPressProfileSelect(coordinator, SETTING_ADULT_PROFILE, ADULT),
             TinyPressDifficultySelect(coordinator, SETTING_MAZE_DIFFICULTY),
             TinyPressDifficultySelect(coordinator, SETTING_SUDOKU_DIFFICULTY),
+            TinyPressStoryLengthSelect(coordinator, SETTING_STORY_LENGTH),
         ]
     )
 
@@ -91,4 +93,26 @@ class TinyPressProfileSelect(TinyPressEntity, SelectEntity):
         """Store the chosen profile's ID."""
         profile = next(p for p in self._profiles if p.name == option)
         self.coordinator.store.set_setting(self._key, profile.id)
+        self.async_write_ha_state()
+
+
+class TinyPressStoryLengthSelect(TinyPressEntity, SelectEntity):
+    """Short, medium or long bedtime stories (buttons and prints without one)."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_options = ["short", "medium", "long"]
+
+    def __init__(self, coordinator: TinyPressCoordinator, key: str) -> None:
+        """Remember which setting this select stores."""
+        super().__init__(coordinator, key)
+        self._key = key
+
+    @property
+    def current_option(self) -> str:
+        """Stored length (medium by default)."""
+        return str(self.coordinator.store.get_setting(self._key, "medium"))
+
+    async def async_select_option(self, option: str) -> None:
+        """Save the choice."""
+        self.coordinator.store.set_setting(self._key, option)
         self.async_write_ha_state()

@@ -11,7 +11,7 @@ A Home Assistant integration that turns an Epson receipt printer into a househol
 - **Home Assistant:** 2026.11.0 or newer
 - **Nothing prints automatically.** Tiny Press ships no schedules or time-based automations.
 
-> **Status: v0.4.0.** Adult puzzles (sudoku, crossword, cryptogram, puzzle pack) on top of v0.3.0. **v0.3.0:** Kid pack (profiles, maze, word search, math strip, jokes and fun facts), a dashboard card with kid mode, kid-mode print limits, previews and answer keys. See the [roadmap](docs/roadmap.md) for what's next.
+> **Status: v0.5.0.** Bedtime stories and choose-your-own-adventure chapters. **v0.4.0:** Adult puzzles (sudoku, crossword, cryptogram, puzzle pack) on top of v0.3.0. **v0.3.0:** Kid pack (profiles, maze, word search, math strip, jokes and fun facts), a dashboard card with kid mode, kid-mode print limits, previews and answer keys. See the [roadmap](docs/roadmap.md) for what's next.
 
 <!-- Screenshot placeholders -->
 <!-- ![Device page](docs/images/device.png) -->
@@ -40,7 +40,7 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 |---|---|---|
 | Longest single print | 600 mm | Any print longer than this is trimmed and ends with a "trimmed" note, so a runaway print can't empty the roll. |
 | Status check interval | 60 s | How often paper and cover status are read. Status is never read while a job is printing. |
-| AI task entity | none | Optional. Any `ai_task` entity (for example the Anthropic integration's). Used for bedtime stories in a later version. |
+| AI task entity | none | Optional. Any `ai_task` entity (for example the Anthropic integration's). Writes bedtime stories. Without it, bundled stories print instead. |
 | Weather entity | none | Used by the Weather print. Not needed if you only have one weather entity. |
 | Use AI for jokes and fun facts | off | Off: jokes and facts come from bundled, human-written lists (facts from NOAA, NASA and the National Park Service, with credits). On: the AI is asked first. |
 
@@ -90,6 +90,8 @@ Every math strip ends with a harder ★ bonus problem. Kid sudoku (numbers) is 4
 | `button.tiny_press_crossword` | Prints a criss-cross crossword for the selected adult |
 | `button.tiny_press_cryptogram` | Prints a cryptogram from a public-domain quote |
 | `button.tiny_press_puzzle_pack` | Prints sudoku, crossword and cryptogram in one go |
+| `button.tiny_press_bedtime_story` | Prints a bedtime story (Story length select) |
+| `button.tiny_press_next_chapter` | Prints the next chapter of the kid's adventure (gentler choice) |
 | `button.tiny_press_weather` | Prints current weather and a forecast of up to 10 days |
 | `button.tiny_press_answers` | Prints the answer key for the newest puzzle |
 | `button.tiny_press_test_page` | Prints the test page |
@@ -97,6 +99,7 @@ Every math strip ends with a harder ★ bonus problem. Kid sudoku (numbers) is 4
 | `select.tiny_press_kid_profile` | Who the buttons print for |
 | `select.tiny_press_adult_profile` | Who the adult puzzles are for |
 | `select.tiny_press_maze_difficulty` | Easy, medium or hard |
+| `select.tiny_press_story_length` | Short, medium or long stories |
 | `select.tiny_press_sudoku_difficulty` | Easy, medium or hard (defaults to the adult's difficulty) |
 
 If the printer is unreachable for more than 24 hours, a **Repairs** issue appears. It clears itself once the printer answers again.
@@ -148,6 +151,28 @@ data:
   profile: Rosie
 ```
 
+### `tiny_press.print_story`
+
+```yaml
+action: tiny_press.print_story
+data:
+  topic: a dragon who is afraid of the dark
+  length: medium        # short, medium or long
+  mode: serial          # or standalone
+response_variable: story   # title, chapter, choices {A, B}, source
+```
+
+The story is written for the kid's reading grade and interests, with a made-up main character. Her name is never sent to the AI. Without an AI task entity (or if it fails), a bundled story prints and a notification explains why.
+
+### `tiny_press.continue_story`
+
+```yaml
+action: tiny_press.continue_story
+data:
+  choice: B       # as circled on the last chapter; leave out for the gentler one
+  # final: true   # wrap the adventure up
+```
+
 ### `tiny_press.preview`
 
 Draws a print without printing it. Returns `image` (a PNG data URI), `seed` and the usual fields. Call `tiny_press.print` with the same `seed` to print exactly what you saw.
@@ -188,7 +213,7 @@ type: custom:tiny-press-card
 title: Rosie's printer
 kid_mode: true          # hold-to-print, no settings or answers, shows limits
 show_preview: false     # true: see the print first, then Shuffle or Print
-buttons: [maze, word_search, math, kid_sudoku, spelling, joke, kid_pack, sudoku, crossword, cryptogram, puzzle_pack, weather]
+buttons: [maze, word_search, math, kid_sudoku, spelling, joke, kid_pack, story, next_chapter, sudoku, crossword, cryptogram, puzzle_pack, weather]
 # ignore_limits: true   # for a parents' dashboard
 ```
 
