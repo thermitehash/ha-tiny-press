@@ -10,9 +10,9 @@
 | 5 | 0.6.0 ✅ | Morning slip (manual only) |
 | — | 0.7.0 ✅ | Sensor history prints (graph, table, timeline) |
 | 6 | 0.8.0 | Voice blueprint and Siri docs |
+| — | 0.9.0 | RSS/Atom feed prints and live quote of the day from Wikiquote (planned, below) |
 | 7 | — | Skylight (planning only, below) |
 | later | — | Selfie prints and AI-generated kid-safe pictures (planning only, below) |
-| later | — | RSS/Atom feed prints and a live quote of the day (planning only, below) |
 
 ## Phase 7: Skylight family calendar (planning only)
 
@@ -62,7 +62,7 @@ Both build on `print_image`'s existing 1-bit rendering. Like everything else, th
   - Whether to cache generated pages for re-printing.
   - A per-day limit so a voice command can't run up a bill.
 
-## Later: RSS/Atom feeds and a live quote of the day (planning only)
+## v0.9.0: RSS/Atom feeds and a live quote of the day (planned)
 
 ### Feed prints
 - A `tiny_press.print_feed` action (and card buttons) that prints the newest items from any RSS or Atom feed: headline, date, a short summary, the source's name and a QR code linking to the item.
