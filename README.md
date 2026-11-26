@@ -54,7 +54,7 @@ Open **Settings → Devices & services → Tiny Press → Configure** to add, ed
 | Interests | Free text such as `dinosaurs, space, horses`. Themed words appear in word searches (and in AI jokes if switched on). |
 | Stretch | Makes puzzles one grade harder (reading stays at their grade) |
 
-An adult profile has a name and a default puzzle difficulty (used by the adult puzzles in v0.3.0). Add as many profiles as you like, for example a younger sibling later.
+An adult profile has a name and a default puzzle difficulty (used by the adult puzzles in v0.4.0). Add as many profiles as you like, for example a younger sibling later.
 
 What each grade gets:
 
