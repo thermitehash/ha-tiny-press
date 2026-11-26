@@ -1,0 +1,68 @@
+print:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: tiny_press
+    type:
+      required: true
+      example: maze
+      selector:
+        select:
+          translation_key: print_type
+          options:
+            - maze
+            - test_page
+    profile:
+      example: Kid
+      selector:
+        text:
+    difficulty:
+      example: harder
+      selector:
+        text:
+    seed:
+      example: 42
+      selector:
+        number:
+          min: 0
+          max: 2147483647
+          mode: box
+
+print_text:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: tiny_press
+    text:
+      required: true
+      example: "Remember to feed the cat!"
+      selector:
+        text:
+          multiline: true
+    title:
+      example: Note
+      selector:
+        text:
+    size:
+      default: normal
+      selector:
+        select:
+          translation_key: text_size
+          options:
+            - small
+            - normal
+            - large
+
+print_image:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: tiny_press
+    path:
+      required: true
+      example: /config/www/drawing.png
+      selector:
+        text:

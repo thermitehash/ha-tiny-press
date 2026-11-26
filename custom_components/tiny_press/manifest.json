@@ -1,0 +1,40 @@
+{
+  "domain": "tiny_press",
+  "name": "Tiny Press",
+  "after_dependencies": [
+    "ai_task",
+    "weather",
+    "calendar"
+  ],
+  "codeowners": [
+    "@thermitehash"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "dhcp": [
+    {
+      "registered_devices": true
+    },
+    {
+      "macaddress": "0026AB*"
+    },
+    {
+      "macaddress": "381A52*"
+    },
+    {
+      "macaddress": "64EB8C*"
+    },
+    {
+      "macaddress": "A4D73C*"
+    },
+    {
+      "macaddress": "B0E892*"
+    }
+  ],
+  "documentation": "https://github.com/thermitehash/ha-tiny-press",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/thermitehash/ha-tiny-press/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
