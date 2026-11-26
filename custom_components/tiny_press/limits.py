@@ -17,6 +17,7 @@ from typing import Any
 from homeassistant.util import dt as dt_util
 
 from .const import PrintType
+from .profiles import KID, load_profiles
 from .store import TinyPressStore
 
 CONF_LIMITS_ENABLED = "limits_enabled"
@@ -91,6 +92,7 @@ class RateLimiter:
     def __init__(self, store: TinyPressStore, options: dict[str, Any]) -> None:
         """Bind to the store and options."""
         self.store = store
+        self.profiles = load_profiles(options)
         self.options = {
             **DEFAULTS,
             **{k: v for k, v in options.items() if k in DEFAULTS},
@@ -105,6 +107,14 @@ class RateLimiter:
     def admins_skip(self) -> bool:
         """True when admin users aren't limited."""
         return bool(self.options[CONF_ADMINS_SKIP])
+
+    def per_day(self, kid: str | None) -> int:
+        """Return a kid's prints a day: their profile's own limit, else the setting."""
+        own = next(
+            (p.daily_limit for p in self.profiles if p.id == kid and p.kind == KID),
+            0,
+        )
+        return own or int(self.options[CONF_PER_DAY])
 
     def _today(self, now: datetime, kid: str | None) -> dict[str, Any]:
         """Today's counts for one kid (each kid has their own)."""
@@ -124,7 +134,7 @@ class RateLimiter:
         now = now or dt_util.utcnow()
         data = self._today(now, kid)
         prints = sorted(datetime.fromisoformat(p) for p in data["prints"])
-        per_day = int(self.options[CONF_PER_DAY])
+        per_day = self.per_day(kid)
         per_hour = int(self.options[CONF_PER_HOUR])
         cooldown = timedelta(seconds=int(self.options[CONF_COOLDOWN_S]))
         paper_left = max(0.0, float(self.options[CONF_PAPER_MM_DAY]) - data["paper_mm"])

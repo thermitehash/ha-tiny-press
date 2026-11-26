@@ -15,7 +15,7 @@
 | — | 0.11.0 ✅ | Per-person card and kid limits, reading and math grades, harder mazes per kid, card time bar |
 | — | 0.11.1 ✅ | Thanksgiving as a heritage (US) day; calendar holidays no longer repeat a built-in day |
 | — | 0.11.2 ✅ | Spelling words from a linked to-do list only; Spelling tiles grey out when the list is empty |
-| — | 0.12.0 ✅ | Spelling crossword with AI-written clues (scrambled-word clues offline) |
+| — | 0.12.0 ✅ | Spelling crossword with AI-written clues (scrambled-word clues offline); daily print limit per kid |
 | 7 | — | Skylight (planning only, below) |
 | later | — | Selfie prints and AI-generated kid-safe pictures (planning only, below) |
 | later | — | Recipe prints from Tandoor (idea, below) |

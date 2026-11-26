@@ -155,3 +155,66 @@ async def test_morning_slip_greys_out_for_everyone(
     config_entry.runtime_data.async_update_listeners()
     await hass.async_block_till_done()
     assert hass.states.get(button).attributes["printed_today"] is False
+
+
+async def test_daily_limit_per_kid(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    printer: FakePrinter,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    freezer.move_to("2026-11-26 15:00:00+00:00")
+    hass.config_entries.async_update_entry(
+        config_entry,
+        options={
+            "limits_enabled": True,
+            "limit_cooldown_s": 0,
+            "limit_per_hour": 0,
+            "limit_per_day": 5,
+            "profiles": [
+                {"id": "rosie", "kind": "kid", "name": "Rosie", "daily_limit": 2},
+                {"id": "max", "kind": "kid", "name": "Max"},
+            ],
+        },
+    )
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+    kids = hass.states.get(LEFT).attributes["kids"]
+    assert kids["rosie"]["per_day"] == 2 and kids["rosie"]["prints_left"] == 2
+    assert kids["max"]["per_day"] == 5 and kids["max"]["prints_left"] == 5
+
+    for _ in range(2):
+        await _print(hass, type="joke", profile="rosie")
+    with pytest.raises(ServiceValidationError, match="enough printing for today"):
+        await _print(hass, type="joke", profile="rosie")
+    # Max follows the household setting.
+    for _ in range(5):
+        await _print(hass, type="joke", profile="max")
+    with pytest.raises(ServiceValidationError, match="enough printing for today"):
+        await _print(hass, type="joke", profile="max")
+
+
+async def test_set_daily_limit_in_options(
+    hass: HomeAssistant, loaded_entry: MockConfigEntry
+) -> None:
+    flow = hass.config_entries.options
+    result = await flow.async_init(loaded_entry.entry_id)
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "add_kid"})
+    result = await flow.async_configure(
+        result["flow_id"],
+        {"name": "Rosie", "grade": "2", "stretch": False, "daily_limit": 3},
+    )
+    await hass.async_block_till_done()
+    assert loaded_entry.options["profiles"][0]["daily_limit"] == 3
+    # Cleared: back to the household setting.
+    result = await flow.async_init(loaded_entry.entry_id)
+    result = await flow.async_configure(
+        result["flow_id"], {"next_step_id": "edit_profile"}
+    )
+    result = await flow.async_configure(result["flow_id"], {"profile": "rosie"})
+    assert result["step_id"] == "edit_kid"
+    result = await flow.async_configure(
+        result["flow_id"], {"name": "Rosie", "grade": "2", "stretch": False}
+    )
+    await hass.async_block_till_done()
+    assert loaded_entry.options["profiles"][0]["daily_limit"] == 0

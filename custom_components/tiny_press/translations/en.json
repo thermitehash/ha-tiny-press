@@ -102,7 +102,8 @@
           "spelling_todo": "Spelling list (to-do list)",
           "math_grade": "Math grade",
           "maze_difficulty": "Maze difficulty",
-          "ha_user": "Home Assistant user"
+          "ha_user": "Home Assistant user",
+          "daily_limit": "Prints per day"
         },
         "data_description": {
           "grade": "Used by word searches, spelling and stories.",
@@ -111,7 +112,8 @@
           "spelling_todo": "The only source of spelling words: a to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words. Without a list, or with every word checked off, the Spelling tiles are greyed out on the card.",
           "math_grade": "Used by math strips and kid sudoku. Grade 1 is single-digit addition and subtraction.",
           "maze_difficulty": "This kid's mazes. \"Follow the Maze difficulty select\" uses the device's select; asking for a level (\"print a hard maze\") still wins.",
-          "ha_user": "Optional. When this person is logged in, the Tiny Press card shows only their prints, limits and story, and kid-mode limits always apply to them."
+          "ha_user": "Optional. When this person is logged in, the Tiny Press card shows only their prints, limits and story, and kid-mode limits always apply to them.",
+          "daily_limit": "Optional. This kid's own daily print limit when kid-mode limits are on. Leave empty to use the Prints per day under Kid-mode limits. The cooldown, hourly and paper limits still apply."
         }
       },
       "edit_kid": {
@@ -124,7 +126,8 @@
           "spelling_todo": "Spelling list (to-do list)",
           "math_grade": "Math grade",
           "maze_difficulty": "Maze difficulty",
-          "ha_user": "Home Assistant user"
+          "ha_user": "Home Assistant user",
+          "daily_limit": "Prints per day"
         },
         "data_description": {
           "grade": "Used by word searches, spelling and stories.",
@@ -133,7 +136,8 @@
           "spelling_todo": "The only source of spelling words: a to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words. Without a list, or with every word checked off, the Spelling tiles are greyed out on the card.",
           "math_grade": "Used by math strips and kid sudoku. Grade 1 is single-digit addition and subtraction.",
           "maze_difficulty": "This kid's mazes. \"Follow the Maze difficulty select\" uses the device's select; asking for a level (\"print a hard maze\") still wins.",
-          "ha_user": "Optional. When this person is logged in, the Tiny Press card shows only their prints, limits and story, and kid-mode limits always apply to them."
+          "ha_user": "Optional. When this person is logged in, the Tiny Press card shows only their prints, limits and story, and kid-mode limits always apply to them.",
+          "daily_limit": "Optional. This kid's own daily print limit when kid-mode limits are on. Leave empty to use the Prints per day under Kid-mode limits. The cooldown, hourly and paper limits still apply."
         }
       },
       "add_adult": {

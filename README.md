@@ -129,6 +129,7 @@ Open **Settings → Devices & services → Tiny Press → Configure** to add, ed
 | Math grade | K–5 (default: same as the reading grade). Sets the math strip and kid sudoku. A kid can read at grade 3 and do grade 1 math. |
 | Home Assistant user | Optional: link this kid to their own login. The card then shows only their prints, limits and story, and limits always apply to them |
 | Maze difficulty | This kid's mazes: Easy, Medium or Hard, or follow the Maze difficulty select (the default). Asking for a level, as in "print a hard maze", still wins. |
+| Prints per day | Optional: this kid's own daily print limit when kid-mode limits are on (for example 3 for a younger kid, 8 for an older one). Empty uses Prints per day under Kid-mode limits; the cooldown, hourly and paper limits still apply to everyone |
 | Interests | Free text such as `dinosaurs, space, horses`. Themed words appear in word searches (and in AI jokes if switched on). |
 | Stretch | Makes puzzles one grade harder, for both reading and math puzzles (stories stay at their reading grade) |
 | Spelling list (to-do list) | The only source of spelling words: a `todo` list, one word per item. Check a word off when it's learned; prints use the unchecked words. Add words by voice: "Add *because* to Rosie's spelling list". With no list, or every word checked off, the card greys out the Spelling, Spelling search and Spelling crossword tiles. |

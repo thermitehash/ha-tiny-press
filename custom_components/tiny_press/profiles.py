@@ -51,6 +51,7 @@ class Profile:
     math_grade: str = ""  # kids: empty means the same as the reading grade
     maze_difficulty: str = ""  # kids: empty follows the Maze difficulty select
     ha_user: str = ""  # the Home Assistant user this profile belongs to, if any
+    daily_limit: int = 0  # kids: prints per day; 0 uses the Kid-mode limits setting
 
     @property
     def display_name(self) -> str | None:
@@ -99,12 +100,20 @@ class Profile:
                 else ""
             ),
             ha_user=str(data.get("ha_user") or ""),
+            daily_limit=_positive_int(data.get("daily_limit")),
             maze_difficulty=(
                 str(data["maze_difficulty"])
                 if data.get("maze_difficulty") in {d.value for d in Difficulty}
                 else ""
             ),
         )
+
+
+def _positive_int(value: Any) -> int:
+    try:
+        return max(0, int(value or 0))
+    except TypeError, ValueError:
+        return 0
 
 
 DEFAULT_KID = Profile(id="kid", kind=KID, name="Kid")
