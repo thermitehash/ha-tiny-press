@@ -14,12 +14,13 @@
 | — | 0.10.0 | Holiday-aware morning slip (day of only), seasonal and holiday puzzle themes, quote source setting (planned, below) |
 | 7 | — | Skylight (planning only, below) |
 | later | — | Selfie prints and AI-generated kid-safe pictures (planning only, below) |
+| later | — | Recipe prints from Tandoor (idea, below) |
 
 ## v0.10.0: holidays and themes (planned)
 
 Design decisions (asked one at a time, answered 2026-11-26):
 1. **On by default:** seasons and solstices, fun science days (Pi Day, Earth Day, World Ocean Day, Space Day and similar), public holidays from a Holidays calendar if one is added, and a first day of school you set.
-2. **Opt-in checklist:** a broad list of about 25 faith and cultural observances, all unticked, plus **custom family days** (birthdays, name days, local festivals) with your own banner text.
+2. **Opt-in holiday groups** instead of single holidays (like Gemstone Lights' Autopilot). Pick whole groups, all off by default, plus **custom family days** (birthdays, name days, local festivals) with your own banner text.
 3. **ASCII art:** centered above the banner text, on recognized days only. Ordinary days look as they do now.
 4. **Themed prints:** word search, crossword, maze, and jokes and facts.
 5. **Theme control:** under Configure → Settings only (Auto, Off, or a fixed theme).
@@ -38,7 +39,17 @@ Design decisions (asked one at a time, answered 2026-11-26):
 
 ### Not centered on any one tradition
 - Nothing religious is on by default. The defaults are secular and natural: seasons, solstices and equinoxes, Earth Day, Pi Day, the first day of school, and your country's public holidays if that calendar is added.
-- Faith and cultural observances are an opt-in checklist, all treated the same way. Examples: Lunar New Year, Holi, Nowruz, Passover, Easter, Ramadan, Eid al-Fitr, Eid al-Adha, Vesak, Rosh Hashanah, Yom Kippur, Diwali, Hanukkah, Christmas, Kwanzaa, Juneteenth, Indigenous Peoples' Day.
+- Faith and cultural observances come in **opt-in groups**, all off by default and all treated the same way. Proposed groups:
+  - **East Asian festivals:** Lunar New Year, Mid-Autumn Festival, Chuseok, Obon.
+  - **Jewish holidays:** Rosh Hashanah, Yom Kippur, Sukkot, Hanukkah, Purim, Passover.
+  - **Muslim holidays:** start of Ramadan, Eid al-Fitr, Eid al-Adha.
+  - **Hindu festivals:** Makar Sankranti and Pongal, Holi, Dussehra, Diwali, Onam.
+  - **Sikh holidays:** Vaisakhi, Guru Nanak's birthday.
+  - **Buddhist holidays:** Losar, Vesak, Bodhi Day.
+  - **Christian holidays:** Easter, Orthodox Easter, Christmas.
+  - **Persian New Year:** Nowruz.
+  - **Cultural and heritage days:** Juneteenth, Indigenous Peoples' Day, Día de los Muertos, Kwanzaa.
+  - **Fun days:** Valentine's Day, Halloween, New Year's Eve.
 
 ### Puzzle themes
 - **Seasonal themes:** word lists for autumn, winter, spring and summer that follow the hemisphere, using Home Assistant's latitude.
@@ -48,6 +59,16 @@ Design decisions (asked one at a time, answered 2026-11-26):
 
 ### Quote source setting
 - Wikiquote (default), a feed from the Feeds list (its newest item becomes the quote, credited with the feed's name), or bundled only. This would extend v0.9.1's Online/Local content source for the slip's bottom.
+
+## Later: recipe prints from Tandoor (idea)
+
+[Tandoor Recipes](https://github.com/TandoorRecipes/recipes) is a self-hosted recipe manager with a REST API.
+- **Print a recipe:** ingredients as checkboxes and numbered steps, scaled to a chosen number of servings, with an optional QR code back to the recipe.
+- **Print today's meal plan** from Tandoor's meal planner, or add it to the morning slip.
+- **Print the shopping list** from Tandoor as checkboxes.
+- **Setup:** a Tandoor URL and an API token under Configure. Requests go only to that server.
+- Manual prints only.
+- **To check then:** Tandoor's API version and authentication, and whether a Home Assistant integration for Tandoor exists to build on.
 
 ## Phase 7: Skylight family calendar (planning only)
 
