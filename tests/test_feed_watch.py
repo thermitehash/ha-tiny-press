@@ -7,6 +7,7 @@ from email.utils import format_datetime
 from typing import Any
 from unittest.mock import patch
 
+import aiohttp
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -264,6 +265,13 @@ async def test_runs_every_minute(
     freezer: FrozenDateTimeFactory,
 ) -> None:
     freezer.move_to(NOON)
+    # Moving the frozen clock a minute can fire the download's own timeout
+    # mid-request (seen on CI), so this test downloads without one.
+    no_timeout = patch(
+        "custom_components.tiny_press.fetch.TIMEOUT", aiohttp.ClientTimeout(total=None)
+    )
+    no_timeout.start()
+    config_entry.async_on_unload(no_timeout.stop)
     aioclient_mock.get(URL, content=rss(("a", NOON)))
     await hass.config.async_set_time_zone("UTC")
     hass.config_entries.async_update_entry(
