@@ -22,6 +22,11 @@ Design questions get asked one at a time when this is built.
 ### Holiday-aware morning slip
 - **Banner under the date** on a holiday: "Today is Diwali, the festival of lights". The one-line description is neutral and factual (what the day is), sourced and credited (for example Library of Congress or Smithsonian educational pages), never devotional.
 - **Day of only:** a holiday is recognized only on the day itself, with no countdowns or reminders beforehand.
+- **Themed ASCII art with the banner:** a small piece of ASCII art for each observance and season, such as a lantern for Lunar New Year, a diya lamp for Diwali, a sun for the summer solstice or a leaf for autumn.
+  - Drawn for Tiny Press, so there are no licensing questions, and kept small: about 6–8 lines, fitting 32 columns so it works on 58 mm paper too.
+  - Printed in a monospace font inside the image, so it looks the same on both paper widths.
+  - The imagery is festive and neutral (lights, food, nature, celebration), not devotional symbols. The same rule applies to every tradition.
+  - Art follows the same opt-in checklist as the banners.
 - **Themed fun:** on a holiday, the slip's bottom and that day's puzzles use its theme.
 - **Dates:** Home Assistant's Holidays integration calendars (country and region), plus a bundled, sourced table of moving lunar and lunisolar dates for about ten years.
 
