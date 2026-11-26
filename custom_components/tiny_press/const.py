@@ -18,6 +18,9 @@ CONF_WEATHER: Final = "weather_entity"
 CONF_CALENDARS: Final = "calendar_entities"
 CONF_TODOS: Final = "todo_entities"
 CONF_MORNING_BOTTOM: Final = "morning_bottom"
+CONF_FEEDS: Final = "feeds"
+CONF_LIVE_QUOTE: Final = "live_quote"  # morning slip quote from Wikiquote first
+CONF_MORNING_FEED: Final = "morning_feed"
 CONF_AI_JOKES: Final = "ai_jokes"  # off: bundled, human-written jokes and facts
 
 DEFAULT_PORT: Final = 9100
@@ -72,6 +75,7 @@ class PrintType(StrEnum):
     STORY = "story"
     MORNING_SLIP = "morning_slip"
     HISTORY = "history"
+    FEED = "feed"
     KID_SUDOKU = "kid_sudoku"
     SPELLING = "spelling"
     SPELLING_SEARCH = "spelling_search"

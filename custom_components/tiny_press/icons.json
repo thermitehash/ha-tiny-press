@@ -132,6 +132,9 @@
     },
     "voice_print": {
       "service": "mdi:microphone-message"
+    },
+    "print_feed": {
+      "service": "mdi:rss"
     }
   }
 }

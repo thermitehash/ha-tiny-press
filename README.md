@@ -11,7 +11,7 @@ A Home Assistant integration that turns an Epson receipt printer into a househol
 - **Home Assistant:** 2026.11.0 or newer
 - **Nothing prints automatically.** Tiny Press ships no schedules or time-based automations.
 
-> **Status: v0.8.0.** Kid prints (maze, word search, math, kid sudoku, spelling, jokes, facts, kid pack), adult puzzles, bedtime stories, the morning slip, weather, sensor history, a dashboard card with kid mode, and kid-mode limits, Assist voice phrases and AI-agent print tools. See [docs/releases](docs/releases) for each version and the [roadmap](docs/roadmap.md) for what's next.
+> **Status: v0.9.0.** Kid prints (maze, word search, math, kid sudoku, spelling, jokes, facts, kid pack), adult puzzles, bedtime stories, the morning slip, weather, sensor history, a dashboard card with kid mode, and kid-mode limits, Assist voice phrases, AI-agent print tools, feed prints and a live quote of the day. See [docs/releases](docs/releases) for each version and the [roadmap](docs/roadmap.md) for what's next.
 
 <!-- Screenshot placeholders -->
 <!-- ![Device page](docs/images/device.png) -->
@@ -44,8 +44,14 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 | Weather entity | none | Used by the Weather print and the morning slip. Not needed if you only have one weather entity. |
 | Morning slip calendars | none | Today's events from these calendars print on the morning slip |
 | Morning slip to-do lists | none | Optional: unchecked items print as checkboxes |
-| Bottom of the morning slip | joke | Joke, fun fact, quote of the day, vocabulary word, small sudoku or nothing |
+| Bottom of the morning slip | joke | Joke, fun fact, quote of the day, vocabulary word, headlines from a feed, small sudoku or nothing |
+| Live quote of the day | on | For the Quote bottom: Wikiquote's quote of the day first (credited), bundled public-domain quotes if it can't be read |
+| Morning slip feed | first feed | For the Headlines bottom: which feed |
 | Use AI for jokes and fun facts | off | Off: jokes and facts come from bundled, human-written lists (facts from NOAA, NASA and the National Park Service, with credits). On: the AI is asked first. |
+
+### Feeds
+
+Configure → **Add a feed**: a name (used on the print and by voice), the feed's URL and how many items to print (1–10). Any RSS or Atom feed works, such as news sites, blogs or podcasts. Tiny Press reads the feed once to check it, then fetches it only when you print it, with a 15-second timeout and a 2 MB cap. Prints carry headlines, dates and short text summaries, never pictures. Remove feeds with Configure → **Remove feeds**.
 
 ### Profiles
 
@@ -230,6 +236,18 @@ data:
   path: /config/www/drawings/rocket.png
 ```
 
+### `tiny_press.print_feed`
+
+Prints the newest items from a feed: headline, date and a short summary. Not a kid print, so never limited.
+
+```yaml
+action: tiny_press.print_feed
+data:
+  feed: BBC News   # name or ID; empty prints the first feed
+  items: 5         # optional, 1-10; defaults to the feed's setting
+  qr: true         # optional: a small QR code under each item opens it on a phone
+```
+
 ## Dashboard card
 
 Tiny Press includes a dashboard card. It adds itself to your dashboard resources (Settings → Dashboards → ⋮ → Resources), so there's nothing extra to install. Edit a dashboard, choose **Add card**, and find **Tiny Press** under **Custom**, or search for it. If it's missing, restart Home Assistant and refresh the browser. With YAML-mode dashboards, add `/tiny_press/tiny-press-card.js` as a JavaScript module resource yourself.
@@ -244,6 +262,8 @@ buttons: [maze, word_search, math, kid_sudoku, spelling, joke, kid_pack, story, 
 history:                # optional one-tap history buttons (hidden in kid mode)
   - {name: Freezer, entity: sensor.freezer_temperature, hours: 24}
   - {name: Garage door, entity: binary_sensor.garage_door, days: 7, tall: true}
+feeds:                  # optional feed buttons (hidden in kid mode)
+  - {name: News, feed: BBC News, items: 5, qr: true}
 ```
 
 <!-- ![Dashboard card](docs/images/card.png) -->
@@ -284,6 +304,7 @@ Two ways to print by voice. Use either or both.
 | "Print a bedtime story", "Print a story about a brave dragon", "Print the next chapter" | Story | "Printing *title*. Sweet dreams!" |
 | "Print an easy sudoku / crossword / cryptogram", "Print a puzzle pack" | Adult puzzle | "Printing a sudoku." |
 | "Print the morning slip", "Print the weather" | Morning slip or weather | "Printing your morning slip." |
+| "Print the news", "Print the headlines from BBC News" | Feed headlines | "Printing 5 headlines from BBC News." |
 | "Print a note that says feed the cat" | The note | "Printing your note." |
 
 - **Kid-mode limits apply** to kid prints by voice, exactly as on the card. When a limit is reached, Tiny Press says why instead of printing ("That's enough printing for today! See you tomorrow.").
@@ -297,7 +318,7 @@ Two ways to print by voice. Use either or both.
 
 When an Assist pipeline's agent has **Assist** control turned on (Settings → Voice assistants → your assistant → the agent's options), Tiny Press gives it two tools:
 
-- **Print on Tiny Press** (`tiny_press__print`): any kid print, joke, fact, story (optionally about a topic), next chapter, adult puzzle, morning slip or weather, for a named profile and difficulty.
+- **Print on Tiny Press** (`tiny_press__print`): any kid print, joke, fact, story (optionally about a topic), next chapter, adult puzzle, morning slip, weather or a feed's headlines, for a named profile, difficulty or feed.
 - **Print a note on Tiny Press** (`tiny_press__print_note`): a dictated note.
 
 So "print my daughter a dinosaur story" or "can you print a hard crossword?" just works, with no "Prefer handling commands locally" needed. The same kid-mode limits and length caps apply, and the agent is told what to say back.
@@ -343,7 +364,7 @@ Versioning is SemVer. `manifest.json` is the single source of truth: bump the mi
 
 ## Content sources
 
-Bundled content comes from sources that allow redistribution: fun facts from NOAA, NASA and the National Park Service (U.S. government works, public domain), K–3 words from the Dolch sight-word lists, and cryptogram quotes from public-domain works (Roosevelt, Muir, Lincoln, Shakespeare) as collected by the National Park Service, and vocabulary definitions from Open English WordNet (CC BY 4.0). Jokes and the NYT-style crossword clues were written for Tiny Press. See [`data/LICENSE.md`](custom_components/tiny_press/data/LICENSE.md) for every source.
+Bundled content comes from sources that allow redistribution: fun facts from NOAA, NASA and the National Park Service (U.S. government works, public domain), K–3 words from the Dolch sight-word lists, and cryptogram quotes from public-domain works (Roosevelt, Muir, Lincoln, Shakespeare) as collected by the National Park Service, and vocabulary definitions from Open English WordNet (CC BY 4.0). Jokes and the NYT-style crossword clues were written for Tiny Press. With Live quote of the day on, the morning slip fetches Wikiquote's quote of the day (CC BY-SA 4.0) and prints its credit. Feed prints show each feed's own content and name. See [`data/LICENSE.md`](custom_components/tiny_press/data/LICENSE.md) for every source.
 
 ## License
 

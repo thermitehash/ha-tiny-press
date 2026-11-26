@@ -6,7 +6,7 @@
  * Nothing prints unless someone presses a button.
  */
 
-const CARD_VERSION = "0.8.0";
+const CARD_VERSION = "0.9.0";
 
 const PRINTS = {
   maze: { label: "Maze", icon: "mdi:map-marker-path" },
@@ -89,6 +89,7 @@ class TinyPressCard extends HTMLElement {
         },
         { name: "kid_mode", selector: { boolean: {} } },
         { name: "history", selector: { object: {} } },
+        { name: "feeds", selector: { object: {} } },
         { name: "show_preview", selector: { boolean: {} } },
         { name: "ignore_limits", selector: { boolean: {} } },
       ],
@@ -102,6 +103,7 @@ class TinyPressCard extends HTMLElement {
           ignore_limits: "Parent card: ignore kid-mode limits",
           history:
             "History buttons, e.g. - {name: Freezer, entity: sensor.freezer, hours: 24}",
+          feeds: "Feed buttons, e.g. - {name: News, feed: BBC News, items: 5, qr: true}",
         })[s.name],
     };
   }
@@ -296,6 +298,29 @@ class TinyPressCard extends HTMLElement {
       .join("")}</div>`;
   }
 
+  _feed(index) {
+    const item = (this._config.feeds || [])[index];
+    if (!item) return;
+    const data = { qr: Boolean(item.qr) };
+    if (item.feed) data.feed = String(item.feed);
+    if (item.items) data.items = Number(item.items);
+    this._run(() => this._call("print_feed", data, true), `Printing ${item.name || item.feed || "the feed"}`);
+  }
+
+  _feedsHtml() {
+    const items = Array.isArray(this._config.feeds) ? this._config.feeds : [];
+    if (this._config.kid_mode || !items.length) return "";
+    const busy = this._state.busy ? "disabled" : "";
+    return `<div class="row-label">Feeds</div><div class="history">${items
+      .map(
+        (item, i) =>
+          `<button class="chipbtn" data-feed="${i}" ${busy}><ha-icon icon="${esc(
+            item.icon || "mdi:rss"
+          )}"></ha-icon>${esc(item.name || item.feed || "Feed")}</button>`
+      )
+      .join("")}</div>`;
+  }
+
   _answers() {
     this._run(() => this._call("print_answers", {}, true), "Printing the answers");
   }
@@ -450,6 +475,7 @@ class TinyPressCard extends HTMLElement {
               .join("")}
           </div>`}
         ${this._state.preview ? "" : this._historyHtml()}
+        ${this._state.preview ? "" : this._feedsHtml()}
         ${blocked ? `<div class="notice" data-countdown>${esc(this._countdownText(limits))}</div>` : ""}
         ${this._state.busy ? `<div class="notice">Working on it…</div>` : ""}
         ${this._state.message ? `<div class="notice ${this._state.tone}">${esc(this._state.message)}</div>` : ""}
@@ -484,6 +510,9 @@ class TinyPressCard extends HTMLElement {
     act("answers", () => this._answers());
     root.querySelectorAll("[data-history]").forEach((b) =>
       b.addEventListener("click", () => this._history(Number(b.dataset.history)))
+    );
+    root.querySelectorAll("[data-feed]").forEach((b) =>
+      b.addEventListener("click", () => this._feed(Number(b.dataset.feed)))
     );
     act("cancel", () => { this._state.preview = null; this._render(); });
     act("shuffle", () => this._preview(this._state.previewType));

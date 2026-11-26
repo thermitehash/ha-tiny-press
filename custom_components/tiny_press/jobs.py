@@ -13,7 +13,7 @@ import random
 from homeassistant.util import dt as dt_util
 
 from .const import PAPER_80MM, Difficulty, PrintType
-from .coordinator import PrintJob
+from .coordinator import PrintJob, Section
 from .generators import (
     crossword,
     cryptogram,
@@ -24,6 +24,7 @@ from .generators import (
     sudoku,
     word_search,
 )
+from .generators.feeds import Feed
 from .generators.history import HistoryReport
 from .generators.jokes import Joke
 from .generators.morning import MorningSlip
@@ -639,4 +640,77 @@ def history_job(report: HistoryReport) -> PrintJob:
         build=lambda width: layout.history_page(
             width, report, footer, dt_util.as_local
         ),
+    )
+
+
+# Bytes a Model 2 QR code holds at error-correction level M, by version.
+_QR_M_BYTES = (14, 26, 42, 62, 84, 106, 122, 152, 180, 213, 251, 287, 331, 362)
+QR_MODULE = 3  # dots per module: small but phone-readable
+MAX_QR_LINK = 300
+
+
+def qr_mm(link: str, module: int = QR_MODULE) -> float:
+    """Paper a native QR code for ``link`` uses, plus a little space."""
+    size = len(link.encode("utf-8"))
+    version = next(
+        (v for v, cap in enumerate(_QR_M_BYTES, start=1) if size <= cap),
+        len(_QR_M_BYTES),
+    )
+    modules = 17 + 4 * version + 8  # plus the quiet zone
+    return round(modules * module / 8 + 2, 1)
+
+
+def _qr_bytes(link: str) -> bytes:
+    return (
+        escpos.align("center")
+        + escpos.qr_code(link, module=QR_MODULE)
+        + escpos.align("left")
+    )
+
+
+def feed_job(
+    name: str, feed: Feed, items: int, qr: bool = False, label: str = "Feed"
+) -> PrintJob:
+    """Build a feed print: newest headlines, with an optional QR per item."""
+    print_id = layout.make_print_id()
+    footer = layout.Footer(label, print_id, _today(), show_id=False)
+    shown = feed.items[:items]
+    printed_at = dt_util.utcnow()
+
+    def sections(width: int) -> list[Section]:
+        out = []
+        for canvas, link in layout.feed_parts(
+            width,
+            name,
+            shown,
+            footer,
+            to_local=dt_util.as_local,
+            printed_at=printed_at,
+            qr=qr,
+        ):
+            if link and len(link) <= MAX_QR_LINK:
+                out.append(Section(canvas, _qr_bytes(link), qr_mm(link)))
+            else:
+                out.append(Section(canvas))
+        return out
+
+    def build(width: int) -> Canvas:
+        canvas = Canvas(width)
+        for part, _link in layout.feed_parts(
+            width, name, shown, footer, to_local=dt_util.as_local, printed_at=printed_at
+        ):
+            canvas.blocks.extend(part.blocks)
+        return canvas
+
+    return PrintJob(
+        type=PrintType.FEED,
+        label=label,
+        print_id=print_id,
+        build=build,
+        sections=sections if qr else None,
+        response={
+            "feed": name,
+            "items": len(shown),
+            "headlines": [item.title for item in shown],
+        },
     )

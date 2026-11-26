@@ -10,7 +10,7 @@
 | 5 | 0.6.0 ✅ | Morning slip (manual only) |
 | — | 0.7.0 ✅ | Sensor history prints (graph, table, timeline) |
 | 6 | 0.8.0 ✅ | Assist voice phrases (blueprint) and print tools for AI agents |
-| — | 0.9.0 | RSS/Atom feed prints and live quote of the day from Wikiquote (planned, below) |
+| — | 0.9.0 ✅ | RSS/Atom feed prints and live quote of the day from Wikiquote |
 | 7 | — | Skylight (planning only, below) |
 | later | — | Selfie prints and AI-generated kid-safe pictures (planning only, below) |
 
@@ -61,7 +61,9 @@ Both build on `print_image`'s existing 1-bit rendering. Like everything else, th
   - Whether to cache generated pages for re-printing.
   - A per-day limit so a voice command can't run up a bill.
 
-## v0.9.0: RSS/Atom feeds and a live quote of the day (planned)
+## v0.9.0: RSS/Atom feeds and a live quote of the day (built)
+
+Built as planned, with two changes: feeds are set up under Configure → Add a feed (Tiny Press fetches them itself rather than through the Feedreader integration), and Wikiquote has no Quote of the Day RSS feed, so Tiny Press reads its "Main Page/Quote of the day" page instead.
 
 ### Feed prints
 - A `tiny_press.print_feed` action (and card buttons) that prints the newest items from any RSS or Atom feed: headline, date, a short summary, the source's name and a QR code linking to the item.

@@ -25,6 +25,7 @@ from .services import (
     _DIFFICULTY_WORDS,
     _coordinator,
     async_morning_slip,
+    async_print_feed,
     async_print_type,
     async_story,
 )
@@ -54,6 +55,7 @@ VOICE_TYPES: tuple[str, ...] = (
     PrintType.PUZZLE_PACK,
     PrintType.MORNING_SLIP,
     PrintType.WEATHER,
+    PrintType.FEED,
     NOTE,
 )
 
@@ -81,6 +83,7 @@ VOICE_SCHEMA = vol.Schema(
         vol.Optional("topic"): vol.Any(None, cv.string),
         vol.Optional("text"): vol.Any(None, cv.string),
         vol.Optional("sentence"): vol.Any(None, cv.string),
+        vol.Optional("feed"): vol.Any(None, cv.string),
     }
 )
 
@@ -133,6 +136,10 @@ def _success_speech(kind: str, response: dict[str, Any], who: str) -> str:
         return f"Printing {what}. Sweet dreams!"
     if kind == NOTE:
         return "Printing your note."
+    if kind == PrintType.FEED:
+        count = response.get("items") or 0
+        what = "headline" if count == 1 else "headlines"
+        return f"Printing {count} {what} from {response.get('feed') or 'the feed'}."
     name = _NAMES.get(kind, "that")
     if kind in KID_TYPES and who:
         return f"Printing {name} for {who}."
@@ -149,6 +156,7 @@ async def async_voice_print(
     topic: str | None = None,
     text: str | None = None,
     sentence: str | None = None,
+    feed: str | None = None,
 ) -> dict[str, Any]:
     """Print a voice request. Never raises for the user's own problems.
 
@@ -177,6 +185,8 @@ async def async_voice_print(
             )
         elif kind == PrintType.MORNING_SLIP:
             response = await async_morning_slip(hass, coordinator)
+        elif kind == PrintType.FEED:
+            response = await async_print_feed(hass, coordinator, _clean(feed, 80))
         else:
             response = await async_print_type(
                 hass,
@@ -220,6 +230,7 @@ def async_setup_voice_service(hass: HomeAssistant) -> None:
             topic=call.data.get("topic"),
             text=call.data.get("text"),
             sentence=call.data.get("sentence"),
+            feed=call.data.get("feed"),
         )
 
     hass.services.async_register(

@@ -11,10 +11,12 @@ from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 from custom_components.tiny_press.const import DOMAIN, PAPER_DOTS
 from custom_components.tiny_press.generators import jokes, morning, sudoku
 from custom_components.tiny_press.generators.data import load_json
+from custom_components.tiny_press.generators.feeds import WIKIQUOTE_URL
 from custom_components.tiny_press.generators.weather import build_report
 from custom_components.tiny_press.render import layout
 
@@ -253,8 +255,10 @@ async def test_morning_slip_minimal(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
     printer: FakePrinter,
+    aioclient_mock: AiohttpClientMocker,
     bottom: str,
 ) -> None:
+    aioclient_mock.get(WIKIQUOTE_URL, status=503)  # live quote fails: bundled
     await _setup(hass, config_entry, morning_bottom=bottom)
     res = await _slip(hass)
     assert res["events"] == 0 and res["weather"] is None and res["todos"] == 0

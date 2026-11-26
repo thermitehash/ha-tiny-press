@@ -16,6 +16,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
+from PIL import Image
 
 from .const import (
     CONF_AI_JOKES,
@@ -89,6 +90,66 @@ class PrintJob:
     response: dict[str, Any] = field(default_factory=dict)  # extra response data
     extra: bytes = b""  # native ESC/POS appended after the raster (e.g. a QR)
     extra_mm: float = 0.0
+    # Optional: the page as sections, each followed by native ESC/POS (a QR
+    # code per feed item). Used instead of ``build`` when set.
+    sections: Callable[[int], list[Section]] | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class Section:
+    """Part of a page, then native bytes (and the paper they use)."""
+
+    canvas: Canvas
+    extra: bytes = b""
+    extra_mm: float = 0.0
+
+
+def _stack(images: list[Image.Image], width: int) -> Image.Image:
+    """One image from parts, top to bottom (for previews)."""
+    if len(images) == 1:
+        return images[0]
+    out = Image.new("1", (width, max(1, sum(i.height for i in images))), 1)
+    y = 0
+    for image in images:
+        out.paste(image, (0, y))
+        y += image.height
+    return out
+
+
+def render_job(
+    job: PrintJob, width: int, max_dots: int
+) -> tuple[list[tuple[Image.Image, bytes]], int, float, bool]:
+    """Render a job's raster parts within the length cap.
+
+    Returns ([(image, native bytes after it)], raster height, extra mm,
+    truncated).
+    """
+    if job.sections is None:
+        image, truncated = job.build(width).render(max_dots)
+        return [(image, job.extra)], image.height, job.extra_mm, truncated
+    parts: list[tuple[Image.Image, bytes]] = []
+    height = 0
+    extra_mm = 0.0
+    budget = max_dots
+    truncated = False
+    for section in job.sections(width):
+        if budget <= 0:
+            truncated = True
+            break
+        image, cut = section.canvas.render(budget)
+        budget -= image.height
+        height += image.height
+        extra = section.extra
+        if cut or budget < section.extra_mm * DOTS_PER_MM:
+            extra = b""  # no room for the QR: stop here
+            truncated = truncated or cut or bool(section.extra)
+        parts.append((image, extra))
+        if extra:
+            budget -= int(section.extra_mm * DOTS_PER_MM)
+            extra_mm += section.extra_mm
+        if truncated:
+            break
+    return parts, height, extra_mm, truncated
 
 
 class TinyPressCoordinator(DataUpdateCoordinator[PrinterState]):
@@ -202,15 +263,17 @@ class TinyPressCoordinator(DataUpdateCoordinator[PrinterState]):
         max_dots = max(1, self.max_length_mm - FEED_MM) * DOTS_PER_MM
         width = self.width
 
-        def render() -> tuple[str, int, bool]:
-            image, truncated = job.build(width).render(max_dots)
+        def render() -> tuple[str, float, bool]:
+            parts, height, extra_mm, truncated = render_job(job, width, max_dots)
+            image = _stack([part for part, _ in parts], width)
             buffer = io.BytesIO()
             image.save(buffer, format="PNG", optimize=True)
             encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
-            return f"data:image/png;base64,{encoded}", image.height, truncated
+            length = height / DOTS_PER_MM + FEED_MM + extra_mm
+            return f"data:image/png;base64,{encoded}", length, truncated
 
         try:
-            image, height, truncated = await self.hass.async_add_executor_job(render)
+            image, length, truncated = await self.hass.async_add_executor_job(render)
         except (OSError, ValueError) as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
@@ -221,7 +284,7 @@ class TinyPressCoordinator(DataUpdateCoordinator[PrinterState]):
             "print_id": job.print_id,
             "type": job.type,
             "profile": job.profile,
-            "length_mm": round(height / DOTS_PER_MM + FEED_MM + job.extra_mm, 1),
+            "length_mm": round(length, 1),
             "truncated": truncated,
             "image": image,
             **job.response,
@@ -240,13 +303,17 @@ class TinyPressCoordinator(DataUpdateCoordinator[PrinterState]):
         max_dots = max(1, self.max_length_mm - FEED_MM) * DOTS_PER_MM
         width = self.width
 
-        def render() -> tuple[bytes, int, bool]:
-            image, truncated = job.build(width).render(max_dots)
-            data = escpos.INIT + escpos.raster(image) + job.extra + escpos.cut()
-            return data, image.height, truncated
+        def render() -> tuple[bytes, int, float, bool]:
+            parts, height, extra_mm, truncated = render_job(job, width, max_dots)
+            data = escpos.INIT
+            for image, extra in parts:
+                data += escpos.raster(image) + extra
+            return data + escpos.cut(), height, extra_mm, truncated
 
         try:
-            data, height, truncated = await self.hass.async_add_executor_job(render)
+            data, height, extra_mm, truncated = await self.hass.async_add_executor_job(
+                render
+            )
         except (OSError, ValueError) as err:
             self._fire(job, success=False)
             raise HomeAssistantError(
@@ -265,7 +332,7 @@ class TinyPressCoordinator(DataUpdateCoordinator[PrinterState]):
                 translation_placeholders={"error": str(err)},
             ) from err
 
-        length_mm = round(height / DOTS_PER_MM + FEED_MM + job.extra_mm, 1)
+        length_mm = round(height / DOTS_PER_MM + FEED_MM + extra_mm, 1)
         printed_at = dt_util.utcnow().isoformat()
         self.store.record_print(
             {

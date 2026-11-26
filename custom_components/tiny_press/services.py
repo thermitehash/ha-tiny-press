@@ -38,7 +38,9 @@ from .const import (
     ATTR_TITLE,
     ATTR_TYPE,
     CONF_CALENDARS,
+    CONF_LIVE_QUOTE,
     CONF_MORNING_BOTTOM,
+    CONF_MORNING_FEED,
     CONF_PAPER_WIDTH,
     CONF_TODOS,
     CONF_WEATHER,
@@ -55,7 +57,15 @@ from .const import (
     PrintType,
 )
 from .coordinator import PrintJob, TinyPressConfigEntry, TinyPressCoordinator
+from .fetch import (
+    FetchError,
+    async_fetch_feed,
+    async_live_quote,
+    feeds_from_options,
+    find_feed,
+)
 from .generators import history, morning, sudoku as sudoku_gen
+from .generators.feeds import MAX_ITEMS, WIKIQUOTE_CREDIT
 from .generators.story import pick_offline
 from .generators.weather import WeatherReport, build_report
 from .limits import KID_TYPES
@@ -169,6 +179,16 @@ HISTORY_SCHEMA = vol.All(
             vol.Optional("title"): vol.All(cv.string, vol.Length(max=60)),
         }
     ),
+)
+PRINT_FEED_SCHEMA = vol.Schema(
+    {
+        **ENTRY_FIELD,
+        vol.Optional("feed"): cv.string,
+        vol.Optional("items"): vol.All(
+            vol.Coerce(int), vol.Range(min=1, max=MAX_ITEMS)
+        ),
+        vol.Optional("qr", default=False): cv.boolean,
+    }
 )
 PRINT_ANSWERS_SCHEMA = vol.Schema(
     {**ENTRY_FIELD, vol.Optional(ATTR_PRINT_ID): cv.string}
@@ -329,6 +349,12 @@ async def async_build_job(
             )
         case PrintType.WEATHER:
             return jobs.weather_job(await async_weather_report(hass, coordinator))
+        case PrintType.FEED:
+            return await async_feed_job(hass, coordinator)
+        case PrintType.HISTORY:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="history_print_type"
+            )
         case _:
             paper, info = test_page_info(coordinator)
             return jobs.test_page_job(paper, info)
@@ -534,6 +560,83 @@ async def async_story(
     return response
 
 
+async def async_feed_job(
+    hass: HomeAssistant,
+    coordinator: TinyPressCoordinator,
+    feed: str | None = None,
+    items: int | None = None,
+    qr: bool = False,
+) -> PrintJob:
+    """Fetch a configured feed and build its print."""
+    feeds = feeds_from_options(coordinator.config_entry.options)
+    if not feeds:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="no_feeds"
+        )
+    chosen = find_feed(feeds, feed)
+    if chosen is None:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="feed_not_found",
+            translation_placeholders={"feed": str(feed)},
+        )
+    count = items or chosen.items
+    try:
+        parsed = await async_fetch_feed(hass, chosen.url, count)
+    except FetchError as err:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="feed_failed",
+            translation_placeholders={"feed": chosen.name, "error": str(err)},
+        ) from err
+    return jobs.feed_job(chosen.name, parsed, count, qr=qr)
+
+
+async def async_print_feed(
+    hass: HomeAssistant,
+    coordinator: TinyPressCoordinator,
+    feed: str | None = None,
+    items: int | None = None,
+    qr: bool = False,
+) -> dict[str, Any]:
+    """Print a feed's newest items. Not a kid print, so never limited."""
+    job = await async_feed_job(hass, coordinator, feed, items, qr)
+    return await coordinator.async_print(job)
+
+
+async def _morning_quote(
+    hass: HomeAssistant, coordinator: TinyPressCoordinator
+) -> morning.Quote:
+    """Wikiquote's quote of the day when switched on, else (or on failure) bundled."""
+    if coordinator.config_entry.options.get(CONF_LIVE_QUOTE, True):
+        live = await async_live_quote(hass, coordinator.store)
+        if live is not None:
+            return morning.Quote(live[0], live[1], None, WIKIQUOTE_CREDIT)
+    picked = await hass.async_add_executor_job(
+        morning.pick_quote, jobs.new_seed(), coordinator.store.recent("quote")
+    )
+    if picked.index is not None:
+        coordinator.store.remember("quote", picked.index)
+    return picked
+
+
+async def _morning_headlines(
+    hass: HomeAssistant, coordinator: TinyPressCoordinator
+) -> tuple[str, tuple] | None:
+    """Fetch the morning feed's newest headlines, or None if it can't be read."""
+    options = coordinator.config_entry.options
+    feeds = feeds_from_options(options)
+    chosen = find_feed(feeds, options.get(CONF_MORNING_FEED)) or find_feed(feeds, None)
+    if chosen is None:
+        return None
+    try:
+        parsed = await async_fetch_feed(hass, chosen.url, morning.MORNING_HEADLINES)
+    except FetchError as err:
+        _LOGGER.info("Couldn't read %s for the morning slip: %s", chosen.name, err)
+        return None
+    return chosen.name, parsed.items[: morning.MORNING_HEADLINES]
+
+
 async def async_morning_slip(
     hass: HomeAssistant, coordinator: TinyPressCoordinator, *, kid_mode: bool = False
 ) -> dict[str, Any]:
@@ -603,6 +706,7 @@ async def async_morning_slip(
     puzzle = None
     quote = None
     word = None
+    headlines = None
     if bottom in ("joke", "fact"):
         kind = PrintType.JOKE if bottom == "joke" else PrintType.FACT
         kid = coordinator.kid_profile()
@@ -616,17 +720,18 @@ async def async_morning_slip(
             )
             if joke.index is not None:
                 coordinator.store.remember(kind, joke.index)
-    elif bottom in ("quote", "word"):
-        pick = morning.pick_quote if bottom == "quote" else morning.pick_word
-        picked = await hass.async_add_executor_job(
-            pick, jobs.new_seed(), coordinator.store.recent(bottom)
+    elif bottom == "feed":
+        headlines = await _morning_headlines(hass, coordinator)
+        if headlines is None:  # no feed, or it can't be read: a quote instead
+            quote = await _morning_quote(hass, coordinator)
+    elif bottom == "quote":
+        quote = await _morning_quote(hass, coordinator)
+    elif bottom == "word":
+        word = await hass.async_add_executor_job(
+            morning.pick_word, jobs.new_seed(), coordinator.store.recent("word")
         )
-        if picked.index is not None:
-            coordinator.store.remember(bottom, picked.index)
-        if bottom == "quote":
-            quote = picked
-        else:
-            word = picked
+        if word.index is not None:
+            coordinator.store.remember("word", word.index)
     elif bottom == "puzzle":
         level = coordinator.adult_profile().difficulty
         puzzle = await hass.async_add_executor_job(
@@ -642,6 +747,7 @@ async def async_morning_slip(
         puzzle=puzzle,
         quote=quote,
         word=word,
+        headlines=headlines,
         calendars_set=bool(calendars),
     )
     response = await coordinator.async_print(jobs.morning_job(slip))
@@ -768,6 +874,8 @@ async def async_print_type(
         return await async_story(
             hass, coordinator, profile=profile, ignore_limits=ignore_limits
         )
+    if kind is PrintType.FEED:
+        return await async_print_feed(hass, coordinator)
     limited = kind in KID_TYPES and not ignore_limits and coordinator.limiter.enabled
     if limited:
         check_limits(hass, coordinator, kind, profile)
@@ -971,6 +1079,16 @@ def async_setup_services(hass: HomeAssistant) -> None:
             title=call.data.get("title"),
         )
 
+    async def handle_print_feed(call: ServiceCall) -> ServiceResponse:
+        coordinator = _coordinator(hass, call)
+        return await async_print_feed(
+            hass,
+            coordinator,
+            call.data.get("feed"),
+            call.data.get("items"),
+            call.data["qr"],
+        )
+
     async def handle_print_answers(call: ServiceCall) -> ServiceResponse:
         coordinator = _coordinator(hass, call)
         entry = coordinator.store.find_answer(call.data.get(ATTR_PRINT_ID))
@@ -1012,6 +1130,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         ("continue_story", handle_continue_story, CONTINUE_STORY_SCHEMA),
         ("print_morning_slip", handle_morning, MORNING_SCHEMA),
         ("print_history", handle_history, HISTORY_SCHEMA),
+        ("print_feed", handle_print_feed, PRINT_FEED_SCHEMA),
         (SERVICE_PRINT_TEXT, handle_print_text, PRINT_TEXT_SCHEMA),
         (SERVICE_PRINT_IMAGE, handle_print_image, PRINT_IMAGE_SCHEMA),
     ):
