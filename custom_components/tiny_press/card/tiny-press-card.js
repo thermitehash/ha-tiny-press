@@ -6,7 +6,7 @@
  * Nothing prints unless someone presses a button.
  */
 
-const CARD_VERSION = "0.11.1";
+const CARD_VERSION = "0.11.2";
 
 const PRINTS = {
   maze: { label: "Maze", icon: "mdi:map-marker-path" },
@@ -130,7 +130,10 @@ class TinyPressCard extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     const entities = this._entities();
-    const signature = Object.values(entities)
+    // Kids' spelling to-do lists too, so the Spelling tiles follow them live.
+    const kidSel = entities.kidProfile ? hass.states[entities.kidProfile] : undefined;
+    const lists = (kidSel?.attributes?.profiles || []).map((p) => p.spelling_todo).filter(Boolean);
+    const signature = [...Object.values(entities), ...lists]
       .map((id) => {
         const s = hass.states[id];
         return s ? `${id}:${s.state}:${s.last_updated}` : id;
@@ -471,11 +474,30 @@ class TinyPressCard extends HTMLElement {
     if (t === "morning_slip" && this._morningDone()) {
       return `${esc(PRINTS[t].label)}<small>Printed today</small>`;
     }
+    if (t === "spelling" || t === "spelling_search") {
+      const sp = this._spellingInfo();
+      return sp.known ? `${esc(PRINTS[t].label)}<small>${esc(sp.note)}</small>` : esc(PRINTS[t].label);
+    }
     if (t !== "next_chapter") return esc(PRINTS[t].label);
     const info = this._chapterInfo();
     if (!info.known) return esc(PRINTS[t].label);
     if (!info.story) return `No story yet<small>Start a Bedtime story</small>`;
     return `Chapter ${info.next}<small>${esc(info.story)}</small>`;
+  }
+
+  // Spelling tiles: the kid's spelling to-do list, greyed out when it has no
+  // unchecked words (a to-do entity's state is its count of open items).
+  _spellingInfo() {
+    let kid = this._kidShown();
+    if (!kid && this._viewer().mode === "shared") {
+      const active = this._stateOf("kidProfile")?.state;
+      kid = this._viewer().profiles.find((p) => p.kind === "kid" && p.name === active);
+    }
+    if (!kid) return { known: false };
+    if (!kid.spelling_todo) return { known: true, words: 0, note: "No spelling list" };
+    const words = Number(this._hass?.states?.[kid.spelling_todo]?.state);
+    if (!Number.isFinite(words)) return { known: true, words: 0, note: "List unavailable" };
+    return { known: true, words, note: words ? `${words} word${words === 1 ? "" : "s"}` : "List is empty" };
   }
 
   _morningDone() {
@@ -484,6 +506,10 @@ class TinyPressCard extends HTMLElement {
 
   _tileDisabled(t) {
     if (t === "morning_slip") return this._morningDone();
+    if (t === "spelling" || t === "spelling_search") {
+      const sp = this._spellingInfo();
+      return sp.known && !sp.words;
+    }
     if (t !== "next_chapter") return false;
     const info = this._chapterInfo();
     return info.known && !info.story;

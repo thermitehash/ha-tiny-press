@@ -297,9 +297,6 @@ def _kid_schema(profile: Profile | None) -> vol.Schema:
                 "spelling_todo",
                 description={"suggested_value": p.spelling_todo or None},
             ): EntitySelector(EntitySelectorConfig(domain="todo")),
-            vol.Optional("spelling_words", default=p.spelling_words): TextSelector(
-                TextSelectorConfig(multiline=True)
-            ),
         }
     )
 
@@ -563,7 +560,6 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
             ha_user=_user_from(data),
             interests=(data.get("interests") or "").strip(),
             stretch=bool(data.get("stretch")),
-            spelling_words=(data.get("spelling_words") or "").strip(),
             spelling_todo=data.get("spelling_todo") or "",
         )
 

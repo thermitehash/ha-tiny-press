@@ -121,8 +121,11 @@ KID = {
     "kind": "kid",
     "name": "Rosie",
     "grade": "1",
-    "spelling_words": "cat, dog, sun, fish",
+    "spelling_todo": "todo.rosie_spelling",
 }
+WORDS = [
+    {"summary": w, "status": "needs_action"} for w in ("cat", "dog", "sun", "fish")
+]
 OLDER = {"id": "max", "kind": "kid", "name": "Max", "grade": "4"}
 
 
@@ -138,6 +141,7 @@ async def test_prints_through_action(
     hass.config_entries.async_update_entry(
         config_entry, options={"profiles": [KID, OLDER]}
     )
+    _todo(hass, WORDS)
     assert await hass.config_entries.async_setup(config_entry.entry_id)
     store = config_entry.runtime_data.store
 
@@ -198,7 +202,8 @@ def _todo(hass: HomeAssistant, items: list[dict[str, str]] | Exception) -> list[
     return calls
 
 
-TODO_KID = {**KID, "spelling_todo": "todo.rosie_spelling", "spelling_words": "typed"}
+# An old typed list left in the options from before v0.11.2 is ignored.
+TODO_KID = {**KID, "spelling_words": "typed"}
 
 
 async def _setup_todo_kid(hass: HomeAssistant, entry: MockConfigEntry) -> None:
@@ -240,22 +245,23 @@ async def test_all_words_learned(
         await _print(hass, type="spelling")
 
 
-async def test_unreadable_todo_falls_back_to_typed(
+async def test_unreadable_todo_has_no_words(
     hass: HomeAssistant, config_entry: MockConfigEntry, printer: FakePrinter
 ) -> None:
     from homeassistant.exceptions import HomeAssistantError
 
     _todo(hass, HomeAssistantError("gone"))
     await _setup_todo_kid(hass, config_entry)
-    await _print(hass, type="spelling", seed=1)
-    store = config_entry.runtime_data.store
-    assert store.history[0]["answer"]["words"] == ["typed"]
+    with pytest.raises(ServiceValidationError, match="no spelling words"):
+        await _print(hass, type="spelling", seed=1)
 
 
-async def test_empty_todo_falls_back_to_typed(
+async def test_empty_todo_has_no_words(
     hass: HomeAssistant, config_entry: MockConfigEntry, printer: FakePrinter
 ) -> None:
     _todo(hass, [])
     await _setup_todo_kid(hass, config_entry)
-    await _print(hass, type="spelling", seed=1)
-    assert config_entry.runtime_data.store.history[0]["answer"]["words"] == ["typed"]
+    with pytest.raises(ServiceValidationError, match="no spelling words"):
+        await _print(hass, type="spelling", seed=1)
+    profiles = hass.states.get("select.tiny_press_kid_profile").attributes["profiles"]
+    assert profiles[0]["spelling_todo"] == "todo.rosie_spelling"

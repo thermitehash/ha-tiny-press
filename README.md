@@ -131,8 +131,7 @@ Open **Settings → Devices & services → Tiny Press → Configure** to add, ed
 | Maze difficulty | This kid's mazes: Easy, Medium or Hard, or follow the Maze difficulty select (the default). Asking for a level, as in "print a hard maze", still wins. |
 | Interests | Free text such as `dinosaurs, space, horses`. Themed words appear in word searches (and in AI jokes if switched on). |
 | Stretch | Makes puzzles one grade harder, for both reading and math puzzles (stories stay at their reading grade) |
-| Spelling list (to-do list) | Optional: a `todo` list, one word per item. Check a word off when it's learned; prints use the unchecked words. Add words by voice: "Add *because* to Rosie's spelling list". |
-| Spelling words | Optional typed list (commas or new lines), used when no to-do list is set |
+| Spelling list (to-do list) | The only source of spelling words: a `todo` list, one word per item. Check a word off when it's learned; prints use the unchecked words. Add words by voice: "Add *because* to Rosie's spelling list". With no list, or every word checked off, the card greys out the Spelling and Spelling search tiles. |
 
 An adult profile has a name, a default puzzle difficulty (used by the adult puzzles) and an optional Home Assistant user. A linked adult's card prints as them, and never counts against kid-mode limits. Add as many profiles as you like, for example a younger sibling later.
 
@@ -210,7 +209,7 @@ This is the general entry point that every button and voice phrase uses.
 | Field | Notes |
 |---|---|
 | `type` | `maze`, `word_search`, `math`, `joke`, `fact`, `kid_pack`, `kid_sudoku`, `spelling`, `spelling_search`, `sudoku`, `crossword`, `cryptogram`, `puzzle_pack`, `weather` or `test_page` |
-| `words` | For `spelling` and `spelling_search`: words to practice. Empty uses the kid profile's spelling list. |
+| `words` | For `spelling` and `spelling_search`: words to practice. Empty uses the kid profile's spelling to-do list. |
 | `profile` | Kid profile name for word searches, math, jokes and kid packs. Empty uses the Kid profile select. |
 | `difficulty` | For mazes (and the maze in a kid pack). Loose words work: `easy`, `medium`, `hard`, `harder`, `tricky`, `a little harder`. Empty uses the Maze difficulty select. |
 | `seed` | The same seed prints the same puzzle again (and the same bundled joke) |

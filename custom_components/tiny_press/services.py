@@ -510,7 +510,7 @@ async def async_todo_words(
     """Words still to learn from a to-do list (unchecked items).
 
     Checked-off items count as learned. Returns None if the list can't be
-    read (the typed list is used instead); raises if every word is learned.
+    read; raises if every word is learned.
     """
     try:
         response = await hass.services.async_call(

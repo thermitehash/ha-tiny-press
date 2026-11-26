@@ -427,12 +427,8 @@ def spelling_words_for(
     words: list[str] | str | None,
     todo_words: list[str] | None = None,
 ) -> list[str]:
-    """Words from the action, else the to-do list, else the typed list."""
-    found = (
-        spelling.parse_words(words)
-        or spelling.parse_words(todo_words)
-        or spelling.parse_words(profile.spelling_words)
-    )
+    """Words from the action, else the kid's spelling to-do list."""
+    found = spelling.parse_words(words) or spelling.parse_words(todo_words)
     if not found:
         raise ValueError("no spelling words")
     return found
