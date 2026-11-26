@@ -52,6 +52,15 @@
       },
       "weather": {
         "default": "mdi:weather-partly-cloudy"
+      },
+      "kid_sudoku": {
+        "default": "mdi:grid"
+      },
+      "spelling": {
+        "default": "mdi:alphabetical-variant"
+      },
+      "spelling_search": {
+        "default": "mdi:text-box-search-outline"
       }
     },
     "select": {

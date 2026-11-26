@@ -14,11 +14,11 @@ from homeassistant.util import dt as dt_util
 
 from .const import PAPER_80MM, Difficulty, PrintType
 from .coordinator import PrintJob
-from .generators import jokes, math_strip, maze, word_search
+from .generators import jokes, math_strip, maze, spelling, sudoku, word_search
 from .generators.jokes import Joke
 from .generators.weather import WeatherReport
 from .printer import escpos
-from .profiles import Profile
+from .profiles import Profile, grade_number
 from .render import layout
 from .render.canvas import Canvas
 
@@ -215,6 +215,9 @@ def answer_job(entry: dict) -> PrintJob:
         PrintType.MAZE: "Maze answers",
         PrintType.WORD_SEARCH: "Word search answers",
         PrintType.MATH: "Math answers",
+        PrintType.KID_SUDOKU: "Sudoku answers",
+        PrintType.SPELLING: "Spelling answers",
+        PrintType.SPELLING_SEARCH: "Word search answers",
         PrintType.JOKE: "Joke answer",
         PrintType.FACT: "Fun fact",
     }
@@ -244,6 +247,39 @@ def answer_job(entry: dict) -> PrintJob:
 
         def build(width: int) -> Canvas:
             return layout.math_page(width, sheet, footer, answer=True)
+
+    elif kind == PrintType.KID_SUDOKU:
+        grid_puzzle = sudoku.Sudoku(
+            data["size"],
+            tuple(tuple(r) for r in data["puzzle"]),
+            tuple(tuple(r) for r in data["solution"]),
+        )
+        pictures = bool(data.get("pictures"))
+
+        def build(width: int) -> Canvas:
+            return layout.sudoku_page(
+                width, grid_puzzle, footer, pictures=pictures, answer=True
+            )
+
+    elif kind == PrintType.SPELLING:
+        sheet_s = spelling.SpellingSheet(
+            tuple(data["words"]),
+            tuple(data["scrambled"]),
+            tuple(tuple(b) for b in data["blanks"]),
+        )
+
+        def build(width: int) -> Canvas:
+            return layout.spelling_page(width, sheet_s, footer, answer=True)
+
+    elif kind == PrintType.SPELLING_SEARCH:
+        grid_s = word_search.WordSearch(
+            data["size"],
+            tuple(data["grid"]),
+            tuple(word_search.Placement(*p) for p in data["placements"]),
+        )
+
+        def build(width: int) -> Canvas:
+            return layout.word_search_page(width, grid_s, footer, answer=True)
 
     elif kind in (PrintType.JOKE, PrintType.FACT):
         setup, punchline = data["setup"], data.get("punchline")
@@ -277,4 +313,107 @@ def weather_job(report: WeatherReport) -> PrintJob:
             "forecast_days": len(report.days),
         },
         build=lambda width: layout.weather_page(width, report, footer),
+    )
+
+
+KID_SUDOKU_LEVELS = {
+    Difficulty.EASY: (4, "easy"),
+    Difficulty.MEDIUM: (6, "easy"),
+    Difficulty.HARD: (6, "hard"),
+}
+
+
+def kid_sudoku_level(profile: Profile) -> Difficulty:
+    """Default level by grade: K-1 easy (4x4), 2-3 medium, 4-5 hard (6x6)."""
+    n = grade_number(profile.puzzle_grade)
+    return (
+        Difficulty.EASY if n <= 1 else Difficulty.MEDIUM if n <= 3 else Difficulty.HARD
+    )
+
+
+def kid_sudoku_job(
+    profile: Profile,
+    difficulty: Difficulty | None = None,
+    seed: int | None = None,
+    pictures: bool | None = None,
+) -> PrintJob:
+    """Build a 4x4 or 6x6 sudoku with numbers, or pictures for young kids."""
+    seed = new_seed() if seed is None else seed
+    print_id = _id("kid_sudoku", seed)
+    level = difficulty or kid_sudoku_level(profile)
+    size, givens = KID_SUDOKU_LEVELS[level]
+    if pictures is None:
+        pictures = grade_number(profile.puzzle_grade) <= 1
+    puzzle = sudoku.generate(size, givens, seed)
+    footer = layout.Footer("Sudoku", print_id, _today(), f"{size}x{size}")
+    answer = {**puzzle.answer(), "seed": seed, "pictures": pictures}
+    return PrintJob(
+        type=PrintType.KID_SUDOKU,
+        label="Sudoku",
+        print_id=print_id,
+        difficulty=level.value,
+        profile=profile.name,
+        answers=(
+            {"print_id": print_id, "type": PrintType.KID_SUDOKU, "answer": answer},
+        ),
+        build=lambda width: layout.sudoku_page(
+            width, puzzle, footer, pictures=pictures
+        ),
+    )
+
+
+def spelling_words_for(profile: Profile, words: list[str] | str | None) -> list[str]:
+    """Words from the action, else the profile's list; raise if there are none."""
+    found = spelling.parse_words(words) or spelling.parse_words(profile.spelling_words)
+    if not found:
+        raise ValueError("no spelling words")
+    return found
+
+
+def spelling_job(
+    profile: Profile, words: list[str], seed: int | None = None
+) -> PrintJob:
+    """Build unscramble and missing-letter practice for a spelling list."""
+    seed = new_seed() if seed is None else seed
+    print_id = _id("spelling", seed)
+    sheet = spelling.generate(words, seed)
+    footer = layout.Footer("Spelling", print_id, _today(), f"{len(words)} words")
+    return PrintJob(
+        type=PrintType.SPELLING,
+        label="Spelling",
+        print_id=print_id,
+        profile=profile.name,
+        answers=(
+            {
+                "print_id": print_id,
+                "type": PrintType.SPELLING,
+                "answer": {**sheet.answer(), "seed": seed},
+            },
+        ),
+        build=lambda width: layout.spelling_page(width, sheet, footer),
+    )
+
+
+def spelling_search_job(
+    profile: Profile, words: list[str], seed: int | None = None
+) -> PrintJob:
+    """Build a word search that hides exactly the spelling words."""
+    seed = new_seed() if seed is None else seed
+    print_id = _id("spelling_search", seed)
+    grade = profile.puzzle_grade
+    puzzle = word_search.generate_from_words(grade, seed, words)
+    footer = layout.Footer("Spelling search", print_id, _today(), f"Grade {grade}")
+    return PrintJob(
+        type=PrintType.SPELLING_SEARCH,
+        label="Spelling search",
+        print_id=print_id,
+        profile=profile.name,
+        answers=(
+            {
+                "print_id": print_id,
+                "type": PrintType.SPELLING_SEARCH,
+                "answer": {**puzzle.answer(), "seed": seed, "grade": grade},
+            },
+        ),
+        build=lambda width: layout.word_search_page(width, puzzle, footer),
     )

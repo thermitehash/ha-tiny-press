@@ -58,6 +58,9 @@ class PrintType(StrEnum):
     FACT = "fact"
     KID_PACK = "kid_pack"
     WEATHER = "weather"
+    KID_SUDOKU = "kid_sudoku"
+    SPELLING = "spelling"
+    SPELLING_SEARCH = "spelling_search"
     TEST_PAGE = "test_page"
 
 

@@ -25,6 +25,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorConfig,
     SelectSelectorMode,
     TextSelector,
+    TextSelectorConfig,
 )
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 import voluptuous as vol
@@ -235,6 +236,9 @@ def _kid_schema(profile: Profile | None) -> vol.Schema:
             ),
             vol.Optional("interests", default=p.interests): TextSelector(),
             vol.Required("stretch", default=p.stretch): BooleanSelector(),
+            vol.Optional("spelling_words", default=p.spelling_words): TextSelector(
+                TextSelectorConfig(multiline=True)
+            ),
         }
     )
 
@@ -412,6 +416,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
             grade=grade_label(grade_number(data["grade"])),
             interests=(data.get("interests") or "").strip(),
             stretch=bool(data.get("stretch")),
+            spelling_words=(data.get("spelling_words") or "").strip(),
         )
 
     def _adult_from(self, data: dict[str, Any], profile_id: str) -> Profile:

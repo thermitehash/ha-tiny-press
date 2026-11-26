@@ -208,6 +208,7 @@ async def test_profiles_add_edit_remove(
             "grade": "2",
             "interests": "dinosaurs, space",
             "stretch": False,
+            "spelling_words": "",
             "difficulty": "medium",
         }
     ]

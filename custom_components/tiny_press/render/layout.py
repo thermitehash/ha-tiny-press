@@ -16,6 +16,8 @@ from PIL import Image, ImageDraw
 from ..generators.jokes import Joke
 from ..generators.math_strip import MathStrip, Problem
 from ..generators.maze import Maze
+from ..generators.spelling import SpellingSheet
+from ..generators.sudoku import Sudoku
 from ..generators.weather import WeatherReport, condition_label
 from ..generators.word_search import WordSearch
 from .canvas import MARGIN, Canvas, font
@@ -626,5 +628,192 @@ def weather_page(width: int, report: WeatherReport, footer: Footer) -> Canvas:
         canvas.drawing(rows)
         canvas.text("% = chance of rain or snow", px=16, align="right")
     canvas.space(8)
+    canvas.footer(*footer.fields())
+    return canvas
+
+
+def _shape(
+    draw: ImageDraw.ImageDraw, value: int, cx: float, cy: float, r: float
+) -> None:
+    """Draw picture-sudoku symbol 1-6: circle, square, triangle, star, heart, diamond."""
+    if value == 1:
+        draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=0)
+    elif value == 2:
+        q = r * 0.88
+        draw.rectangle((cx - q, cy - q, cx + q, cy + q), fill=0)
+    elif value == 3:
+        draw.polygon(
+            [(cx, cy - r), (cx + r, cy + r * 0.8), (cx - r, cy + r * 0.8)], fill=0
+        )
+    elif value == 4:
+        draw.polygon(_star(cx, cy + r * 0.08, r * 1.1), fill=0)
+    elif value == 5:
+        q = r * 0.55
+        draw.ellipse(
+            (cx - r, cy - r * 0.75, cx - r + 2 * q, cy - r * 0.75 + 2 * q), fill=0
+        )
+        draw.ellipse(
+            (cx + r - 2 * q, cy - r * 0.75, cx + r, cy - r * 0.75 + 2 * q), fill=0
+        )
+        draw.polygon(
+            [
+                (cx - r * 0.98, cy - r * 0.3),
+                (cx + r * 0.98, cy - r * 0.3),
+                (cx, cy + r),
+            ],
+            fill=0,
+        )
+    else:
+        draw.polygon(
+            [(cx, cy - r), (cx + r * 0.8, cy), (cx, cy + r), (cx - r * 0.8, cy)], fill=0
+        )
+
+
+def sudoku_drawing(
+    width: int, puzzle: Sudoku, *, pictures: bool = False, show_answers: bool = False
+) -> Image.Image:
+    """Draw the grid with thick box borders; answers are drawn lighter (outlined)."""
+    inner = width - 2 * MARGIN
+    n = puzzle.size
+    cell = min(inner // n, 120 if n <= 6 else 60)
+    grid = cell * n
+    x0 = (width - grid) // 2
+    img = Image.new("L", (width, grid + 8), 255)
+    draw = ImageDraw.Draw(img)
+    br, bc = puzzle.box
+    face = font("mono", int(cell * 0.6), True)
+    answer_face = font("mono", int(cell * 0.5), False)
+    for r in range(n):
+        for c in range(n):
+            given = puzzle.puzzle[r][c]
+            value = given or (puzzle.solution[r][c] if show_answers else 0)
+            if not value:
+                continue
+            cx, cy = x0 + c * cell + cell / 2, 4 + r * cell + cell / 2
+            if pictures:
+                if given:
+                    _shape(draw, value, cx, cy, cell * 0.28)
+                else:  # answers: outlined so givens stand out
+                    shape = Image.new("L", (cell, cell), 255)
+                    _shape(
+                        ImageDraw.Draw(shape), value, cell / 2, cell / 2, cell * 0.28
+                    )
+                    edge = shape.point(lambda p: 0 if p < 128 else 255)
+                    hollow = Image.new("L", (cell, cell), 255)
+                    hollow.paste(edge, (0, 0))
+                    small = Image.new("L", (cell, cell), 255)
+                    _shape(ImageDraw.Draw(small), value, cell / 2, cell / 2, cell * 0.2)
+                    hollow.paste(
+                        255, (0, 0), small.point(lambda p: 255 if p < 128 else 0)
+                    )
+                    img.paste(hollow, (int(cx - cell / 2), int(cy - cell / 2)))
+            else:
+                draw.text(
+                    (cx, cy),
+                    str(value),
+                    font=face if given else answer_face,
+                    fill=0,
+                    anchor="mm",
+                )
+    for i in range(n + 1):
+        thick_r = 5 if i % br == 0 else 2
+        thick_c = 5 if i % bc == 0 else 2
+        y = 4 + i * cell
+        draw.rectangle(
+            (x0 - 2, y - thick_r // 2, x0 + grid + 2, y + thick_r // 2), fill=0
+        )
+        x = x0 + i * cell
+        draw.rectangle((x - thick_c // 2, 2, x + thick_c // 2, 4 + grid + 2), fill=0)
+    return img
+
+
+def sudoku_page(
+    width: int,
+    puzzle: Sudoku,
+    footer: Footer,
+    *,
+    pictures: bool = False,
+    answer: bool = False,
+) -> Canvas:
+    """Lay out a kid sudoku (or its answer key)."""
+    canvas = Canvas(width)
+    canvas.title("Sudoku answers" if answer else "Sudoku")
+    n = puzzle.size
+    if pictures:
+        canvas.text(
+            "Put each picture once in every row, column and box.", px=24, align="center"
+        )
+        legend = Image.new("L", (width, 64), 255)
+        draw = ImageDraw.Draw(legend)
+        step = (width - 2 * MARGIN) / n
+        for v in range(1, n + 1):
+            _shape(draw, v, MARGIN + step * (v - 0.5), 32, 20)
+        canvas.drawing(legend)
+    else:
+        canvas.text(
+            f"Write 1 to {n} once in every row, column and box.", px=24, align="center"
+        )
+    canvas.space(8)
+    canvas.drawing(
+        sudoku_drawing(width, puzzle, pictures=pictures, show_answers=answer)
+    )
+    canvas.space(6)
+    canvas.footer(*footer.fields())
+    return canvas
+
+
+def spelling_page(
+    width: int, sheet: SpellingSheet, footer: Footer, *, answer: bool = False
+) -> Canvas:
+    """Lay out unscramble and missing-letter practice (or the answer key)."""
+    canvas = Canvas(width)
+    canvas.title("Spelling answers" if answer else "Spelling practice")
+    canvas.space(4)
+    px = 30 if width >= 500 else 26
+    mono = font("mono", px, True)
+    line_h = int(px * 1.6)
+    half = len(sheet.words)
+
+    def rows(lines: list[tuple[str, str]]) -> Image.Image:
+        img = Image.new("L", (width, line_h * len(lines) + 6), 255)
+        draw = ImageDraw.Draw(img)
+        for i, (left, right) in enumerate(lines):
+            y = i * line_h + line_h / 2
+            draw.text((MARGIN + 4, y), left, font=mono, fill=0, anchor="lm")
+            if right:
+                draw.text(
+                    (width - MARGIN - 4, y), right, font=mono, fill=0, anchor="rm"
+                )
+            else:
+                draw.line(
+                    (width * 0.58, y + px * 0.45, width - MARGIN - 4, y + px * 0.45),
+                    fill=0,
+                    width=2,
+                )
+        return img
+
+    canvas.text("Unscramble the words", px=26, bold=True)
+    canvas.drawing(
+        rows(
+            [
+                (f"{i + 1:>2}. {w.upper()}", sheet.words[i] if answer else "")
+                for i, w in enumerate(sheet.scrambled)
+            ]
+        )
+    )
+    canvas.rule(dashed=True)
+    canvas.text("Fill in the missing letters", px=26, bold=True)
+    canvas.drawing(
+        rows(
+            [
+                (
+                    f"{i + half + 1:>2}. {sheet.masked(i)}",
+                    sheet.words[i] if answer else "",
+                )
+                for i in range(len(sheet.words))
+            ]
+        )
+    )
+    canvas.space(6)
     canvas.footer(*footer.fields())
     return canvas

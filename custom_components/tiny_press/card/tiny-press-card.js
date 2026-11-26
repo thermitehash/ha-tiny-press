@@ -15,9 +15,12 @@ const PRINTS = {
   joke: { label: "Joke", icon: "mdi:emoticon-happy-outline" },
   fact: { label: "Fun fact", icon: "mdi:lightbulb-on-outline" },
   kid_pack: { label: "Kid pack", icon: "mdi:package-variant-closed" },
+  kid_sudoku: { label: "Sudoku", icon: "mdi:grid" },
+  spelling: { label: "Spelling", icon: "mdi:alphabetical-variant" },
+  spelling_search: { label: "Spelling search", icon: "mdi:text-box-search-outline" },
   weather: { label: "Weather", icon: "mdi:weather-partly-cloudy" },
 };
-const DEFAULT_BUTTONS = ["maze", "word_search", "math", "joke", "kid_pack", "weather"];
+const DEFAULT_BUTTONS = ["maze", "word_search", "math", "kid_sudoku", "spelling", "joke", "kid_pack", "weather"];
 
 const PAPER = {
   ok: { label: "Paper OK", tone: "ok", icon: "mdi:paper-roll-outline" },

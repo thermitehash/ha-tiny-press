@@ -57,6 +57,8 @@ SERVICE_PREVIEW = "preview"
 SERVICE_PRINT_ANSWERS = "print_answers"
 ATTR_IGNORE_LIMITS = "ignore_limits"
 ATTR_PRINT_ID = "print_id"
+ATTR_WORDS = "words"
+ATTR_PICTURES = "pictures"
 SERVICE_PRINT_TEXT = "print_text"
 SERVICE_PRINT_IMAGE = "print_image"
 
@@ -100,6 +102,8 @@ PRINT_SCHEMA = vol.Schema(
         vol.Optional(ATTR_DIFFICULTY): cv.string,
         vol.Optional(ATTR_SEED): vol.All(vol.Coerce(int), vol.Range(min=0)),
         vol.Optional(ATTR_IGNORE_LIMITS, default=False): cv.boolean,
+        vol.Optional(ATTR_WORDS): vol.Any(cv.string, [cv.string]),
+        vol.Optional(ATTR_PICTURES): cv.boolean,
     }
 )
 PREVIEW_SCHEMA = vol.Schema(
@@ -109,6 +113,8 @@ PREVIEW_SCHEMA = vol.Schema(
         vol.Optional(ATTR_PROFILE): cv.string,
         vol.Optional(ATTR_DIFFICULTY): cv.string,
         vol.Optional(ATTR_SEED): vol.All(vol.Coerce(int), vol.Range(min=0)),
+        vol.Optional(ATTR_WORDS): vol.Any(cv.string, [cv.string]),
+        vol.Optional(ATTR_PICTURES): cv.boolean,
     }
 )
 PRINT_ANSWERS_SCHEMA = vol.Schema(
@@ -167,6 +173,8 @@ async def async_build_job(
     profile: str | None = None,
     difficulty: str | None = None,
     seed: int | None = None,
+    words: list[str] | str | None = None,
+    pictures: bool | None = None,
 ) -> PrintJob | Callable[[], PrintJob]:
     """Return the job (or a builder to run in the executor) for one print type."""
     match kind:
@@ -199,6 +207,30 @@ async def async_build_job(
             kid = coordinator.kid_profile(profile)
             level = maze_difficulty(coordinator, difficulty)
             return partial(jobs.kid_pack_job, kid, level, seed)
+        case PrintType.KID_SUDOKU:
+            kid = coordinator.kid_profile(profile)
+            level = (
+                normalize_difficulty(difficulty, Difficulty.MEDIUM)
+                if difficulty
+                else None
+            )
+            return partial(jobs.kid_sudoku_job, kid, level, seed, pictures)
+        case PrintType.SPELLING | PrintType.SPELLING_SEARCH:
+            kid = coordinator.kid_profile(profile)
+            try:
+                found = jobs.spelling_words_for(kid, words)
+            except ValueError as err:
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN,
+                    translation_key="no_spelling_words",
+                    translation_placeholders={"profile": kid.name},
+                ) from err
+            build = (
+                jobs.spelling_job
+                if kind is PrintType.SPELLING
+                else jobs.spelling_search_job
+            )
+            return partial(build, kid, found, seed)
         case PrintType.WEATHER:
             return jobs.weather_job(await async_weather_report(hass, coordinator))
         case _:
@@ -287,13 +319,22 @@ async def async_print_type(
     difficulty: str | None = None,
     seed: int | None = None,
     ignore_limits: bool = False,
+    words: list[str] | str | None = None,
+    pictures: bool | None = None,
 ) -> dict[str, Any]:
     """Print one type. Shared by the ``print`` action and the buttons."""
     limited = kind in KID_TYPES and not ignore_limits and coordinator.limiter.enabled
     if limited:
         check_limits(hass, coordinator, kind, profile)
     job = await async_build_job(
-        hass, coordinator, kind, profile=profile, difficulty=difficulty, seed=seed
+        hass,
+        coordinator,
+        kind,
+        profile=profile,
+        difficulty=difficulty,
+        seed=seed,
+        words=words,
+        pictures=pictures,
     )
     response = await coordinator.async_print(job)
     if limited:
@@ -310,11 +351,20 @@ async def async_preview_type(
     profile: str | None = None,
     difficulty: str | None = None,
     seed: int | None = None,
+    words: list[str] | str | None = None,
+    pictures: bool | None = None,
 ) -> dict[str, Any]:
     """Render a print without printing it. Pass the returned seed to ``print``."""
     seed = jobs.new_seed() if seed is None else seed
     job = await async_build_job(
-        hass, coordinator, kind, profile=profile, difficulty=difficulty, seed=seed
+        hass,
+        coordinator,
+        kind,
+        profile=profile,
+        difficulty=difficulty,
+        seed=seed,
+        words=words,
+        pictures=pictures,
     )
     return {**await coordinator.async_preview(job), "seed": seed}
 
@@ -392,6 +442,8 @@ def async_setup_services(hass: HomeAssistant) -> None:
             difficulty=call.data.get(ATTR_DIFFICULTY),
             seed=call.data.get(ATTR_SEED),
             ignore_limits=ignore,
+            words=call.data.get(ATTR_WORDS),
+            pictures=call.data.get(ATTR_PICTURES),
         )
 
     async def handle_preview(call: ServiceCall) -> ServiceResponse:
@@ -403,6 +455,8 @@ def async_setup_services(hass: HomeAssistant) -> None:
             profile=call.data.get(ATTR_PROFILE),
             difficulty=call.data.get(ATTR_DIFFICULTY),
             seed=call.data.get(ATTR_SEED),
+            words=call.data.get(ATTR_WORDS),
+            pictures=call.data.get(ATTR_PICTURES),
         )
 
     async def handle_print_answers(call: ServiceCall) -> ServiceResponse:

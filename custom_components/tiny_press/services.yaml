@@ -17,6 +17,9 @@ print:
             - joke
             - fact
             - kid_pack
+            - kid_sudoku
+            - spelling
+            - spelling_search
             - weather
             - test_page
     profile:
@@ -36,6 +39,14 @@ print:
           mode: box
     ignore_limits:
       default: false
+      selector:
+        boolean:
+    words:
+      example: "because, friend, said"
+      selector:
+        text:
+          multiline: true
+    pictures:
       selector:
         boolean:
 
@@ -96,6 +107,9 @@ preview:
             - joke
             - fact
             - kid_pack
+            - kid_sudoku
+            - spelling
+            - spelling_search
             - weather
             - test_page
     profile:
@@ -113,6 +127,14 @@ preview:
           min: 0
           max: 2147483647
           mode: box
+    words:
+      example: "because, friend, said"
+      selector:
+        text:
+          multiline: true
+    pictures:
+      selector:
+        boolean:
 
 print_answers:
   fields:

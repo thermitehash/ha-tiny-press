@@ -74,12 +74,14 @@
           "name": "Name",
           "grade": "Reading grade",
           "interests": "Interests",
-          "stretch": "Stretch"
+          "stretch": "Stretch",
+          "spelling_words": "Spelling words"
         },
         "data_description": {
           "grade": "The grade they read and do math at.",
           "interests": "Free text, for example: dinosaurs, space, horses.",
-          "stretch": "Make puzzles one grade harder."
+          "stretch": "Make puzzles one grade harder.",
+          "spelling_words": "Optional. This week's school list, separated by commas or new lines. Used by Spelling practice and Spelling word search."
         }
       },
       "edit_kid": {
@@ -88,12 +90,14 @@
           "name": "Name",
           "grade": "Reading grade",
           "interests": "Interests",
-          "stretch": "Stretch"
+          "stretch": "Stretch",
+          "spelling_words": "Spelling words"
         },
         "data_description": {
           "grade": "The grade they read and do math at.",
           "interests": "Free text, for example: dinosaurs, space, horses.",
-          "stretch": "Make puzzles one grade harder."
+          "stretch": "Make puzzles one grade harder.",
+          "spelling_words": "Optional. This week's school list, separated by commas or new lines. Used by Spelling practice and Spelling word search."
         }
       },
       "add_adult": {
@@ -160,7 +164,10 @@
         "fact": "Fun fact",
         "kid_pack": "Kid pack (maze, word search and math)",
         "test_page": "Test page",
-        "weather": "Weather and forecast"
+        "weather": "Weather and forecast",
+        "kid_sudoku": "Kid sudoku (4x4 or 6x6)",
+        "spelling": "Spelling practice",
+        "spelling_search": "Spelling word search"
       }
     },
     "text_size": {
@@ -273,6 +280,15 @@
       },
       "weather": {
         "name": "Weather"
+      },
+      "kid_sudoku": {
+        "name": "Kid sudoku"
+      },
+      "spelling": {
+        "name": "Spelling practice"
+      },
+      "spelling_search": {
+        "name": "Spelling word search"
       }
     },
     "select": {
@@ -334,6 +350,9 @@
     },
     "weather_not_set": {
       "message": "Choose a weather entity under Configure → Settings to print the weather."
+    },
+    "no_spelling_words": {
+      "message": "{profile} has no spelling words yet. Add them under Configure → Edit a profile, or pass words to the action."
     }
   },
   "services": {
@@ -355,7 +374,7 @@
         },
         "difficulty": {
           "name": "Difficulty",
-          "description": "For mazes. Loose words work: easy, medium, hard, harder, tricky. Leave empty to use the Maze difficulty select."
+          "description": "For mazes and kid sudoku. Loose words work: easy, medium, hard, harder, tricky. Kid sudoku: easy is 4x4, medium and hard are 6x6. Empty uses the select (mazes) or the kid's grade (sudoku)."
         },
         "seed": {
           "name": "Seed",
@@ -364,6 +383,14 @@
         "ignore_limits": {
           "name": "Ignore kid limits",
           "description": "For parents' scripts and dashboards: print even if kid-mode limits would block it."
+        },
+        "words": {
+          "name": "Spelling words",
+          "description": "For spelling prints: words to practice. Leave empty to use the kid profile's spelling list."
+        },
+        "pictures": {
+          "name": "Pictures",
+          "description": "For kid sudoku: shapes instead of numbers. Empty uses pictures for kindergarten and grade 1."
         }
       }
     },
@@ -421,11 +448,19 @@
         },
         "difficulty": {
           "name": "Difficulty",
-          "description": "For mazes. Loose words work: easy, medium, hard, harder, tricky. Leave empty to use the Maze difficulty select."
+          "description": "For mazes and kid sudoku. Loose words work: easy, medium, hard, harder, tricky. Kid sudoku: easy is 4x4, medium and hard are 6x6. Empty uses the select (mazes) or the kid's grade (sudoku)."
         },
         "seed": {
           "name": "Seed",
           "description": "Prints the same puzzle again for the same seed. Jokes with a seed come from the bundled list."
+        },
+        "words": {
+          "name": "Spelling words",
+          "description": "For spelling prints: words to practice. Leave empty to use the kid profile's spelling list."
+        },
+        "pictures": {
+          "name": "Pictures",
+          "description": "For kid sudoku: shapes instead of numbers. Empty uses pictures for kindergarten and grade 1."
         }
       }
     },

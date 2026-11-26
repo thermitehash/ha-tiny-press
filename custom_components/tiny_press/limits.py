@@ -41,6 +41,9 @@ KID_TYPES = frozenset(
         PrintType.JOKE,
         PrintType.FACT,
         PrintType.KID_PACK,
+        PrintType.KID_SUDOKU,
+        PrintType.SPELLING,
+        PrintType.SPELLING_SEARCH,
     }
 )
 
