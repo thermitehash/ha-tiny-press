@@ -28,7 +28,7 @@ const PRINTS = {
   weather: { label: "Weather", icon: "mdi:weather-partly-cloudy" },
 };
 const DEFAULT_BUTTONS = [
-  "maze", "word_search", "math", "kid_sudoku", "spelling", "joke", "kid_pack",
+  "maze", "word_search", "math", "kid_sudoku", "spelling", "spelling_search", "joke", "kid_pack",
   "story", "next_chapter", "sudoku", "crossword", "cryptogram", "puzzle_pack",
   "morning_slip", "weather",
 ];

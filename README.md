@@ -325,7 +325,7 @@ type: custom:tiny-press-card
 title: Rosie's printer
 kid_mode: true          # hold-to-print, no settings or answers, shows limits
 show_preview: false     # true: see the print first, then Shuffle or Print
-buttons: [maze, word_search, math, kid_sudoku, spelling, joke, kid_pack, story, next_chapter, sudoku, crossword, cryptogram, puzzle_pack, morning_slip, weather]
+buttons: [maze, word_search, math, kid_sudoku, spelling, spelling_search, joke, kid_pack, story, next_chapter, sudoku, crossword, cryptogram, puzzle_pack, morning_slip, weather]
 # ignore_limits: true   # for a parents' dashboard
 history:                # optional one-tap history buttons (hidden in kid mode)
   - {name: Freezer, entity: sensor.freezer_temperature, hours: 24}
@@ -383,6 +383,7 @@ Two ways to print by voice. Use either or both.
 | "Print a maze", "Print a hard maze for Rosie" | Maze | "Printing a maze for Rosie." |
 | "Print a word search / math sheet / kid pack / kid sudoku for Rosie" | That kid print | "Printing a word search for Rosie." |
 | "Print spelling practice for Rosie" | Spelling practice | "Printing spelling practice for Rosie." |
+| "Print a spelling word search for Rosie" | Spelling word search | "Printing a spelling word search for Rosie." |
 | "Tell me a joke", "Tell me a fun fact" | Joke or fact | The joke or fact itself, read aloud |
 | "Print a bedtime story", "Print a story about a brave dragon", "Print the next chapter" | Story | "Printing *title*. Sweet dreams!" |
 | "Print an easy sudoku / crossword / cryptogram", "Print a puzzle pack" | Adult puzzle | "Printing a sudoku." |

@@ -304,6 +304,7 @@ voice_print:
             - kid_pack
             - kid_sudoku
             - spelling
+            - spelling_search
             - joke
             - fact
             - story
