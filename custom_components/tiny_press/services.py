@@ -26,7 +26,7 @@ from homeassistant.util import dt as dt_util
 import voluptuous as vol
 
 from . import jobs
-from .ai import async_ai_joke, async_ai_story
+from .ai import async_ai_joke, async_ai_spelling_clues, async_ai_story
 from .const import (
     ATTR_CONFIG_ENTRY_ID,
     ATTR_DIFFICULTY,
@@ -73,7 +73,7 @@ from .fetch import (
     feeds_from_options,
     find_feed,
 )
-from .generators import history, morning, observances, sudoku as sudoku_gen
+from .generators import history, morning, observances, spelling, sudoku as sudoku_gen
 from .generators.feeds import MAX_ITEMS, WIKIQUOTE_CREDIT
 from .generators.jokes import Joke, pick_themed
 from .generators.story import pick_offline
@@ -379,7 +379,11 @@ async def async_build_job(
                 else None
             )
             return partial(jobs.kid_sudoku_job, kid, level, seed)
-        case PrintType.SPELLING | PrintType.SPELLING_SEARCH:
+        case (
+            PrintType.SPELLING
+            | PrintType.SPELLING_SEARCH
+            | PrintType.SPELLING_CROSSWORD
+        ):
             kid = coordinator.kid_profile(profile)
             todo_words = None
             if kid.spelling_todo:
@@ -392,6 +396,11 @@ async def async_build_job(
                     translation_key="no_spelling_words",
                     translation_placeholders={"profile": kid.name},
                 ) from err
+            if kind is PrintType.SPELLING_CROSSWORD:
+                seed = jobs.new_seed() if seed is None else seed
+                picked = spelling.pick_words(found, seed)[: spelling.CROSSWORD_WORDS]
+                clues = await async_spelling_clues(hass, coordinator, kid, picked)
+                return partial(jobs.spelling_crossword_job, kid, picked, clues, seed)
             build = (
                 jobs.spelling_job
                 if kind is PrintType.SPELLING
@@ -498,6 +507,35 @@ async def async_weather_report(
         forecast,
         to_local=dt_util.as_local,
     )
+
+
+MAX_CLUE_SETS = 20
+
+
+async def async_spelling_clues(
+    hass: HomeAssistant,
+    coordinator: TinyPressCoordinator,
+    kid: Profile,
+    words: list[str],
+) -> dict[str, str]:
+    """AI-written clues for a spelling crossword ({} without an AI task).
+
+    Kept per kid and word list, so a preview and its print get the same
+    clues and the AI isn't asked again for the same list.
+    """
+    if not coordinator.ai_task_entity:
+        return {}
+    key = (kid.id, tuple(sorted(words)))
+    if key not in coordinator.spelling_clues:
+        clues = await async_ai_spelling_clues(
+            hass, coordinator.ai_task_entity, words, kid
+        )
+        if not clues:
+            return {}  # try the AI again next time
+        if len(coordinator.spelling_clues) >= MAX_CLUE_SETS:
+            coordinator.spelling_clues.pop(next(iter(coordinator.spelling_clues)))
+        coordinator.spelling_clues[key] = clues
+    return coordinator.spelling_clues[key]
 
 
 async def async_todo_words(

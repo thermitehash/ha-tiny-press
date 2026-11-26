@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -132,6 +133,70 @@ async def async_ai_joke(
         return None
     fact = _text(data.get("fact"))
     return Joke(FACT, fact, None, "ai") if fact else None
+
+
+MAX_CLUE = 90
+
+
+def clue_ok(word: str, clue: str | None) -> bool:
+    """Check a crossword clue: short, clean, and not giving the word away.
+
+    The word may not appear in its clue, on its own or inside a longer word
+    ("friendly" gives away "friend"); short words only count whole.
+    """
+    if not clue or len(clue) > MAX_CLUE or not is_clean(clue):
+        return False
+    target = word.lower()
+    tokens = re.findall(r"[a-z']+", clue.lower())
+    return not any(
+        t.strip("'") == target or (len(target) >= 4 and target in t) for t in tokens
+    )
+
+
+async def async_ai_spelling_clues(
+    hass: HomeAssistant, entity_id: str | None, words: list[str], profile: Profile
+) -> dict[str, str]:
+    """Ask the AI for one kid-friendly crossword clue per spelling word.
+
+    Returns only the clues that pass the checks (a clue never contains its
+    answer); missing words fall back to scrambles in the caller.
+    """
+    if not words:
+        return {}
+    grade = (
+        "kindergarten"
+        if profile.reading_grade == "K"
+        else f"grade {profile.reading_grade}"
+    )
+    fields = {f"clue_{i}": word for i, word in enumerate(words, 1)}
+    instructions = (
+        f"Write a short crossword clue for each of these spelling words, for a "
+        f"child who reads at a {grade} level: "
+        + ", ".join(f"clue_{i} is for '{w}'" for i, w in enumerate(words, 1))
+        + ". Each clue is one short sentence or phrase (under 12 words) that "
+        "helps the child think of the word: a simple definition, an opposite, "
+        "or a fill-in-the-blank sentence with ___ where the word goes. Never "
+        f"write the word itself in its clue. {KID_RULES}"
+    )
+    structure = {
+        key: {
+            "description": f"Clue for the word '{word}'",
+            "required": True,
+            "selector": {"text": {}},
+        }
+        for key, word in fields.items()
+    }
+    data = await async_generate(
+        hass, entity_id, "Tiny Press spelling crossword", instructions, structure
+    )
+    if data is None:
+        return {}
+    out: dict[str, str] = {}
+    for key, word in fields.items():
+        clue = _text(data.get(key))
+        if clue_ok(word, clue):
+            out[word] = clue
+    return out
 
 
 STORY_TIMEOUT = 90.0

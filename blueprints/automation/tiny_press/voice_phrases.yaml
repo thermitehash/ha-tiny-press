@@ -31,7 +31,7 @@ blueprint:
     turned_on:
       name: Phrases to use
       description: Untick a group to turn its phrases off.
-      default: [maze, word_search, math, kid_pack, kid_sudoku, spelling, spelling_search, joke, fact, story, story_topic, next_chapter, sudoku, crossword, cryptogram, puzzle_pack, morning_slip, weather, feed, note]
+      default: [maze, word_search, math, kid_pack, kid_sudoku, spelling, spelling_search, spelling_crossword, joke, fact, story, story_topic, next_chapter, sudoku, crossword, cryptogram, puzzle_pack, morning_slip, weather, feed, note]
       selector:
         select:
           multiple: true
@@ -43,6 +43,7 @@ blueprint:
             - {label: Kid sudoku, value: kid_sudoku}
             - {label: Spelling practice, value: spelling}
             - {label: Spelling word search, value: spelling_search}
+            - {label: Spelling crossword, value: spelling_crossword}
             - {label: Joke (read aloud too), value: joke}
             - {label: Fun fact (read aloud too), value: fact}
             - {label: Bedtime story, value: story}
@@ -102,6 +103,12 @@ blueprint:
           default:
             - "print a spelling [word] search"
             - "print a spelling [word] search for {name}"
+          selector: {text: {multiple: true}}
+        spelling_crossword_phrases:
+          name: Spelling crossword
+          default:
+            - "print a spelling crossword"
+            - "print a spelling crossword for {name}"
           selector: {text: {multiple: true}}
         joke_phrases:
           name: Joke
@@ -197,6 +204,7 @@ triggers:
   - {trigger: conversation, id: kid_sudoku, command: !input kid_sudoku_phrases, enabled: "{{ 'kid_sudoku' in turned_on }}"}
   - {trigger: conversation, id: spelling, command: !input spelling_phrases, enabled: "{{ 'spelling' in turned_on }}"}
   - {trigger: conversation, id: spelling_search, command: !input spelling_search_phrases, enabled: "{{ 'spelling_search' in turned_on }}"}
+  - {trigger: conversation, id: spelling_crossword, command: !input spelling_crossword_phrases, enabled: "{{ 'spelling_crossword' in turned_on }}"}
   - {trigger: conversation, id: joke, command: !input joke_phrases, enabled: "{{ 'joke' in turned_on }}"}
   - {trigger: conversation, id: fact, command: !input fact_phrases, enabled: "{{ 'fact' in turned_on }}"}
   - {trigger: conversation, id: story, command: !input story_phrases, enabled: "{{ 'story' in turned_on }}"}

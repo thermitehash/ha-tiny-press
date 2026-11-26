@@ -6,7 +6,7 @@
  * Nothing prints unless someone presses a button.
  */
 
-const CARD_VERSION = "0.11.2";
+const CARD_VERSION = "0.12.0";
 
 const PRINTS = {
   maze: { label: "Maze", icon: "mdi:map-marker-path" },
@@ -18,6 +18,7 @@ const PRINTS = {
   kid_sudoku: { label: "Kid sudoku", icon: "mdi:grid" },
   spelling: { label: "Spelling", icon: "mdi:alphabetical-variant" },
   spelling_search: { label: "Spelling search", icon: "mdi:text-box-search-outline" },
+  spelling_crossword: { label: "Spelling crossword", icon: "mdi:alpha-s-box-outline" },
   sudoku: { label: "Sudoku", icon: "mdi:grid", adult: true },
   crossword: { label: "Crossword", icon: "mdi:alpha-c-box-outline", adult: true },
   cryptogram: { label: "Cryptogram", icon: "mdi:lock-question", adult: true },
@@ -27,8 +28,10 @@ const PRINTS = {
   morning_slip: { label: "Morning slip", icon: "mdi:weather-sunset-up", service: "print_morning_slip" },
   weather: { label: "Weather", icon: "mdi:weather-partly-cloudy" },
 };
+const SPELLING_TILES = ["spelling", "spelling_search", "spelling_crossword"];
 const DEFAULT_BUTTONS = [
-  "maze", "word_search", "math", "kid_sudoku", "spelling", "spelling_search", "joke", "kid_pack",
+  "maze", "word_search", "math", "kid_sudoku", "spelling", "spelling_search", "spelling_crossword",
+  "joke", "kid_pack",
   "story", "next_chapter", "sudoku", "crossword", "cryptogram", "puzzle_pack",
   "morning_slip", "weather",
 ];
@@ -474,7 +477,7 @@ class TinyPressCard extends HTMLElement {
     if (t === "morning_slip" && this._morningDone()) {
       return `${esc(PRINTS[t].label)}<small>Printed today</small>`;
     }
-    if (t === "spelling" || t === "spelling_search") {
+    if (SPELLING_TILES.includes(t)) {
       const sp = this._spellingInfo();
       return sp.known ? `${esc(PRINTS[t].label)}<small>${esc(sp.note)}</small>` : esc(PRINTS[t].label);
     }
@@ -506,7 +509,7 @@ class TinyPressCard extends HTMLElement {
 
   _tileDisabled(t) {
     if (t === "morning_slip") return this._morningDone();
-    if (t === "spelling" || t === "spelling_search") {
+    if (SPELLING_TILES.includes(t)) {
       const sp = this._spellingInfo();
       return sp.known && !sp.words;
     }

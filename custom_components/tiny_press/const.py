@@ -109,6 +109,7 @@ class PrintType(StrEnum):
     KID_SUDOKU = "kid_sudoku"
     SPELLING = "spelling"
     SPELLING_SEARCH = "spelling_search"
+    SPELLING_CROSSWORD = "spelling_crossword"
     TEST_PAGE = "test_page"
 
 

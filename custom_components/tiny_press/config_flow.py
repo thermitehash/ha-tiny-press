@@ -297,6 +297,18 @@ def _kid_schema(profile: Profile | None) -> vol.Schema:
                 "spelling_todo",
                 description={"suggested_value": p.spelling_todo or None},
             ): EntitySelector(EntitySelectorConfig(domain="todo")),
+            vol.Optional(
+                "daily_limit",
+                description={"suggested_value": p.daily_limit or None},
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=1,
+                    max=200,
+                    step=1,
+                    mode=NumberSelectorMode.BOX,
+                    unit_of_measurement="prints",
+                )
+            ),
         }
     )
 
@@ -561,6 +573,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
             interests=(data.get("interests") or "").strip(),
             stretch=bool(data.get("stretch")),
             spelling_todo=data.get("spelling_todo") or "",
+            daily_limit=int(data.get("daily_limit") or 0),
         )
 
     def _adult_from(self, data: dict[str, Any], profile_id: str) -> Profile:

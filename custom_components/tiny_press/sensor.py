@@ -105,6 +105,7 @@ class TinyPressPrintsLeft(TinyPressEntity, SensorEntity):
             kid.id: {
                 "name": kid.name,
                 "prints_left": (status := limiter.status(kid.id)).prints_left_today,
+                "per_day": limiter.per_day(kid.id),
                 **status.as_attributes(),
             }
             for kid in profiles_of(dict(self.coordinator.config_entry.options), KID)
@@ -112,5 +113,6 @@ class TinyPressPrintsLeft(TinyPressEntity, SensorEntity):
         return {
             **limiter.status(active.id).as_attributes(),
             "profile": active.name,
+            "per_day": limiter.per_day(active.id),
             "kids": kids,
         }

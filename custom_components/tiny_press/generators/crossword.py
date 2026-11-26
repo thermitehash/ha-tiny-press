@@ -204,3 +204,88 @@ def generate(
             )
         )
     return Crossword(bottom - top + 1, right - left + 1, tuple(entries))
+
+
+def generate_from_words(
+    entries: list[dict[str, str]], seed: int, attempts: int = 60
+) -> tuple[Crossword, tuple[str, ...]]:
+    """Build a criss-cross from exactly these words (a spelling list).
+
+    ``entries`` are ``{"word", "clue"}``. As many words as possible are
+    interlocked within 13x13 cells; words that share no letters with the
+    grid can't join it and come back in the second value, so the page can
+    still list them. Raises ValueError when no word is usable.
+    """
+    rng = random.Random(seed)
+    usable: dict[str, str] = {}
+    for e in entries:
+        word = e["word"].upper()
+        if word.isalpha() and 2 <= len(word) <= MAX_SIDE and word not in usable:
+            usable[word] = e["clue"]
+    if not usable:
+        raise ValueError("no usable words")
+    words = list(usable)
+    best: list[tuple[str, int, int, tuple[int, int]]] = []
+    for attempt in range(attempts):
+        pool = list(words)
+        rng.shuffle(pool)
+        if attempt % 2 == 0:  # half the tries start from the longest word
+            pool.sort(key=len, reverse=True)
+        first = pool[0]
+        r0, c0 = BOARD // 2, (BOARD - len(first)) // 2
+        grid = {(r0, c0 + i): ch for i, ch in enumerate(first)}
+        placed = [(first, r0, c0, ACROSS)]
+        waiting = pool[1:]
+        progress = True
+        while waiting and progress:  # retry skipped words once others land
+            progress = False
+            for word in list(waiting):
+                options = []
+                for (gr, gc), ch in list(grid.items()):
+                    for i, wch in enumerate(word):
+                        if wch != ch:
+                            continue
+                        for d in (ACROSS, DOWN):
+                            r, c = gr - d[0] * i, gc - d[1] * i
+                            score = _fits(grid, word, r, c, d)
+                            if score <= 0:
+                                continue
+                            trial = dict(grid)
+                            for j, x in enumerate(word):
+                                trial[(r + d[0] * j, c + d[1] * j)] = x
+                            top, left, bottom, right = _extent(trial)
+                            if bottom - top < MAX_SIDE and right - left < MAX_SIDE:
+                                options.append((score, rng.random(), r, c, d))
+                if not options:
+                    continue
+                _s, _t, r, c, d = max(options)
+                for j, ch in enumerate(word):
+                    grid[(r + d[0] * j, c + d[1] * j)] = ch
+                placed.append((word, r, c, d))
+                waiting.remove(word)
+                progress = True
+        if len(placed) > len(best):
+            best = placed
+        if len(best) == len(words):
+            break
+    grid = {}
+    for word, r, c, d in best:
+        for j, ch in enumerate(word):
+            grid[(r + d[0] * j, c + d[1] * j)] = ch
+    top, left, bottom, right = _extent(grid)
+    starts = sorted({(r - top, c - left) for _w, r, c, _d in best})
+    number_of = {cell: i + 1 for i, cell in enumerate(starts)}
+    out = [
+        Entry(
+            number_of[(r - top, c - left)],
+            word,
+            r - top,
+            c - left,
+            "down" if d == DOWN else "across",
+            usable[word],
+        )
+        for word, r, c, d in sorted(best, key=lambda p: (p[1], p[2], p[3] == DOWN))
+    ]
+    in_grid = {w for w, *_ in best}
+    left_out = tuple(w for w in words if w not in in_grid)
+    return Crossword(bottom - top + 1, right - left + 1, tuple(out)), left_out
