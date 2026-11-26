@@ -17,7 +17,13 @@
 
 ## v0.10.0: holidays and themes (planned)
 
-Design questions get asked one at a time when this is built.
+Design decisions (asked one at a time, answered 2026-11-26):
+1. **On by default:** seasons and solstices, fun science days (Pi Day, Earth Day, World Ocean Day, Space Day and similar), public holidays from a Holidays calendar if one is added, and a first day of school you set.
+2. **Opt-in checklist:** a broad list of about 25 faith and cultural observances, all unticked, plus **custom family days** (birthdays, name days, local festivals) with your own banner text.
+3. **ASCII art:** centered above the banner text, on recognized days only. Ordinary days look as they do now.
+4. **Themed prints:** word search, crossword, maze, and jokes and facts.
+5. **Theme control:** under Configure → Settings only (Auto, Off, or a fixed theme).
+6. **Feed as quote source:** the newest item's summary is the quote and its title is the author, falling back to the title alone.
 
 ### Holiday-aware morning slip
 - **Banner under the date** on a holiday: "Today is Diwali, the festival of lights". The one-line description is neutral and factual (what the day is), sourced and credited (for example Library of Congress or Smithsonian educational pages), never devotional.
