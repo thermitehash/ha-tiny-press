@@ -11,7 +11,7 @@ A Home Assistant integration that turns an Epson receipt printer into a househol
 - **Home Assistant:** 2026.11.0 or newer
 - **Nothing prints on a schedule.** Tiny Press ships no schedules or time-based automations. The only automatic printing is feed auto-print, which is off until you switch it on for a feed.
 
-> **Status: v0.10.0.** Kid prints (maze, word search, math, kid sudoku, spelling, jokes, facts, kid pack), adult puzzles, bedtime stories, the morning slip, weather, sensor history, a dashboard card with kid mode, and kid-mode limits, Assist voice phrases, AI-agent print tools, feed prints, a live quote of the day, and holidays and themes. See [docs/releases](docs/releases) for each version and the [roadmap](docs/roadmap.md) for what's next.
+> **Status: v0.11.0.** Kid prints (maze, word search, math, kid sudoku, spelling, jokes, facts, kid pack), adult puzzles, bedtime stories, the morning slip, weather, sensor history, a dashboard card with kid mode, and kid-mode limits, Assist voice phrases, AI-agent print tools, feed prints, a live quote of the day, and holidays and themes. See [docs/releases](docs/releases) for each version and the [roadmap](docs/roadmap.md) for what's next.
 
 <!-- Screenshot placeholders -->
 <!-- ![Device page](docs/images/device.png) -->
@@ -125,24 +125,26 @@ Open **Settings → Devices & services → Tiny Press → Configure** to add, ed
 | Kid profile | |
 |---|---|
 | Name | Shown on the Kid profile select; may be used in stories later |
-| Reading grade | K–5 (default 3). Sets word lists, grid size and math level. |
+| Reading grade | K–5 (default 3). Sets word lists and word search size, spelling, and story reading level. |
+| Math grade | K–5 (default: same as the reading grade). Sets the math strip and kid sudoku. A kid can read at grade 3 and do grade 1 math. |
 | Interests | Free text such as `dinosaurs, space, horses`. Themed words appear in word searches (and in AI jokes if switched on). |
-| Stretch | Makes puzzles one grade harder (reading stays at their grade) |
+| Stretch | Makes puzzles one grade harder, for both reading and math puzzles (stories stay at their reading grade) |
 | Spelling list (to-do list) | Optional: a `todo` list, one word per item. Check a word off when it's learned; prints use the unchecked words. Add words by voice: "Add *because* to Rosie's spelling list". |
 | Spelling words | Optional typed list (commas or new lines), used when no to-do list is set |
 
 An adult profile has a name and a default puzzle difficulty (used by the adult puzzles). Add as many profiles as you like, for example a younger sibling later.
 
-What each grade gets:
+What each grade gets (word searches follow the reading grade, math strips the math grade):
 
 | Grade | Word search | Math strip |
 |---|---|---|
-| K–1 | 10×10, across and down | add/subtract within 10 (K) or 20 (1) |
+| K | 10×10, across and down | add/subtract within 10 |
+| 1 | 10×10, across and down | single-digit add/subtract (0–9 and 0–9, no negative answers); bonus within 20 |
 | 2 | 10×10, across and down | two-digit add/subtract, every problem needs regrouping |
 | 3 | 10×10, plus diagonals | adds ×/÷ facts to 10 and two word problems |
 | 4–5 | 12×12, more diagonals | bigger numbers, ×/÷ to 12, multi-digit × |
 
-Every math strip ends with a harder ★ bonus problem. Kid sudoku (numbers) is 4×4 for K–1, 6×6 for grades 2–3, and a harder 6×6 for grades 4–5.
+Every math strip ends with a harder ★ bonus problem. Kid sudoku (numbers) follows the math grade: 4×4 for K–1, 6×6 for grades 2–3, and a harder 6×6 for grades 4–5.
 
 ## 3. Entities
 

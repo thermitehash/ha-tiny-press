@@ -100,14 +100,16 @@
           "interests": "Interests",
           "stretch": "Stretch",
           "spelling_words": "Spelling words",
-          "spelling_todo": "Spelling list (to-do list)"
+          "spelling_todo": "Spelling list (to-do list)",
+          "math_grade": "Math grade"
         },
         "data_description": {
-          "grade": "The grade they read and do math at.",
+          "grade": "Used by word searches, spelling and stories.",
           "interests": "Free text, for example: dinosaurs, space, horses.",
-          "stretch": "Make puzzles one grade harder.",
+          "stretch": "Make puzzles one grade harder (reading and math).",
           "spelling_words": "Optional. Typed list (commas or new lines), used when no to-do list is chosen or it can't be read.",
-          "spelling_todo": "Optional. A to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words."
+          "spelling_todo": "Optional. A to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words.",
+          "math_grade": "Used by math strips and kid sudoku. Grade 1 is single-digit addition and subtraction."
         }
       },
       "edit_kid": {
@@ -118,14 +120,16 @@
           "interests": "Interests",
           "stretch": "Stretch",
           "spelling_words": "Spelling words",
-          "spelling_todo": "Spelling list (to-do list)"
+          "spelling_todo": "Spelling list (to-do list)",
+          "math_grade": "Math grade"
         },
         "data_description": {
-          "grade": "The grade they read and do math at.",
+          "grade": "Used by word searches, spelling and stories.",
           "interests": "Free text, for example: dinosaurs, space, horses.",
-          "stretch": "Make puzzles one grade harder.",
+          "stretch": "Make puzzles one grade harder (reading and math). (reading and math).",
           "spelling_words": "Optional. Typed list (commas or new lines), used when no to-do list is chosen or it can't be read.",
-          "spelling_todo": "Optional. A to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words."
+          "spelling_todo": "Optional. A to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words.",
+          "math_grade": "Used by math strips and kid sudoku. Grade 1 is single-digit addition and subtraction."
         }
       },
       "add_adult": {

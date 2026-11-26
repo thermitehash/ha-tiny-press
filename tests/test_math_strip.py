@@ -75,3 +75,16 @@ def test_check_rejects_wrong() -> None:
     assert not ms.Problem(2, ms.ADD, 2, 5).check()
     assert not ms.Problem(7, ms.DIV, 0, 0).check()
     assert not ms.Problem(1, "?", 1, 1).check()
+
+
+def test_first_grade_is_single_digit_add_and_subtract() -> None:
+    for seed in range(200):
+        sheet = ms.generate("1", seed)
+        for problem in sheet.problems:
+            assert problem.op in (ms.ADD, ms.SUB)
+            assert 0 <= problem.a <= 9 and 0 <= problem.b <= 9, problem
+            assert problem.answer >= 0 and problem.check()
+            assert problem.text is None and not problem.vertical
+        assert sheet.bonus.answer <= 20 and max(sheet.bonus.a, sheet.bonus.b) <= 20
+    ops = {p.op for s in range(20) for p in ms.generate("1", s).problems}
+    assert ops == {ms.ADD, ms.SUB}

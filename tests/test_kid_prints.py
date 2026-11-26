@@ -177,3 +177,16 @@ async def test_ai_not_used_unless_switched_on(
     response = await _print(hass, type="fact")
     assert response["source"] == "offline"
     assert calls == []
+
+
+def test_math_grade_is_separate_from_reading() -> None:
+    from custom_components.tiny_press.profiles import Profile
+
+    kid = Profile.from_dict({"name": "Rosie", "grade": "3", "math_grade": "1"})
+    assert (kid.puzzle_grade, kid.math_level) == ("3", "1")
+    stretched = Profile.from_dict(
+        {"name": "Rosie", "grade": "3", "math_grade": "1", "stretch": True}
+    )
+    assert (stretched.puzzle_grade, stretched.math_level) == ("4", "2")
+    older = Profile.from_dict({"name": "Max", "grade": "4"})  # saved before v0.11
+    assert older.math_grade == "" and older.math_level == "4"

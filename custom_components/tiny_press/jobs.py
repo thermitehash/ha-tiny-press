@@ -113,7 +113,7 @@ def math_job(profile: Profile, seed: int | None = None) -> PrintJob:
     """Build a math strip for a kid profile."""
     seed = new_seed() if seed is None else seed
     print_id = _id("math", seed)
-    grade = profile.puzzle_grade
+    grade = profile.math_level
     sheet = math_strip.generate(grade, seed)
     footer = layout.Footer("Math", print_id, _today(), _grade_label(grade))
     answer = {**sheet.answer(), "seed": seed}
@@ -374,8 +374,8 @@ KID_SUDOKU_LEVELS = {
 
 
 def kid_sudoku_level(profile: Profile) -> Difficulty:
-    """Default level by grade: K-1 easy (4x4), 2-3 medium, 4-5 hard (6x6)."""
-    n = grade_number(profile.puzzle_grade)
+    """Default level by math grade: K-1 easy (4x4), 2-3 medium, 4-5 hard (6x6)."""
+    n = grade_number(profile.math_level)
     return (
         Difficulty.EASY if n <= 1 else Difficulty.MEDIUM if n <= 3 else Difficulty.HARD
     )

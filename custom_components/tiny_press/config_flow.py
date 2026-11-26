@@ -268,6 +268,15 @@ def _kid_schema(profile: Profile | None) -> vol.Schema:
                     mode=SelectSelectorMode.DROPDOWN,
                 )
             ),
+            vol.Required(
+                "math_grade", default=(p.math_grade or p.grade).lower()
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=[g.lower() for g in GRADES],
+                    translation_key="grade",
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
+            ),
             vol.Optional("interests", default=p.interests): TextSelector(),
             vol.Required("stretch", default=p.stretch): BooleanSelector(),
             vol.Optional(
@@ -531,6 +540,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
             kind=KID,
             name=data[CONF_NAME].strip(),
             grade=grade_label(grade_number(data["grade"])),
+            math_grade=grade_label(grade_number(data.get("math_grade", data["grade"]))),
             interests=(data.get("interests") or "").strip(),
             stretch=bool(data.get("stretch")),
             spelling_words=(data.get("spelling_words") or "").strip(),
