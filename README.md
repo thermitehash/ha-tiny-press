@@ -11,7 +11,7 @@ A Home Assistant integration that turns an Epson receipt printer into a househol
 - **Home Assistant:** 2026.11.0 or newer
 - **Nothing prints automatically.** Tiny Press ships no schedules or time-based automations.
 
-> **Status: v0.2.0.** Kid pack: profiles, maze, word search, math strip, jokes and fun facts, plus notes, pictures and the test page. See the [roadmap](docs/roadmap.md) for what's next.
+> **Status: v0.3.0.** Kid pack (profiles, maze, word search, math strip, jokes and fun facts), a dashboard card with kid mode, kid-mode print limits, previews and answer keys. See the [roadmap](docs/roadmap.md) for what's next.
 
 <!-- Screenshot placeholders -->
 <!-- ![Device page](docs/images/device.png) -->
@@ -41,6 +41,7 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 | Longest single print | 600 mm | Any print longer than this is trimmed and ends with a "trimmed" note, so a runaway print can't empty the roll. |
 | Status check interval | 60 s | How often paper and cover status are read. Status is never read while a job is printing. |
 | AI task entity | none | Optional. Any `ai_task` entity (for example the Anthropic integration's). Used for bedtime stories in a later version. |
+| Weather entity | none | Used by the Weather print. Not needed if you only have one weather entity. |
 | Use AI for jokes and fun facts | off | Off: jokes and facts come from bundled, human-written lists (facts from NOAA, NASA and the National Park Service, with credits). On: the AI is asked first. |
 
 ### Profiles
@@ -53,8 +54,9 @@ Open **Settings → Devices & services → Tiny Press → Configure** to add, ed
 | Reading grade | K–5 (default 3). Sets word lists, grid size and math level. |
 | Interests | Free text such as `dinosaurs, space, horses`. Themed words appear in word searches (and in AI jokes if switched on). |
 | Stretch | Makes puzzles one grade harder (reading stays at their grade) |
+| Spelling words | Optional: this week's school list (commas or new lines). Used by the spelling prints. |
 
-An adult profile has a name and a default puzzle difficulty (used by the adult puzzles in v0.3.0). Add as many profiles as you like, for example a younger sibling later.
+An adult profile has a name and a default puzzle difficulty (used by the adult puzzles in v0.4.0). Add as many profiles as you like, for example a younger sibling later.
 
 What each grade gets:
 
@@ -65,7 +67,7 @@ What each grade gets:
 | 3 | 10×10, plus diagonals | adds ×/÷ facts to 10 and two word problems |
 | 4–5 | 12×12, more diagonals | bigger numbers, ×/÷ to 12, multi-digit × |
 
-Every math strip ends with a harder ★ bonus problem.
+Every math strip ends with a harder ★ bonus problem. Kid sudoku (numbers) is 4×4 for K–1, 6×6 for grades 2–3, and a harder 6×6 for grades 4–5.
 
 ## 3. Entities
 
@@ -80,7 +82,13 @@ Every math strip ends with a harder ★ bonus problem.
 | `button.tiny_press_math` | Prints a math strip for the selected kid |
 | `button.tiny_press_joke` | Prints a joke (punchline upside down below a fold line) |
 | `button.tiny_press_kid_pack` | Prints a maze, word search and math strip in one go |
+| `button.tiny_press_kid_sudoku` | Prints a 4×4 or 6×6 number sudoku |
+| `button.tiny_press_spelling` | Prints unscramble and missing-letter practice from the kid's spelling list |
+| `button.tiny_press_spelling_search` | Prints a word search of the kid's spelling list |
+| `button.tiny_press_weather` | Prints current weather and a forecast of up to 10 days |
+| `button.tiny_press_answers` | Prints the answer key for the newest puzzle |
 | `button.tiny_press_test_page` | Prints the test page |
+| `sensor.tiny_press_kid_prints_left_today` | Kid prints left today when kid-mode limits are on. Attributes: `next_print_at`, `paper_left_mm`, `blocked_reason` |
 | `select.tiny_press_kid_profile` | Who the buttons print for |
 | `select.tiny_press_maze_difficulty` | Easy, medium or hard |
 
@@ -112,7 +120,8 @@ This is the general entry point that every button and voice phrase uses.
 
 | Field | Notes |
 |---|---|
-| `type` | `maze`, `word_search`, `math`, `joke`, `fact`, `kid_pack` or `test_page` |
+| `type` | `maze`, `word_search`, `math`, `joke`, `fact`, `kid_pack`, `kid_sudoku`, `spelling`, `spelling_search`, `weather` or `test_page` |
+| `words` | For `spelling` and `spelling_search`: words to practice. Empty uses the kid profile's spelling list. |
 | `profile` | Kid profile name for word searches, math, jokes and kid packs. Empty uses the Kid profile select. |
 | `difficulty` | For mazes (and the maze in a kid pack). Loose words work: `easy`, `medium`, `hard`, `harder`, `tricky`, `a little harder`. Empty uses the Maze difficulty select. |
 | `seed` | The same seed prints the same puzzle again (and the same bundled joke) |
@@ -131,6 +140,14 @@ data:
   type: kid_pack
   profile: Rosie
 ```
+
+### `tiny_press.preview`
+
+Draws a print without printing it. Returns `image` (a PNG data URI), `seed` and the usual fields. Call `tiny_press.print` with the same `seed` to print exactly what you saw.
+
+### `tiny_press.print_answers`
+
+Prints the answer key for the newest puzzle, or for a footer ID: `print_id: K7Q2`. Answer keys are kept for the last 20 puzzles.
 
 ### `tiny_press.print_text`
 
@@ -155,9 +172,39 @@ data:
   path: /config/www/drawings/rocket.png
 ```
 
+## Dashboard card
+
+Tiny Press includes a dashboard card. It loads automatically; there's nothing extra to install. Edit a dashboard, choose **Add card**, and search for **Tiny Press**.
+
+```yaml
+type: custom:tiny-press-card
+title: Rosie's printer
+kid_mode: true          # hold-to-print, no settings or answers, shows limits
+show_preview: false     # true: see the print first, then Shuffle or Print
+buttons: [maze, word_search, math, kid_sudoku, spelling, joke, kid_pack, weather]
+# ignore_limits: true   # for a parents' dashboard
+```
+
+<!-- ![Dashboard card](docs/images/card.png) -->
+
+## Kid-mode limits
+
+Under **Configure → Kid-mode limits** you can turn on a wait between prints (default 2 minutes), prints per hour (4), prints per day (10) and a daily paper budget (1.5 m).
+
+- **Who they apply to:** kid prints from every button, card, action, voice phrase and Siri shortcut. Counts reset at midnight.
+- **What she sees:** when a print is blocked, she gets a friendly message ("Just a moment! The next print is ready at 3:42 PM"), and Tiny Press fires `tiny_press_rate_limited` so you can be notified.
+- **Parents skip the limits** with `ignore_limits: true`:
+
+```yaml
+action: tiny_press.print
+data:
+  type: kid_pack
+  ignore_limits: true
+```
+
 ## 5. Voice and Siri
 
-Assist voice phrases (an automation blueprint) and Siri shortcuts arrive in **v0.6.0**.
+Assist voice phrases (an automation blueprint) and Siri shortcuts arrive in **v0.7.0**.
 
 > **Heads-up for later:** the voice phrases use sentence triggers, which only run when Home Assistant's built-in conversation agent handles the sentence. If your Assist pipeline uses Claude/Anthropic (or another LLM) as its agent, turn on **"Prefer handling commands locally"** in the pipeline settings, or the phrases won't work.
 

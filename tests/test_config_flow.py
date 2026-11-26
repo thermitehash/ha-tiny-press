@@ -148,7 +148,7 @@ async def test_options_settings(
 ) -> None:
     result = await hass.config_entries.options.async_init(loaded_entry.entry_id)
     assert result["type"] is FlowResultType.MENU
-    assert result["menu_options"] == ["settings", "add_kid", "add_adult"]
+    assert result["menu_options"] == ["settings", "kid_limits", "add_kid", "add_adult"]
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"next_step_id": "settings"}
     )
@@ -168,6 +168,7 @@ async def test_options_settings(
         "poll_interval": 120,
         "ai_task_entity": "ai_task.claude",
         "ai_jokes": True,
+        "weather_entity": None,
     }
     coordinator = loaded_entry.runtime_data
     assert coordinator.max_length_mm == 450
@@ -207,6 +208,7 @@ async def test_profiles_add_edit_remove(
             "grade": "2",
             "interests": "dinosaurs, space",
             "stretch": False,
+            "spelling_words": "",
             "difficulty": "medium",
         }
     ]

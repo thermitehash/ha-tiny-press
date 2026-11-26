@@ -23,6 +23,9 @@
       },
       "last_print": {
         "default": "mdi:receipt-text-outline"
+      },
+      "prints_left": {
+        "default": "mdi:timer-sand"
       }
     },
     "button": {
@@ -43,6 +46,21 @@
       },
       "kid_pack": {
         "default": "mdi:package-variant-closed"
+      },
+      "answers": {
+        "default": "mdi:check-decagram-outline"
+      },
+      "weather": {
+        "default": "mdi:weather-partly-cloudy"
+      },
+      "kid_sudoku": {
+        "default": "mdi:grid"
+      },
+      "spelling": {
+        "default": "mdi:alphabetical-variant"
+      },
+      "spelling_search": {
+        "default": "mdi:text-box-search-outline"
       }
     },
     "select": {
@@ -63,6 +81,12 @@
     },
     "print_image": {
       "service": "mdi:image-outline"
+    },
+    "preview": {
+      "service": "mdi:eye-outline"
+    },
+    "print_answers": {
+      "service": "mdi:check-decagram-outline"
     }
   }
 }

@@ -3,15 +3,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import partial
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .const import PrintType
+from .const import DOMAIN, PrintType
 from .coordinator import TinyPressConfigEntry, TinyPressCoordinator
 from .entity import TinyPressEntity
+from .jobs import answer_job
 from .services import async_print_type
 
 PARALLEL_UPDATES = 1
@@ -21,7 +24,7 @@ PARALLEL_UPDATES = 1
 class TinyPressButtonDescription(ButtonEntityDescription):
     """Describes a print button."""
 
-    print_type: PrintType
+    print_type: PrintType | None  # None: answers for the newest puzzle
 
 
 BUTTONS: tuple[TinyPressButtonDescription, ...] = (
@@ -30,6 +33,13 @@ BUTTONS: tuple[TinyPressButtonDescription, ...] = (
     TinyPressButtonDescription(key="math", print_type=PrintType.MATH),
     TinyPressButtonDescription(key="joke", print_type=PrintType.JOKE),
     TinyPressButtonDescription(key="kid_pack", print_type=PrintType.KID_PACK),
+    TinyPressButtonDescription(key="kid_sudoku", print_type=PrintType.KID_SUDOKU),
+    TinyPressButtonDescription(key="spelling", print_type=PrintType.SPELLING),
+    TinyPressButtonDescription(
+        key="spelling_search", print_type=PrintType.SPELLING_SEARCH
+    ),
+    TinyPressButtonDescription(key="weather", print_type=PrintType.WEATHER),
+    TinyPressButtonDescription(key="answers", print_type=None),
     TinyPressButtonDescription(
         key="test_page",
         print_type=PrintType.TEST_PAGE,
@@ -63,6 +73,15 @@ class TinyPressButton(TinyPressEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Print."""
-        await async_print_type(
-            self.hass, self.coordinator, self.entity_description.print_type
-        )
+        kind = self.entity_description.print_type
+        if kind is None:
+            entry = self.coordinator.store.find_answer(None)
+            if entry is None:
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN,
+                    translation_key="no_answers",
+                    translation_placeholders={"print_id": "-"},
+                )
+            await self.coordinator.async_print(partial(answer_job, entry))
+            return
+        await async_print_type(self.hass, self.coordinator, kind)

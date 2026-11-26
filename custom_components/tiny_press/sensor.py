@@ -32,6 +32,7 @@ async def async_setup_entry(
             TinyPressPaper(coordinator, "paper"),
             TinyPressPaperUsed(coordinator, "paper_used"),
             TinyPressLastPrint(coordinator, "last_print"),
+            TinyPressPrintsLeft(coordinator, "prints_left"),
         ]
     )
 
@@ -77,3 +78,23 @@ class TinyPressLastPrint(TinyPressEntity, SensorEntity):
         """ID, time, length, profile and difficulty."""
         last = self.coordinator.store.last_print
         return {k: v for k, v in last.items() if k != "type"} if last else None
+
+
+class TinyPressPrintsLeft(TinyPressEntity, SensorEntity):
+    """Kid prints left today (unknown when kid-mode limits are off).
+
+    Attributes give the cooldown end (``next_print_at``), paper left and why
+    the next print would be blocked, for dashboards.
+    """
+
+    _attr_native_unit_of_measurement = "prints"
+
+    @property
+    def native_value(self) -> int | None:
+        """Prints left today."""
+        return self.coordinator.limiter.status().prints_left_today
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Limit details."""
+        return self.coordinator.limiter.status().as_attributes()

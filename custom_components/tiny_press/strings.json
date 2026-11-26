@@ -43,6 +43,7 @@
         "title": "Tiny Press options",
         "menu_options": {
           "settings": "Settings",
+          "kid_limits": "Kid-mode limits",
           "add_kid": "Add a kid",
           "add_adult": "Add an adult",
           "edit_profile": "Edit a profile",
@@ -55,13 +56,15 @@
           "max_length_mm": "Longest single print",
           "poll_interval": "Status check interval",
           "ai_task_entity": "AI task entity",
-          "ai_jokes": "Use AI for jokes and fun facts"
+          "ai_jokes": "Use AI for jokes and fun facts",
+          "weather_entity": "Weather entity"
         },
         "data_description": {
           "max_length_mm": "Any print longer than this is trimmed, so a runaway print can't empty the roll.",
           "poll_interval": "How often to read paper and cover status. Status is never read while printing.",
           "ai_task_entity": "Optional. Used for bedtime stories in a later version, and for jokes and fun facts if you switch that on below.",
-          "ai_jokes": "Off (recommended): jokes and facts come from Tiny Press's bundled, human-written lists, each with a credited source. On: ask the AI task entity first and fall back to the bundled lists."
+          "ai_jokes": "Off (recommended): jokes and facts come from Tiny Press's bundled, human-written lists, each with a credited source. On: ask the AI task entity first and fall back to the bundled lists.",
+          "weather_entity": "Used by the Weather print (and the morning slip later). Not needed if you only have one weather entity."
         }
       },
       "add_kid": {
@@ -71,12 +74,14 @@
           "name": "[%key:common::config_flow::data::name%]",
           "grade": "Reading grade",
           "interests": "Interests",
-          "stretch": "Stretch"
+          "stretch": "Stretch",
+          "spelling_words": "Spelling words"
         },
         "data_description": {
           "grade": "The grade they read and do math at.",
           "interests": "Free text, for example: dinosaurs, space, horses.",
-          "stretch": "Make puzzles one grade harder."
+          "stretch": "Make puzzles one grade harder.",
+          "spelling_words": "Optional. This week's school list, separated by commas or new lines. Used by Spelling practice and Spelling word search."
         }
       },
       "edit_kid": {
@@ -85,12 +90,14 @@
           "name": "[%key:common::config_flow::data::name%]",
           "grade": "[%key:component::tiny_press::options::step::add_kid::data::grade%]",
           "interests": "[%key:component::tiny_press::options::step::add_kid::data::interests%]",
-          "stretch": "[%key:component::tiny_press::options::step::add_kid::data::stretch%]"
+          "stretch": "[%key:component::tiny_press::options::step::add_kid::data::stretch%]",
+          "spelling_words": "[%key:component::tiny_press::options::step::add_kid::data::spelling_words%]"
         },
         "data_description": {
           "grade": "[%key:component::tiny_press::options::step::add_kid::data_description::grade%]",
           "interests": "[%key:component::tiny_press::options::step::add_kid::data_description::interests%]",
-          "stretch": "[%key:component::tiny_press::options::step::add_kid::data_description::stretch%]"
+          "stretch": "[%key:component::tiny_press::options::step::add_kid::data_description::stretch%]",
+          "spelling_words": "[%key:component::tiny_press::options::step::add_kid::data_description::spelling_words%]"
         }
       },
       "add_adult": {
@@ -118,6 +125,22 @@
         "data": {
           "profiles": "Profiles to remove"
         }
+      },
+      "kid_limits": {
+        "title": "Kid-mode limits",
+        "description": "Limits apply to kid prints (maze, word search, math, joke, fun fact, kid pack) from every button, dashboard card, voice phrase and Siri shortcut. Parents can skip them with `ignore_limits: true` on an action. Counts reset at midnight.",
+        "data": {
+          "limits_enabled": "Limit kid prints",
+          "limit_cooldown_s": "Wait between prints",
+          "limit_per_hour": "Prints per hour",
+          "limit_per_day": "Prints per day",
+          "limit_paper_mm_day": "Paper per day",
+          "limit_admins_skip": "Admin users skip the limits"
+        },
+        "data_description": {
+          "limit_per_hour": "0 means no hourly limit.",
+          "limit_admins_skip": "Leave off if a shared wall tablet is signed in as an admin."
+        }
       }
     },
     "error": {
@@ -140,7 +163,11 @@
         "joke": "Joke",
         "fact": "Fun fact",
         "kid_pack": "Kid pack (maze, word search and math)",
-        "test_page": "Test page"
+        "test_page": "Test page",
+        "weather": "Weather and forecast",
+        "kid_sudoku": "Kid sudoku (4x4 or 6x6)",
+        "spelling": "Spelling practice",
+        "spelling_search": "Spelling word search"
       }
     },
     "text_size": {
@@ -207,6 +234,26 @@
             "name": "Difficulty"
           }
         }
+      },
+      "prints_left": {
+        "name": "Kid prints left today",
+        "state_attributes": {
+          "enabled": {
+            "name": "Limits on"
+          },
+          "prints_today": {
+            "name": "Prints today"
+          },
+          "paper_left_mm": {
+            "name": "Paper left today"
+          },
+          "next_print_at": {
+            "name": "Next print at"
+          },
+          "blocked_reason": {
+            "name": "Blocked because"
+          }
+        }
       }
     },
     "button": {
@@ -227,6 +274,21 @@
       },
       "test_page": {
         "name": "Test page"
+      },
+      "answers": {
+        "name": "Answers"
+      },
+      "weather": {
+        "name": "Weather"
+      },
+      "kid_sudoku": {
+        "name": "Kid sudoku"
+      },
+      "spelling": {
+        "name": "Spelling practice"
+      },
+      "spelling_search": {
+        "name": "Spelling word search"
       }
     },
     "select": {
@@ -270,6 +332,27 @@
     },
     "image_not_found": {
       "message": "{path} isn't an image file Tiny Press can read."
+    },
+    "rate_limited_cooldown": {
+      "message": "Just a moment! The next print is ready at {time}."
+    },
+    "rate_limited_hour": {
+      "message": "That's lots of printing for now. Try again at {time}."
+    },
+    "rate_limited_day": {
+      "message": "That's enough printing for today! See you tomorrow."
+    },
+    "rate_limited_paper": {
+      "message": "Today's paper is all used up. See you tomorrow!"
+    },
+    "no_answers": {
+      "message": "There's no answer key for {print_id}. Answer keys are kept for the last 20 puzzles."
+    },
+    "weather_not_set": {
+      "message": "Choose a weather entity under Configure → Settings to print the weather."
+    },
+    "no_spelling_words": {
+      "message": "{profile} has no spelling words yet. Add them under Configure → Edit a profile, or pass words to the action."
     }
   },
   "services": {
@@ -291,11 +374,19 @@
         },
         "difficulty": {
           "name": "Difficulty",
-          "description": "For mazes. Loose words work: easy, medium, hard, harder, tricky. Leave empty to use the Maze difficulty select."
+          "description": "For mazes and kid sudoku. Loose words work: easy, medium, hard, harder, tricky. Kid sudoku: easy is 4x4, medium and hard are 6x6. Empty uses the select (mazes) or the kid's grade (sudoku)."
         },
         "seed": {
           "name": "Seed",
           "description": "Prints the same puzzle again for the same seed. Jokes with a seed come from the bundled list."
+        },
+        "ignore_limits": {
+          "name": "Ignore kid limits",
+          "description": "For parents' scripts and dashboards: print even if kid-mode limits would block it."
+        },
+        "words": {
+          "name": "Spelling words",
+          "description": "For spelling prints: words to practice. Leave empty to use the kid profile's spelling list."
         }
       }
     },
@@ -332,6 +423,50 @@
         "path": {
           "name": "Path",
           "description": "An image under /media or /config/www, for example /config/www/drawing.png."
+        }
+      }
+    },
+    "preview": {
+      "name": "Preview",
+      "description": "Draws a print without printing it and returns the picture (a PNG data URI) and its seed. Call Print with the same seed to print exactly what you saw.",
+      "fields": {
+        "config_entry_id": {
+          "name": "[%key:component::tiny_press::services::print::fields::config_entry_id::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::config_entry_id::description%]"
+        },
+        "type": {
+          "name": "[%key:component::tiny_press::services::print::fields::type::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::type::description%]"
+        },
+        "profile": {
+          "name": "[%key:component::tiny_press::services::print::fields::profile::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::profile::description%]"
+        },
+        "difficulty": {
+          "name": "[%key:component::tiny_press::services::print::fields::difficulty::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::difficulty::description%]"
+        },
+        "seed": {
+          "name": "[%key:component::tiny_press::services::print::fields::seed::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::seed::description%]"
+        },
+        "words": {
+          "name": "[%key:component::tiny_press::services::print::fields::words::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::words::description%]"
+        }
+      }
+    },
+    "print_answers": {
+      "name": "Print answers",
+      "description": "Prints the answer key for the newest puzzle, or for a puzzle ID from its footer (like K7Q2).",
+      "fields": {
+        "config_entry_id": {
+          "name": "[%key:component::tiny_press::services::print::fields::config_entry_id::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::config_entry_id::description%]"
+        },
+        "print_id": {
+          "name": "Puzzle ID",
+          "description": "The 4-character ID printed in the footer. Leave empty for the newest puzzle."
         }
       }
     }

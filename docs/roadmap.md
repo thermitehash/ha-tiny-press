@@ -4,10 +4,11 @@
 |---|---|---|
 | 1 | 0.1.0 ✅ | Printer transport, queue and status; rendering; `print_text`, `print_image`; test page; maze; status entities |
 | 2 | 0.2.0 ✅ | Kid pack: word search, math strip, joke/fun fact, kid profiles, combined Kid pack |
-| 3 | 0.3.0 | Adult puzzles: sudoku, criss-cross crossword, cryptogram, answer keys, puzzle pack |
-| 4 | 0.4.0 | Bedtime story and serial choose-your-own-adventure via `ai_task`, with offline fallback |
-| 5 | 0.5.0 | Morning slip (manual only) |
-| 6 | 0.6.0 | Voice blueprint and Siri docs |
+| — | 0.3.0 ✅ | Dashboard card, kid-mode rate limiter, print preview, answer keys for kid puzzles |
+| 3 | 0.4.0 | Adult puzzles: sudoku, criss-cross crossword, cryptogram, puzzle pack |
+| 4 | 0.5.0 | Bedtime story (short/medium/long) and serial choose-your-own-adventure via `ai_task`, with offline fallback |
+| 5 | 0.6.0 | Morning slip (manual only) |
+| 6 | 0.7.0 | Voice blueprint and Siri docs |
 | 7 | — | Skylight (planning only, below) |
 | later | — | Selfie prints and AI-generated kid-safe pictures (planning only, below) |
 
@@ -58,3 +59,29 @@ Both build on `print_image`'s existing 1-bit rendering. Like everything else, th
   - Which `ai_task` providers support image generation, and at what cost per image.
   - Whether to cache generated pages for re-printing.
   - A per-day limit so a voice command can't run up a bill.
+
+## Dashboard card (built in v0.3.0)
+
+The items below were the plan. Everything is built except the visual-editor niceties beyond the basic form.
+
+A Lovelace card (`custom:tiny-press-card`) so the household gets one tidy,
+kid-friendly control instead of a grid of separate button entities.
+
+- **Big print buttons** with icons (Maze, Word search, Math, Joke, Kid pack, and later Sudoku, Story and Next chapter), sized for small fingers on a wall tablet.
+- **Profile chips** to switch the active kid or adult, plus a difficulty or story-length toggle next to the relevant buttons.
+- **Status strip:** online, paper state (OK / running low / out / cover open) and paper used, with a gentle warning when paper is low.
+- **Last print:** type, time and its `#ID`, with an "Answers" button that prints the answer key for it.
+- **Preview before printing:** a rendered preview of the next print (the same 1-bit image the printer gets), with Print and Shuffle buttons. This needs a small preview endpoint or action that returns a PNG without printing.
+- **Busy state:** buttons disable while a job is printing, and errors show as a friendly message, not a stack trace.
+- **Kid mode:** an option to hide settings and adult puzzles, and to require a hold-to-print press so a toddler can't empty the roll.
+  - **Rate limiter:** a cooldown between prints (e.g. 2 minutes), a cap on prints per hour and per day (e.g. 4 and 10), and a daily paper budget in mm.
+    - The card shows "Next print in 1:30" or "3 prints left today", and a friendly "That's enough printing for today!" when the limit is reached.
+  - **Enforced in the integration, not just the card**, so the same limits apply to buttons, voice phrases and Siri. Kid-facing entry points count toward the limit.
+    - Adults can bypass it: an "adult" flag on the action call, and actions run by admin users.
+    - Limits are set in the options flow and reset at local midnight.
+    - Blocked attempts fire `tiny_press_rate_limited`, so a parent can be notified if they want.
+- **Packaging:**
+  - Ship the card's JavaScript inside the integration and register it as a frontend resource automatically, so there's no separate HACS "Dashboard" repository to install.
+  - Configure it in the visual card editor (the printer device, and which buttons to show).
+  - Works in light and dark themes.
+- Nothing prints on its own. The card only prints when someone presses a button.

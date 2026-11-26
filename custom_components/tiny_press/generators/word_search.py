@@ -8,6 +8,7 @@ placed in the grid; words that don't fit are swapped for others.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 import random
 import re
 import string
@@ -221,3 +222,44 @@ def generate(
     letters = string.ascii_uppercase
     rows = tuple("".join(cell or rng.choice(letters) for cell in row) for row in grid)
     return WordSearch(size, rows, tuple(placements))
+
+
+MAX_SIZE = 15
+
+
+def generate_from_words(grade: str, seed: int, words: list[str]) -> WordSearch:
+    """Hide exactly ``words`` (e.g. a spelling list); every one is placed.
+
+    The grid starts at the grade's size (or the longest word) and grows a
+    little if the words don't all fit.
+    """
+    clean = sorted(
+        {w.upper() for w in words if w.isalpha() and len(w) >= 2},
+        key=len,
+        reverse=True,
+    )
+    if not clean:
+        raise ValueError("no words to hide")
+    longest = len(clean[0])
+    if longest > MAX_SIZE:
+        raise ValueError(f"words longer than {MAX_SIZE} letters don't fit")
+    letters = sum(len(w) for w in clean)
+    size = max(size_for_grade(grade), longest, math.ceil(math.sqrt(letters * 1.8)))
+    dirs = directions_for_grade(grade)
+    rng = random.Random(seed)
+    for attempt in range(40):
+        size_now = min(MAX_SIZE, size + attempt // 10)
+        grid: list[list[str]] = [[""] * size_now for _ in range(size_now)]
+        placements = []
+        for word in clean:
+            placed = _try_place(grid, word, dirs, rng)
+            if not placed:
+                break
+            placements.append(placed)
+        else:
+            rows = tuple(
+                "".join(cell or rng.choice(string.ascii_uppercase) for cell in row)
+                for row in grid
+            )
+            return WordSearch(size_now, rows, tuple(placements))
+    raise ValueError("too many words to fit in one grid")
