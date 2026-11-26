@@ -88,7 +88,7 @@ Configure → **Holidays and themes**. On a recognized day, the morning slip pri
 | Buddhist holidays | Losar, Vesak, Bodhi Day |
 | Christian holidays | Easter, Orthodox Easter, Christmas |
 | Nowruz | Nowruz, the spring-equinox new year |
-| Cultural and heritage days (US) | Juneteenth, Indigenous Peoples' Day, Día de los Muertos, Kwanzaa |
+| Cultural and heritage days (US) | Juneteenth, Indigenous Peoples' Day, Día de los Muertos, Thanksgiving, Kwanzaa |
 | Fun days | Valentine's Day, Halloween, New Year's Eve |
 
 **Family days** (Configure → **Add a family day**): birthdays, name days or local festivals, every year on the same date, with your own banner text and a choice of art. Remove them with Configure → **Remove family days**.

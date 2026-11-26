@@ -6,7 +6,7 @@
  * Nothing prints unless someone presses a button.
  */
 
-const CARD_VERSION = "0.11.0";
+const CARD_VERSION = "0.11.1";
 
 const PRINTS = {
   maze: { label: "Maze", icon: "mdi:map-marker-path" },

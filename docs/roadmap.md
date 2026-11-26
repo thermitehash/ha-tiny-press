@@ -12,6 +12,8 @@
 | 6 | 0.8.0 ✅ | Assist voice phrases (blueprint) and print tools for AI agents |
 | — | 0.9.0 ✅ | RSS/Atom feed prints and live quote of the day from Wikiquote |
 | — | 0.10.0 ✅ | Holiday-aware morning slip (day of only), seasonal and holiday puzzle themes, quote from a feed |
+| — | 0.11.0 ✅ | Per-person card and kid limits, reading and math grades, harder mazes per kid, card time bar |
+| — | 0.11.1 ✅ | Thanksgiving as a heritage (US) day; calendar holidays no longer repeat a built-in day |
 | 7 | — | Skylight (planning only, below) |
 | later | — | Selfie prints and AI-generated kid-safe pictures (planning only, below) |
 | later | — | Recipe prints from Tandoor (idea, below) |

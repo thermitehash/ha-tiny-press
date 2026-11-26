@@ -18,6 +18,7 @@ from datetime import UTC, date, datetime, timedelta
 from functools import cache
 import hashlib
 import math
+import re
 from typing import Any
 
 from .data import load_json
@@ -153,6 +154,11 @@ def art_names() -> list[str]:
 def art(name: str | None) -> tuple[str, ...]:
     """Return an ASCII art piece's lines (empty if unknown)."""
     return tuple(_data()["art"].get(name or "", ()))
+
+
+def _name_key(name: str) -> str:
+    """Letters only, lowercased, for matching holiday names loosely."""
+    return re.sub(r"[^a-z]", "", name.lower())
 
 
 def falls_on(item: dict[str, Any], day: date) -> bool:
@@ -321,7 +327,14 @@ def todays(
             )
         )
     if "public" in secular:
+        # A calendar holiday that is also a bundled day ("Thanksgiving Day",
+        # "Juneteenth National Independence Day") prints once, as the bundled
+        # day with its own banner and art.
+        bundled = [_name_key(o.name) for o in out if o.group != "custom"]
         for name in public or []:
+            key = _name_key(name)
+            if any(b and key.startswith(b) for b in bundled):
+                continue
             out.append(
                 Observance(
                     f"public:{name}",
