@@ -13,6 +13,8 @@ CONF_PAPER_WIDTH: Final = "paper_width"
 CONF_MAX_LENGTH_MM: Final = "max_length_mm"
 CONF_POLL_INTERVAL: Final = "poll_interval"
 CONF_PRINT_TEST_PAGE: Final = "print_test_page"
+CONF_AI_TASK: Final = "ai_task_entity"
+CONF_AI_JOKES: Final = "ai_jokes"  # off: bundled, human-written jokes and facts
 
 DEFAULT_PORT: Final = 9100
 DEFAULT_MAX_LENGTH_MM: Final = 600
@@ -38,12 +40,21 @@ EVENT_PRINTED: Final = "tiny_press_printed"
 
 STORAGE_VERSION: Final = 1
 HISTORY_SIZE: Final = 20
+RECENT_JOKES: Final = 40  # bundled jokes/facts not repeated within this many
+
+SETTING_MAZE_DIFFICULTY: Final = "maze_difficulty"
+SETTING_KID_PROFILE: Final = "kid_profile"
 
 
 class PrintType(StrEnum):
     """Print types the general ``tiny_press.print`` action accepts."""
 
     MAZE = "maze"
+    WORD_SEARCH = "word_search"
+    MATH = "math"
+    JOKE = "joke"
+    FACT = "fact"
+    KID_PACK = "kid_pack"
     TEST_PAGE = "test_page"
 
 

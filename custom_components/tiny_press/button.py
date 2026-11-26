@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
@@ -10,10 +9,10 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .const import Difficulty
-from .coordinator import PrintJob, TinyPressConfigEntry, TinyPressCoordinator
+from .const import PrintType
+from .coordinator import TinyPressConfigEntry, TinyPressCoordinator
 from .entity import TinyPressEntity
-from .services import SETTING_MAZE_DIFFICULTY, maze_job, test_page_job
+from .services import async_print_type
 
 PARALLEL_UPDATES = 1
 
@@ -22,18 +21,19 @@ PARALLEL_UPDATES = 1
 class TinyPressButtonDescription(ButtonEntityDescription):
     """Describes a print button."""
 
-    job: Callable[[TinyPressCoordinator], PrintJob]
-
-
-def _maze(coordinator: TinyPressCoordinator) -> PrintJob:
-    difficulty = coordinator.store.get_setting(SETTING_MAZE_DIFFICULTY, Difficulty.EASY)
-    return maze_job(coordinator, Difficulty(difficulty))
+    print_type: PrintType
 
 
 BUTTONS: tuple[TinyPressButtonDescription, ...] = (
-    TinyPressButtonDescription(key="maze", job=_maze),
+    TinyPressButtonDescription(key="maze", print_type=PrintType.MAZE),
+    TinyPressButtonDescription(key="word_search", print_type=PrintType.WORD_SEARCH),
+    TinyPressButtonDescription(key="math", print_type=PrintType.MATH),
+    TinyPressButtonDescription(key="joke", print_type=PrintType.JOKE),
+    TinyPressButtonDescription(key="kid_pack", print_type=PrintType.KID_PACK),
     TinyPressButtonDescription(
-        key="test_page", job=test_page_job, entity_category=EntityCategory.DIAGNOSTIC
+        key="test_page",
+        print_type=PrintType.TEST_PAGE,
+        entity_category=EntityCategory.DIAGNOSTIC,
     ),
 )
 
@@ -50,7 +50,7 @@ async def async_setup_entry(
 
 
 class TinyPressButton(TinyPressEntity, ButtonEntity):
-    """Prints when pressed."""
+    """Prints when pressed, for the profile chosen in the selects."""
 
     entity_description: TinyPressButtonDescription
 
@@ -63,6 +63,6 @@ class TinyPressButton(TinyPressEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Print."""
-        await self.coordinator.async_print(
-            self.entity_description.job(self.coordinator)
+        await async_print_type(
+            self.hass, self.coordinator, self.entity_description.print_type
         )

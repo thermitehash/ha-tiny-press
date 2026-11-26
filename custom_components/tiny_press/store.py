@@ -7,7 +7,7 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
-from .const import DOMAIN, HISTORY_SIZE, STORAGE_VERSION
+from .const import DOMAIN, HISTORY_SIZE, RECENT_JOKES, STORAGE_VERSION
 
 SAVE_DELAY = 10
 
@@ -30,6 +30,7 @@ class TinyPressStore:
             "history": [],
             "offline_since": None,
             "settings": {},
+            "recent": {},
         }
 
     async def async_load(self) -> None:
@@ -63,19 +64,33 @@ class TinyPressStore:
         """Recent puzzles with answer data, newest first."""
         return self.data["history"]
 
-    def record_print(self, last: dict[str, Any], answer: dict[str, Any] | None) -> None:
-        """Add paper used, set the last print and keep the answer key."""
+    def record_print(
+        self, last: dict[str, Any], answers: list[dict[str, Any]] | tuple[()] = ()
+    ) -> None:
+        """Add paper used, set the last print and keep the answer keys.
+
+        Each answer is ``{"print_id", "type", "answer"}``; a kid pack has three.
+        """
         self.data["paper_used_mm"] = round(self.paper_used_mm + last["length_mm"], 1)
         self.data["last_print"] = last
-        if answer is not None:
-            entry = {
-                "print_id": last["print_id"],
-                "type": last["type"],
-                "printed_at": last["printed_at"],
-                "answer": answer,
-            }
-            rest = [h for h in self.history if h["print_id"] != last["print_id"]]
-            self.data["history"] = [entry, *rest][:HISTORY_SIZE]
+        history = self.history
+        for item in answers:
+            entry = {**item, "printed_at": last["printed_at"]}
+            history = [
+                entry,
+                *(h for h in history if h["print_id"] != item["print_id"]),
+            ]
+        self.data["history"] = history[:HISTORY_SIZE]
+        self._save()
+
+    def recent(self, kind: str) -> list[int]:
+        """Indexes of recently printed bundled jokes or facts."""
+        return list(self.data["recent"].get(kind, []))
+
+    def remember(self, kind: str, index: int) -> None:
+        """Note a bundled joke or fact so it isn't repeated soon."""
+        items = [i for i in self.recent(kind) if i != index]
+        self.data["recent"][kind] = [index, *items][:RECENT_JOKES]
         self._save()
 
     def get_setting(self, key: str, default: Any = None) -> Any:

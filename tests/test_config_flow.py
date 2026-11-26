@@ -143,14 +143,135 @@ async def test_dhcp_updates_moved_printer(hass: HomeAssistant) -> None:
     assert entry.data[CONF_HOST] == "10.0.0.9"
 
 
-async def test_options_flow(hass: HomeAssistant, loaded_entry: MockConfigEntry) -> None:
+async def test_options_settings(
+    hass: HomeAssistant, loaded_entry: MockConfigEntry
+) -> None:
     result = await hass.config_entries.options.async_init(loaded_entry.entry_id)
-    assert result["step_id"] == "init"
+    assert result["type"] is FlowResultType.MENU
+    assert result["menu_options"] == ["settings", "add_kid", "add_adult"]
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {"max_length_mm": 450, "poll_interval": 120}
+        result["flow_id"], {"next_step_id": "settings"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            "max_length_mm": 450,
+            "poll_interval": 120,
+            "ai_task_entity": "ai_task.claude",
+            "ai_jokes": True,
+        },
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
-    assert loaded_entry.options == {"max_length_mm": 450, "poll_interval": 120}
-    assert loaded_entry.runtime_data.max_length_mm == 450
-    assert loaded_entry.runtime_data.update_interval.total_seconds() == 120
+    assert loaded_entry.options == {
+        "max_length_mm": 450,
+        "poll_interval": 120,
+        "ai_task_entity": "ai_task.claude",
+        "ai_jokes": True,
+    }
+    coordinator = loaded_entry.runtime_data
+    assert coordinator.max_length_mm == 450
+    assert coordinator.update_interval.total_seconds() == 120
+    assert coordinator.ai_task_entity == "ai_task.claude"
+    assert coordinator.use_ai_jokes
+
+
+async def _menu(hass: HomeAssistant, entry: MockConfigEntry, step: str):
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    return await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": step}
+    )
+
+
+async def test_profiles_add_edit_remove(
+    hass: HomeAssistant, loaded_entry: MockConfigEntry
+) -> None:
+    result = await _menu(hass, loaded_entry, "add_kid")
+    assert result["step_id"] == "add_kid"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            "name": " Rosie ",
+            "grade": "2",
+            "interests": "dinosaurs, space",
+            "stretch": False,
+        },
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert loaded_entry.options["profiles"] == [
+        {
+            "id": "rosie",
+            "kind": "kid",
+            "name": "Rosie",
+            "grade": "2",
+            "interests": "dinosaurs, space",
+            "stretch": False,
+            "difficulty": "medium",
+        }
+    ]
+    assert hass.states.get("select.tiny_press_kid_profile").state == "Rosie"
+
+    # Duplicate names are refused.
+    result = await _menu(hass, loaded_entry, "add_kid")
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"name": "rosie", "grade": "3", "stretch": False}
+    )
+    assert result["errors"] == {"name": "name_exists"}
+
+    result = await _menu(hass, loaded_entry, "add_adult")
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"name": "Sam", "difficulty": "hard"}
+    )
+    await hass.async_block_till_done()
+    assert [p["name"] for p in loaded_entry.options["profiles"]] == ["Rosie", "Sam"]
+
+    result = await _menu(hass, loaded_entry, "edit_profile")
+    assert result["step_id"] == "edit_profile"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"profile": "rosie"}
+    )
+    assert result["step_id"] == "edit_kid"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {"name": "Rosie", "grade": "3", "interests": "horses", "stretch": True},
+    )
+    await hass.async_block_till_done()
+    rosie = loaded_entry.options["profiles"][0]
+    assert (rosie["grade"], rosie["interests"], rosie["stretch"]) == (
+        "3",
+        "horses",
+        True,
+    )
+
+    result = await _menu(hass, loaded_entry, "edit_profile")
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"profile": "sam"}
+    )
+    assert result["step_id"] == "edit_adult"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"name": "Rosie", "difficulty": "easy"}
+    )
+    assert result["errors"] == {"name": "name_exists"}
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"name": "Sam", "difficulty": "easy"}
+    )
+    await hass.async_block_till_done()
+    assert loaded_entry.options["profiles"][1]["difficulty"] == "easy"
+
+    result = await _menu(hass, loaded_entry, "remove_profile")
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"profiles": ["sam"]}
+    )
+    await hass.async_block_till_done()
+    assert [p["id"] for p in loaded_entry.options["profiles"]] == ["rosie"]
+
+
+async def test_add_profile_needs_name(
+    hass: HomeAssistant, loaded_entry: MockConfigEntry
+) -> None:
+    result = await _menu(hass, loaded_entry, "add_adult")
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"name": "  ", "difficulty": "easy"}
+    )
+    assert result["errors"] == {"name": "name_required"}

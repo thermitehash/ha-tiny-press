@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent / "custom_components" / "tiny_pres
 COMMON = {
     "common::config_flow::data::host": "Host",
     "common::config_flow::data::port": "Port",
+    "common::config_flow::data::name": "Name",
     "common::config_flow::error::cannot_connect": "Failed to connect",
     "common::config_flow::abort::already_configured_device": "Device is already configured",
 }

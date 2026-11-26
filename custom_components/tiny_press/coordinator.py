@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import logging
 from typing import Any
@@ -16,6 +16,8 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_AI_JOKES,
+    CONF_AI_TASK,
     CONF_MAX_LENGTH_MM,
     CONF_PAPER_WIDTH,
     CONF_POLL_INTERVAL,
@@ -28,12 +30,14 @@ from .const import (
     OFFLINE_REPAIR_AFTER_HOURS,
     PAPER_80MM,
     PAPER_DOTS,
+    SETTING_KID_PROFILE,
     PaperState,
 )
 from .printer import escpos
 from .printer.escpos import PrinterStatus
 from .printer.queue import PrintQueue
 from .printer.transport import PrinterError, PrinterTransport
+from .profiles import KID, Profile, find_profile
 from .render.canvas import Canvas
 from .repairs import async_clear_offline_issue, async_raise_offline_issue
 from .store import TinyPressStore
@@ -76,7 +80,9 @@ class PrintJob:
     build: Callable[[int], Canvas]
     difficulty: str | None = None
     profile: str | None = None
-    answer: dict[str, Any] | None = None
+    # Answer keys: {"print_id", "type", "answer"} per puzzle on the page.
+    answers: tuple[dict[str, Any], ...] = ()
+    response: dict[str, Any] = field(default_factory=dict)  # extra response data
     extra: bytes = b""  # native ESC/POS appended after the raster (e.g. a QR)
     extra_mm: float = 0.0
 
@@ -148,8 +154,37 @@ class TinyPressCoordinator(DataUpdateCoordinator[PrinterState]):
                 started,
             )
 
-    async def async_print(self, job: PrintJob) -> dict[str, Any]:
-        """Render, send and record a print. Returns the action response."""
+    @property
+    def ai_task_entity(self) -> str | None:
+        """The ``ai_task`` entity chosen in the options, if any."""
+        return self.config_entry.options.get(CONF_AI_TASK) or None
+
+    @property
+    def use_ai_jokes(self) -> bool:
+        """True when jokes and facts should come from the AI first."""
+        return bool(self.config_entry.options.get(CONF_AI_JOKES)) and bool(
+            self.ai_task_entity
+        )
+
+    def kid_profile(self, wanted: str | None = None) -> Profile:
+        """Return a kid profile by name/ID, else the one chosen in the select."""
+        return find_profile(
+            self.config_entry.options,
+            KID,
+            wanted,
+            self.store.get_setting(SETTING_KID_PROFILE),
+        )
+
+    async def async_print(
+        self, job: PrintJob | Callable[[], PrintJob]
+    ) -> dict[str, Any]:
+        """Build (in the executor), render, send and record a print.
+
+        ``job`` may be a ready ``PrintJob`` or a function that builds one;
+        generators and data files are CPU/disk work, so they run off the loop.
+        """
+        if not isinstance(job, PrintJob):
+            job = await self.hass.async_add_executor_job(job)
         max_dots = max(1, self.max_length_mm - FEED_MM) * DOTS_PER_MM
         width = self.width
 
@@ -189,7 +224,7 @@ class TinyPressCoordinator(DataUpdateCoordinator[PrinterState]):
                 "profile": job.profile,
                 "difficulty": job.difficulty,
             },
-            job.answer,
+            list(job.answers),
         )
         self._fire(job, success=True)
         self.async_update_listeners()
@@ -197,8 +232,10 @@ class TinyPressCoordinator(DataUpdateCoordinator[PrinterState]):
         return {
             "print_id": job.print_id,
             "type": job.type,
+            "profile": job.profile,
             "length_mm": length_mm,
             "truncated": truncated,
+            **job.response,
         }
 
     def _fire(self, job: PrintJob, *, success: bool) -> None:

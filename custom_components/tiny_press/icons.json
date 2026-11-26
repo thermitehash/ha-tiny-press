@@ -31,11 +31,26 @@
       },
       "test_page": {
         "default": "mdi:printer-pos-cog-outline"
+      },
+      "word_search": {
+        "default": "mdi:text-search-variant"
+      },
+      "math": {
+        "default": "mdi:calculator-variant-outline"
+      },
+      "joke": {
+        "default": "mdi:emoticon-happy-outline"
+      },
+      "kid_pack": {
+        "default": "mdi:package-variant-closed"
       }
     },
     "select": {
       "maze_difficulty": {
         "default": "mdi:speedometer"
+      },
+      "kid_profile": {
+        "default": "mdi:account-child"
       }
     }
   },

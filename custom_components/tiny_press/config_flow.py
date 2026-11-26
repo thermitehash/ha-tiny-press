@@ -10,21 +10,28 @@ from homeassistant.config_entries import (
     ConfigFlowResult,
     OptionsFlowWithReload,
 )
-from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PORT
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import (
+    BooleanSelector,
+    EntitySelector,
+    EntitySelectorConfig,
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
+    TextSelector,
 )
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 import voluptuous as vol
 
 from .const import (
+    CONF_AI_JOKES,
+    CONF_AI_TASK,
     CONF_MAX_LENGTH_MM,
     CONF_PAPER_WIDTH,
     CONF_POLL_INTERVAL,
@@ -38,11 +45,23 @@ from .const import (
     PAPER_58MM,
     PAPER_80MM,
     PAPER_DOTS,
+    Difficulty,
 )
 from .coordinator import TinyPressConfigEntry
+from .jobs import test_page_job
 from .printer import escpos
 from .printer.transport import PrinterConnectError, PrinterError, PrinterTransport
-from .services import test_page_print
+from .profiles import (
+    ADULT,
+    CONF_PROFILES,
+    GRADES,
+    KID,
+    Profile,
+    grade_label,
+    grade_number,
+    load_profiles,
+    slugify,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -165,7 +184,7 @@ class TinyPressConfigFlow(ConfigFlow, domain=DOMAIN):
     async def _print_test_page(self, paper: str) -> bool:
         """Print the test page straight from the flow (before the entry exists)."""
         assert self._host is not None
-        job = test_page_print(
+        job = test_page_job(
             paper,
             {
                 "Printer": f"{self._host}:{self._port}",
@@ -192,18 +211,80 @@ class TinyPressConfigFlow(ConfigFlow, domain=DOMAIN):
         return TinyPressOptionsFlow()
 
 
+def _kid_schema(profile: Profile | None) -> vol.Schema:
+    p = profile or Profile(id="", kind=KID, name="")
+    return vol.Schema(
+        {
+            vol.Required(CONF_NAME, default=p.name): TextSelector(),
+            vol.Required("grade", default=p.grade.lower()): SelectSelector(
+                SelectSelectorConfig(
+                    options=[g.lower() for g in GRADES],
+                    translation_key="grade",
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Optional("interests", default=p.interests): TextSelector(),
+            vol.Required("stretch", default=p.stretch): BooleanSelector(),
+        }
+    )
+
+
+def _adult_schema(profile: Profile | None) -> vol.Schema:
+    p = profile or Profile(id="", kind=ADULT, name="")
+    return vol.Schema(
+        {
+            vol.Required(CONF_NAME, default=p.name): TextSelector(),
+            vol.Required("difficulty", default=p.difficulty): SelectSelector(
+                SelectSelectorConfig(
+                    options=[d.value for d in Difficulty],
+                    translation_key="difficulty",
+                    mode=SelectSelectorMode.LIST,
+                )
+            ),
+        }
+    )
+
+
 class TinyPressOptionsFlow(OptionsFlowWithReload):
-    """Longest print and status poll interval."""
+    """Settings and household profiles."""
+
+    def __init__(self) -> None:
+        """Start with nothing selected."""
+        self._editing: Profile | None = None
+
+    @property
+    def _profiles(self) -> list[Profile]:
+        return load_profiles(dict(self.config_entry.options))
+
+    def _save(
+        self, profiles: list[Profile] | None = None, **changes: Any
+    ) -> ConfigFlowResult:
+        options = dict(self.config_entry.options)
+        options.update(changes)
+        if profiles is not None:
+            options[CONF_PROFILES] = [p.as_dict() for p in profiles]
+        return self.async_create_entry(data=options)
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Show the options."""
+        """Choose what to change."""
+        menu = ["settings", "add_kid", "add_adult"]
+        if self._profiles:
+            menu += ["edit_profile", "remove_profile"]
+        return self.async_show_menu(step_id="init", menu_options=menu)
+
+    async def async_step_settings(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Longest print, poll interval and the AI entity."""
         if user_input is not None:
-            return self.async_create_entry(
-                data={
+            return self._save(
+                **{
                     CONF_MAX_LENGTH_MM: int(user_input[CONF_MAX_LENGTH_MM]),
                     CONF_POLL_INTERVAL: int(user_input[CONF_POLL_INTERVAL]),
+                    CONF_AI_TASK: user_input.get(CONF_AI_TASK) or None,
+                    CONF_AI_JOKES: bool(user_input.get(CONF_AI_JOKES)),
                 }
             )
         options = self.config_entry.options
@@ -233,6 +314,172 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                         mode=NumberSelectorMode.BOX,
                     )
                 ),
+                vol.Optional(
+                    CONF_AI_TASK,
+                    description={"suggested_value": options.get(CONF_AI_TASK)},
+                ): EntitySelector(EntitySelectorConfig(domain="ai_task")),
+                vol.Required(
+                    CONF_AI_JOKES, default=bool(options.get(CONF_AI_JOKES, False))
+                ): BooleanSelector(),
             }
         )
-        return self.async_show_form(step_id="init", data_schema=schema)
+        return self.async_show_form(step_id="settings", data_schema=schema)
+
+    def _check_name(self, name: str, keep_id: str | None = None) -> str | None:
+        name = name.strip()
+        if not name:
+            return "name_required"
+        if any(
+            p.name.lower() == name.lower() and p.id != keep_id for p in self._profiles
+        ):
+            return "name_exists"
+        return None
+
+    def _new_id(self, name: str) -> str:
+        base = slugify(name)
+        taken = {p.id for p in self._profiles}
+        candidate, n = base, 2
+        while candidate in taken:
+            candidate, n = f"{base}_{n}", n + 1
+        return candidate
+
+    def _kid_from(self, data: dict[str, Any], profile_id: str) -> Profile:
+        return Profile(
+            id=profile_id,
+            kind=KID,
+            name=data[CONF_NAME].strip(),
+            grade=grade_label(grade_number(data["grade"])),
+            interests=(data.get("interests") or "").strip(),
+            stretch=bool(data.get("stretch")),
+        )
+
+    def _adult_from(self, data: dict[str, Any], profile_id: str) -> Profile:
+        return Profile(
+            id=profile_id,
+            kind=ADULT,
+            name=data[CONF_NAME].strip(),
+            difficulty=data["difficulty"],
+        )
+
+    async def async_step_add_kid(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Add a kid profile."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if error := self._check_name(user_input[CONF_NAME]):
+                errors[CONF_NAME] = error
+            else:
+                kid = self._kid_from(user_input, self._new_id(user_input[CONF_NAME]))
+                return self._save([*self._profiles, kid])
+        return self.async_show_form(
+            step_id="add_kid",
+            data_schema=self.add_suggested_values_to_schema(
+                _kid_schema(None), user_input
+            ),
+            errors=errors,
+        )
+
+    async def async_step_add_adult(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Add an adult profile."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if error := self._check_name(user_input[CONF_NAME]):
+                errors[CONF_NAME] = error
+            else:
+                adult = self._adult_from(
+                    user_input, self._new_id(user_input[CONF_NAME])
+                )
+                return self._save([*self._profiles, adult])
+        return self.async_show_form(
+            step_id="add_adult",
+            data_schema=self.add_suggested_values_to_schema(
+                _adult_schema(None), user_input
+            ),
+            errors=errors,
+        )
+
+    def _profile_selector(self, multiple: bool = False) -> SelectSelector:
+        return SelectSelector(
+            SelectSelectorConfig(
+                options=[
+                    SelectOptionDict(value=p.id, label=f"{p.name} ({p.kind})")
+                    for p in self._profiles
+                ],
+                multiple=multiple,
+                mode=SelectSelectorMode.LIST,
+            )
+        )
+
+    async def async_step_edit_profile(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Pick a profile to edit."""
+        if user_input is not None:
+            self._editing = next(
+                p for p in self._profiles if p.id == user_input["profile"]
+            )
+            if self._editing.kind == KID:
+                return await self.async_step_edit_kid()
+            return await self.async_step_edit_adult()
+        return self.async_show_form(
+            step_id="edit_profile",
+            data_schema=vol.Schema({vol.Required("profile"): self._profile_selector()}),
+        )
+
+    def _replace(self, updated: Profile) -> ConfigFlowResult:
+        return self._save(
+            [updated if p.id == updated.id else p for p in self._profiles]
+        )
+
+    async def async_step_edit_kid(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Edit a kid profile."""
+        assert self._editing is not None
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if error := self._check_name(user_input[CONF_NAME], self._editing.id):
+                errors[CONF_NAME] = error
+            else:
+                return self._replace(self._kid_from(user_input, self._editing.id))
+        return self.async_show_form(
+            step_id="edit_kid",
+            data_schema=_kid_schema(self._editing),
+            errors=errors,
+            description_placeholders={"name": self._editing.name},
+        )
+
+    async def async_step_edit_adult(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Edit an adult profile."""
+        assert self._editing is not None
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if error := self._check_name(user_input[CONF_NAME], self._editing.id):
+                errors[CONF_NAME] = error
+            else:
+                return self._replace(self._adult_from(user_input, self._editing.id))
+        return self.async_show_form(
+            step_id="edit_adult",
+            data_schema=_adult_schema(self._editing),
+            errors=errors,
+            description_placeholders={"name": self._editing.name},
+        )
+
+    async def async_step_remove_profile(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Remove one or more profiles."""
+        if user_input is not None:
+            gone = set(user_input.get("profiles") or [])
+            return self._save([p for p in self._profiles if p.id not in gone])
+        return self.async_show_form(
+            step_id="remove_profile",
+            data_schema=vol.Schema(
+                {vol.Required("profiles"): self._profile_selector(multiple=True)}
+            ),
+        )
