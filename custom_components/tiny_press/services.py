@@ -703,11 +703,14 @@ async def async_morning_slip(
         )
 
     bottom = options.get(CONF_MORNING_BOTTOM, "joke")
+    if bottom == "feed":  # v0.9.0's headlines bottom: headlines are their own part now
+        bottom = "quote"
     joke = None
     puzzle = None
     quote = None
     word = None
-    headlines = None
+    # Headlines from the picked feed are their own part of the slip.
+    headlines = await _morning_headlines(hass, coordinator)
     if bottom in ("joke", "fact"):
         kind = PrintType.JOKE if bottom == "joke" else PrintType.FACT
         kid = coordinator.kid_profile()
@@ -721,10 +724,6 @@ async def async_morning_slip(
             )
             if joke.index is not None:
                 coordinator.store.remember(kind, joke.index)
-    elif bottom == "feed":
-        headlines = await _morning_headlines(hass, coordinator)
-        if headlines is None:  # no feed, or it can't be read: a quote instead
-            quote = await _morning_quote(hass, coordinator)
     elif bottom == "quote":
         quote = await _morning_quote(hass, coordinator)
     elif bottom == "word":

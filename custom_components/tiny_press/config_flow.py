@@ -394,9 +394,10 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                     CONF_TODOS,
                     description={"suggested_value": options.get(CONF_TODOS)},
                 ): EntitySelector(EntitySelectorConfig(domain="todo", multiple=True)),
+                **self._morning_feed_field(options),
                 vol.Required(
                     CONF_MORNING_BOTTOM,
-                    default=options.get(CONF_MORNING_BOTTOM, "joke"),
+                    default=self._bottom_default(options),
                 ): SelectSelector(
                     SelectSelectorConfig(
                         options=list(BOTTOM_OPTIONS),
@@ -434,15 +435,6 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                 ),
             }
         )
-        if self._feeds:
-            schema = schema.extend(
-                {
-                    vol.Optional(
-                        CONF_MORNING_FEED,
-                        description={"suggested_value": options.get(CONF_MORNING_FEED)},
-                    ): self._feed_selector()
-                }
-            )
         return self.async_show_form(step_id="settings", data_schema=schema)
 
     async def async_step_kid_limits(
@@ -651,6 +643,23 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                 {vol.Required("profiles"): self._profile_selector(multiple=True)}
             ),
         )
+
+    def _morning_feed_field(self, options: Any) -> dict[Any, Any]:
+        """Offer the morning slip headlines feed, when any feed is set up."""
+        if not self._feeds:
+            return {}
+        return {
+            vol.Optional(
+                CONF_MORNING_FEED,
+                description={"suggested_value": options.get(CONF_MORNING_FEED)},
+            ): self._feed_selector()
+        }
+
+    @staticmethod
+    def _bottom_default(options: Any) -> str:
+        bottom = options.get(CONF_MORNING_BOTTOM, "joke")
+        # v0.9.0's "feed" bottom is gone; headlines are their own setting.
+        return "quote" if bottom == "feed" else bottom
 
     def _feed_selector(self, multiple: bool = False) -> SelectSelector:
         return SelectSelector(

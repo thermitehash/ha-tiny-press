@@ -7,7 +7,6 @@ from email.utils import format_datetime
 from typing import Any
 from unittest.mock import patch
 
-import aiohttp
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -265,13 +264,6 @@ async def test_runs_every_minute(
     freezer: FrozenDateTimeFactory,
 ) -> None:
     freezer.move_to(NOON)
-    # Moving the frozen clock a minute can fire the download's own timeout
-    # mid-request (seen on CI), so this test downloads without one.
-    no_timeout = patch(
-        "custom_components.tiny_press.fetch.TIMEOUT", aiohttp.ClientTimeout(total=None)
-    )
-    no_timeout.start()
-    config_entry.async_on_unload(no_timeout.stop)
     aioclient_mock.get(URL, content=rss(("a", NOON)))
     await hass.config.async_set_time_zone("UTC")
     hass.config_entries.async_update_entry(
@@ -281,7 +273,8 @@ async def test_runs_every_minute(
     await hass.async_block_till_done()
     freezer.tick(timedelta(minutes=1))
     async_fire_time_changed(hass)
-    await hass.async_block_till_done()
+    # The interval callback runs as a background task.
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert aioclient_mock.call_count == 1
     state = config_entry.runtime_data.store.get_setting(SETTING_FEED_WATCH)
     assert state["news"]["seen"] == ["https://news.example.com/a"]

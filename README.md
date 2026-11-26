@@ -44,9 +44,9 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 | Weather entity | none | Used by the Weather print and the morning slip. Not needed if you only have one weather entity. |
 | Morning slip calendars | none | Today's events from these calendars print on the morning slip |
 | Morning slip to-do lists | none | Optional: unchecked items print as checkboxes |
-| Bottom of the morning slip | joke | Joke, fun fact, quote of the day, vocabulary word, headlines from a feed, small sudoku or nothing |
+| Morning slip headlines | none | A feed whose 3 newest headlines print on the morning slip, above its bottom. Leave empty for none |
+| Bottom of the morning slip | joke | Joke, fun fact, quote of the day, vocabulary word, small sudoku or nothing |
 | Live quote of the day | on | For the Quote bottom: Wikiquote's quote of the day first (credited), bundled public-domain quotes if it can't be read |
-| Morning slip feed | none | For the Headlines bottom: which feed. With none picked, a quote prints instead |
 | Auto-print quiet hours | 9 PM–7 AM, skip | No feed auto-prints during these hours. Items that arrive then are skipped, or printed when quiet hours end (up to 3 per feed) |
 | Use AI for jokes and fun facts | off | Off: jokes and facts come from bundled, human-written lists (facts from NOAA, NASA and the National Park Service, with credits). On: the AI is asked first. |
 

@@ -988,6 +988,14 @@ def morning_page(width: int, slip: MorningSlip, footer: Footer) -> Canvas:
         canvas.rule(dashed=True)
         canvas.text(name, px=26, bold=True)
         canvas.drawing(_rows(width, [("[ ]", item) for item in items]))
+    if slip.headlines is not None:
+        name, items = slip.headlines
+        canvas.rule(dashed=True)
+        canvas.text(f"Headlines \u00b7 {name}", px=24, bold=True, align="center")
+        if not items:
+            canvas.text("Nothing new in this feed right now.", px=20, align="center")
+        for item in items:
+            canvas.text(f"\u2022 {item.title}", px=22)
     if slip.joke is not None:
         canvas.rule(dashed=True)
         if slip.joke.punchline:
@@ -1027,14 +1035,6 @@ def morning_page(width: int, slip: MorningSlip, footer: Footer) -> Canvas:
         canvas.text(
             "Definition: Open English WordNet (CC BY 4.0)", px=14, align="center"
         )
-    if slip.headlines is not None:
-        name, items = slip.headlines
-        canvas.rule(dashed=True)
-        canvas.text(f"Headlines \u00b7 {name}", px=24, bold=True, align="center")
-        if not items:
-            canvas.text("Nothing new in this feed right now.", px=20, align="center")
-        for item in items:
-            canvas.text(f"\u2022 {item.title}", px=22)
     if slip.puzzle is not None:
         canvas.rule(dashed=True)
         canvas.text("Puzzle of the day", px=24, bold=True, align="center")

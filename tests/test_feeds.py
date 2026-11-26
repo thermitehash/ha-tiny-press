@@ -375,50 +375,53 @@ async def test_morning_live_quote_and_headlines(
 
     hass.config_entries.async_update_entry(
         config_entry,
-        options={
-            **config_entry.options,
-            "morning_bottom": "feed",
-            "morning_feed": "news",
-        },
+        options={**config_entry.options, "morning_feed": "news"},
     )
     await hass.async_block_till_done()
-    await _call(hass, "print_morning_slip")
+    await _call(hass, "print_morning_slip")  # cached quote plus headlines
     assert aioclient_mock.call_count == 2
 
 
-async def test_morning_fallbacks(
+async def test_morning_headlines_are_their_own_part(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
     printer: FakePrinter,
     aioclient_mock: AiohttpClientMocker,
 ) -> None:
     aioclient_mock.get(FEED_URL, status=500)
+    # v0.9.0's "feed" bottom now means a quote; no headlines feed picked.
     await _setup(
         hass, config_entry, morning_bottom="feed", feeds=FEEDS, live_quote=False
     )
     store = config_entry.runtime_data.store
-    await _call(hass, "print_morning_slip")  # no morning feed picked: a quote
+    await _call(hass, "print_morning_slip")
     assert len(store.recent("quote")) == 1
-    assert aioclient_mock.call_count == 0  # and no feed was fetched
-    hass.config_entries.async_update_entry(
-        config_entry, options={"morning_bottom": "feed", "live_quote": False}
-    )
-    await hass.async_block_till_done()
-    await _call(hass, "print_morning_slip")  # no feeds at all: quote again
-    assert len(store.recent("quote")) == 2
+    assert aioclient_mock.call_count == 0  # no headlines feed picked: no fetch
+
     hass.config_entries.async_update_entry(
         config_entry,
-        options={
-            "morning_bottom": "feed",
-            "live_quote": False,
-            "feeds": FEEDS,
-            "morning_feed": "news",
-        },
+        options={"morning_bottom": "none", "feeds": FEEDS, "morning_feed": "news"},
     )
     await hass.async_block_till_done()
-    await _call(hass, "print_morning_slip")  # picked feed fails: quote again
-    assert len(store.recent("quote")) == 3
+    await _call(hass, "print_morning_slip")  # picked feed fails: slip still prints
     assert aioclient_mock.call_count == 1
+    assert len(store.recent("quote")) == 1  # bottom is "none": no quote added
+
+    hass.config_entries.async_update_entry(
+        config_entry, options={**config_entry.options, "morning_bottom": "feed"}
+    )
+    await hass.async_block_till_done()
+    result = await hass.config_entries.options.async_init(config_entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "settings"}
+    )
+    keys = [str(key) for key in result["data_schema"].schema]
+    assert keys.index("morning_feed") == keys.index("morning_bottom") - 1
+    bottom = next(k for k in result["data_schema"].schema if str(k) == "morning_bottom")
+    assert bottom.default() == "quote"  # the old "feed" bottom shows as Quote
+    assert "feed" not in [
+        o for o in result["data_schema"].schema[bottom].config["options"]
+    ]
 
 
 async def test_voice_and_llm_feed(
