@@ -284,3 +284,55 @@ print_history:
       example: Freezer
       selector:
         text:
+
+voice_print:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: tiny_press
+    type:
+      required: true
+      example: maze
+      selector:
+        select:
+          translation_key: voice_type
+          options:
+            - maze
+            - word_search
+            - math
+            - kid_pack
+            - kid_sudoku
+            - spelling
+            - joke
+            - fact
+            - story
+            - next_chapter
+            - sudoku
+            - crossword
+            - cryptogram
+            - puzzle_pack
+            - morning_slip
+            - weather
+            - note
+    profile:
+      example: Rosie
+      selector:
+        text:
+    difficulty:
+      example: hard
+      selector:
+        text:
+    topic:
+      example: dinosaurs
+      selector:
+        text:
+    text:
+      example: Feed the cat
+      selector:
+        text:
+          multiline: true
+    sentence:
+      example: print a hard maze
+      selector:
+        text:

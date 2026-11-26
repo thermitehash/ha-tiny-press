@@ -9,7 +9,7 @@
 | 4 | 0.5.0 ✅ | Bedtime story (short/medium/long) and serial choose-your-own-adventure via `ai_task`, with offline fallback |
 | 5 | 0.6.0 ✅ | Morning slip (manual only) |
 | — | 0.7.0 ✅ | Sensor history prints (graph, table, timeline) |
-| 6 | 0.8.0 | Voice blueprint and Siri docs |
+| 6 | 0.8.0 ✅ | Assist voice phrases (blueprint) and print tools for AI agents |
 | — | 0.9.0 | RSS/Atom feed prints and live quote of the day from Wikiquote (planned, below) |
 | 7 | — | Skylight (planning only, below) |
 | later | — | Selfie prints and AI-generated kid-safe pictures (planning only, below) |
@@ -47,7 +47,6 @@ Both build on `print_image`'s existing 1-bit rendering. Like everything else, th
 - A photo-booth layout: a high-contrast portrait crop, dithering tuned for faces (Atkinson or Floyd–Steinberg with a gamma lift so skin doesn't go muddy), an optional frame or sticker border, and a caption line ("Rosie, Nov 26").
 - An optional "strip" mode: three or four snapshots a few seconds apart, stacked like a photo-booth strip.
 - Privacy: snapshots are rendered in memory and never stored by Tiny Press. Diagnostics never include images.
-- From a phone: the iOS Shortcut can send a photo to `/config/www/tiny_press/` and then call `print_image`. Document this as an alternative that doesn't need a camera entity.
 
 ### AI-generated kid-safe pictures
 - Use Home Assistant's `ai_task.generate_image` (available on AI task entities that support image generation) to make **coloring pages**: bold black outlines, no shading, white background. That style suits a thermal printer far better than photos.
@@ -95,7 +94,7 @@ kid-friendly control instead of a grid of separate button entities.
 - **Kid mode:** an option to hide settings and adult puzzles, and to require a hold-to-print press so a toddler can't empty the roll.
   - **Rate limiter:** a cooldown between prints (e.g. 2 minutes), a cap on prints per hour and per day (e.g. 4 and 10), and a daily paper budget in mm.
     - The card shows "Next print in 1:30" or "3 prints left today", and a friendly "That's enough printing for today!" when the limit is reached.
-  - **Enforced in the integration, not just the card**, so the same limits apply to buttons, voice phrases and Siri. Kid-facing entry points count toward the limit.
+  - **Enforced in the integration, not just the card**, so the same limits apply to buttons, the card and voice phrases. Kid-facing entry points count toward the limit.
     - Adults can bypass it: an "adult" flag on the action call, and actions run by admin users.
     - Limits are set in the options flow and reset at local midnight.
     - Blocked attempts fire `tiny_press_rate_limited`, so a parent can be notified if they want.
