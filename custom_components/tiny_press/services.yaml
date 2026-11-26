@@ -276,6 +276,10 @@ print_history:
       default: false
       selector:
         boolean:
+    grid:
+      default: false
+      selector:
+        boolean:
     title:
       example: Freezer
       selector:

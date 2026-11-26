@@ -201,6 +201,7 @@ class HistoryReport:
     series: tuple[Series, ...]
     style: str = "graph"  # graph | table | both
     tall: bool = False
+    grid: bool = False  # time gridlines and finer value lines
     notes: tuple[str, ...] = field(default=())
 
     @property

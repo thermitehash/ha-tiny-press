@@ -193,10 +193,11 @@ data:
   entity_id: [sensor.bedroom_temperature, sensor.living_room_temperature]
   hours: 24            # or days: 7, or start/end
   style: graph         # graph (default), table or both
-  tall: false          # true: time runs down the paper
+  tall: false          # true: long graph turned onto the strip (read it sideways)
+  grid: false          # true: time gridlines and a frame
 ```
 
-Numeric sensors print as a line graph with a summary (now, min, max, average, change). On/off and text sensors print as a timeline with time spent in each state. Periods over 3 days use hourly statistics.
+Numeric sensors print as a line graph with a summary (now, min, max, average, change). On/off and text sensors print as a timeline with time spent in each state. Tables are ruled into clear columns and rows. Periods over 3 days use hourly statistics. A tall graph reads like a landscape page when you turn the receipt sideways, with the header at the bottom of the strip.
 
 ### `tiny_press.preview`
 

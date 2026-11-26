@@ -114,8 +114,10 @@ def test_nice_ticks_cover_range() -> None:
 
 @pytest.mark.parametrize("width", sorted(PAPER_DOTS.values()))
 @pytest.mark.parametrize("style", ["graph", "table", "both"])
-@pytest.mark.parametrize("tall", [False, True])
-def test_history_page_widths(width: int, style: str, tall: bool) -> None:
+@pytest.mark.parametrize(
+    ("tall", "grid"), [(False, False), (True, False), (True, True), (False, True)]
+)
+def test_history_page_widths(width: int, style: str, tall: bool, grid: bool) -> None:
     footer = layout.Footer("History", "", date(2026, 11, 26), show_id=False)
     door = H.state_series(
         "d",
@@ -138,6 +140,7 @@ def test_history_page_widths(width: int, style: str, tall: bool) -> None:
             ),
             style,
             tall,
+            grid,
         ),
         H.HistoryReport(
             "Week",
@@ -146,6 +149,7 @@ def test_history_page_widths(width: int, style: str, tall: bool) -> None:
             (H.numeric_series("f", "Freezer", "°F", _temps(week_start, 168, 60)),),
             style,
             tall,
+            grid,
         ),
         H.HistoryReport(
             "One",
@@ -154,6 +158,7 @@ def test_history_page_widths(width: int, style: str, tall: bool) -> None:
             (H.numeric_series("p", "Point", "W", [(START, "5")]),),
             style,
             tall,
+            grid,
         ),
     ):
         image, _ = layout.history_page(width, report, footer, _local).render(600 * 8)
@@ -181,3 +186,37 @@ async def test_history_needs_recorder(
     await _setup(hass, config_entry)
     with pytest.raises(ServiceValidationError, match="Recorder"):
         await _history(hass, entity_id="sensor.x")
+
+
+def test_table_image_has_rules() -> None:
+    img = layout.table_image(
+        576, ["Hour", "Min", "Avg", "Max"], [["1 AM", "1", "2", "3"]] * 3
+    )
+    # Four horizontal rules (top, under header, two between rows... plus bottom).
+    dark_rows = [
+        y
+        for y in range(img.height)
+        if sum(1 for x in range(img.width) if img.getpixel((x, y)) < 128) > 400
+    ]
+    assert len(dark_rows) >= 5
+
+
+def test_tall_block_is_rotated_and_holds_the_footer() -> None:
+    footer = layout.Footer("History", "", date(2026, 11, 26), show_id=False)
+    report = H.HistoryReport(
+        "Week",
+        END - timedelta(days=7),
+        END,
+        (
+            H.numeric_series(
+                "f", "Freezer", "°F", _temps(END - timedelta(days=7), 168, 60)
+            ),
+        ),
+        "graph",
+        tall=True,
+    )
+    block = layout.tall_block(576, report, list(report.series), _local, footer)
+    assert block.width == 576 and block.height > 576
+    page = layout.history_page(576, report, footer, _local)
+    # Only the rotated block has content (header and footer are inside it).
+    assert len([b for b in page.blocks if b.height > 20]) == 1

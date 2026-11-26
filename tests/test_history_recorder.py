@@ -75,7 +75,7 @@ async def test_print_history_from_recorder(
     ]
     assert res["empty"] == ["sensor.missing"]
     # Not a kid print: never limited.
-    res = await _history(hass, entity_id="sensor.bedroom", days=5, tall=True)
+    res = await _history(hass, entity_id="sensor.bedroom", days=5, tall=True, grid=True)
     assert res["empty"] == []
     explicit = await _history(
         hass,

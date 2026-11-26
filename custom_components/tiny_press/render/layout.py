@@ -1090,16 +1090,17 @@ def _styled_line(
 
 
 def _time_ticks(
-    start: datetime, end: datetime, by_day: bool, to_local: Any, *, tall: bool = False
+    start: datetime, end: datetime, by_day: bool, to_local: Any, *, room: int = 6
 ) -> list[datetime]:
+    """Round time ticks (hours or days), about ``room`` of them."""
     span = end - start
     if by_day:
         first = to_local(start).replace(hour=0, minute=0, second=0, microsecond=0)
         days = max(1, round(span.total_seconds() / 86400))
-        every = 1 if tall else max(1, math.ceil(days / 6))
+        every = max(1, math.ceil(days / room))
         return [first + timedelta(days=i) for i in range(1, days + 1, every)]
     hours = max(1, round(span.total_seconds() / 3600))
-    every = next(h for h in (1, 2, 3, 4, 6, 8, 12, 24) if hours / h <= 6)
+    every = next((h for h in (1, 2, 3, 4, 6, 8, 12, 24) if hours / h <= room), 24)
     first = to_local(start).replace(minute=0, second=0, microsecond=0)
     ticks = []
     t = first + timedelta(hours=1)
@@ -1112,78 +1113,55 @@ def _time_ticks(
 
 def line_chart(
     width: int,
+    height: int,
     report: HistoryReport,
     series: list[Series],
     to_local: Any,
-    *,
-    height: int | None = None,
 ) -> Image.Image:
-    """Numeric series on one chart (same unit). Tall: time runs down the paper."""
-    tall = report.tall
+    """Numeric series on one landscape chart (time left to right).
+
+    Tall prints draw this chart long and rotate it onto the strip.
+    """
     values = [v for s in series for _t, v in (*s.points, *s.lows, *s.highs)]
-    ticks = _nice_ticks(min(values), max(values))
+    ticks = _nice_ticks(min(values), max(values), 6 if report.grid else 4)
     lo, hi = ticks[0], ticks[-1]
     if hi == lo:
         hi = lo + 1
-    label_font = font("sans", 18 if width >= 500 else 16, False)
+    label_font = font("sans", 18 if height >= 260 else 16, False)
     unit = series[0].unit
     t0, t1 = report.start.timestamp(), report.end.timestamp()
     span_t = max(1.0, t1 - t0)
-    hours = span_t / 3600
-    if tall:
-        plot_len = int(min(2400, max(500, hours * 14)))
-        img = Image.new("L", (width, plot_len + 60), 255)
-        left, right, top, bottom = MARGIN + 92, width - MARGIN - 10, 34, plot_len + 34
-    else:
-        h = height or (300 if width >= 500 else 250)
-        img = Image.new("L", (width, h), 255)
-        left, right, top, bottom = MARGIN + 58, width - MARGIN - 26, 14, h - 34
+    img = Image.new("L", (width, height), 255)
+    left, right, top, bottom = MARGIN + 58, width - MARGIN - 26, 22, height - 34
     draw = ImageDraw.Draw(img)
 
     def place(t: float, v: float) -> tuple[float, float]:
-        ft = (t - t0) / span_t
-        fv = (v - lo) / (hi - lo)
-        if tall:
-            return left + fv * (right - left), top + ft * (bottom - top)
-        return left + ft * (right - left), bottom - fv * (bottom - top)
+        return (
+            left + (t - t0) / span_t * (right - left),
+            bottom - (v - lo) / (hi - lo) * (bottom - top),
+        )
 
-    # value gridlines and labels
     for tick in ticks:
-        if tall:
-            x, _ = place(t0, tick)
-            for yy in range(top, bottom, 6):
-                draw.point((x, yy), fill=0)
-            draw.text(
-                (x, top - 4), _fmt_num(tick), font=label_font, fill=0, anchor="md"
-            )
-        else:
-            _, y = place(t0, tick)
-            for xx in range(left, right, 6):
-                draw.point((xx, y), fill=0)
-            draw.text(
-                (left - 6, y), _fmt_num(tick), font=label_font, fill=0, anchor="rm"
-            )
-    # time labels
+        _, y = place(t0, tick)
+        for xx in range(left, right, 6):
+            draw.point((xx, y), fill=0)
+        draw.text((left - 6, y), _fmt_num(tick), font=label_font, fill=0, anchor="rm")
+    room = max(4, (right - left) // 90)
     for tick in _time_ticks(
-        report.start, report.end, report.by_day, to_local, tall=tall
+        report.start, report.end, report.by_day, to_local, room=room
     ):
         label = (
             tick.strftime("%a %-m/%-d") if report.by_day else tick.strftime("%-I %p")
         )
-        if tall:
-            _, y = place(tick.timestamp(), lo)
-            draw.line((left - 4, y, left, y), fill=0, width=2)
-            draw.text((left - 8, y), label, font=label_font, fill=0, anchor="rm")
-        else:
-            x, _ = place(tick.timestamp(), lo)
-            draw.line((x, bottom, x, bottom + 4), fill=0, width=2)
-            draw.text((x, bottom + 8), label, font=label_font, fill=0, anchor="mt")
-    # axes
-    if tall:
-        draw.line((left, top, left, bottom), fill=0, width=2)
-    else:
-        draw.line((left, bottom, right, bottom), fill=0, width=2)
-    # min/max band for statistics (thin lines), then the series
+        x, _ = place(tick.timestamp(), lo)
+        if report.grid:
+            for yy in range(top, bottom, 6):
+                draw.point((x, yy), fill=0)
+        draw.line((x, bottom, x, bottom + 4), fill=0, width=2)
+        draw.text((x, bottom + 8), label, font=label_font, fill=0, anchor="mt")
+    draw.line((left, bottom, right, bottom), fill=0, width=2)
+    if report.grid:
+        draw.rectangle((left, top, right, bottom), outline=0, width=1)
     for i, s in enumerate(series):
         for band in (s.lows, s.highs):
             if len(band) > 1:
@@ -1195,11 +1173,72 @@ def line_chart(
         elif pts:
             _styled_line(draw, pts, i, 3)
     if unit:
-        if tall:
-            draw.text((left - 8, top - 4), unit, font=label_font, fill=0, anchor="rd")
-        else:
-            draw.text((MARGIN, 0), unit, font=label_font, fill=0)
+        draw.text((MARGIN, 0), unit, font=label_font, fill=0)
     return img
+
+
+def _legend(width: int, group: list[Series]) -> Image.Image:
+    legend = Image.new("L", (width, 30 * len(group)), 255)
+    draw = ImageDraw.Draw(legend)
+    lf = font("sans", 20, False)
+    for i, s in enumerate(group):
+        y = 15 + i * 30
+        _styled_line(draw, [(MARGIN, y), (MARGIN + 60, y)], i, 3)
+        draw.text((MARGIN + 72, y), s.name, font=lf, fill=0, anchor="lm")
+    return legend
+
+
+def _summary_lines(s: Series) -> list[str]:
+    summary = summarize(s)
+    u = s.unit
+    change = summary.change
+    sign = "+" if change and change > 0 else ""
+    return [
+        f"Now {_fmt_num(summary.now, u)}   Min {_fmt_num(summary.low, u)}   "
+        f"Max {_fmt_num(summary.high, u)}",
+        f"Average {_fmt_num(summary.average, u)}   Change {sign}{_fmt_num(change, u)}",
+    ]
+
+
+def tall_block(
+    paper: int,
+    report: HistoryReport,
+    group: list[Series],
+    to_local: Any,
+    footer: Footer | None = None,
+) -> Image.Image:
+    """Draw a landscape page (header left, long chart right) rotated onto the strip.
+
+    Turn the receipt sideways and everything reads normally; the header ends
+    up at the bottom of the strip and time runs the same way as the data.
+    """
+    hours = max(1.0, (report.end - report.start).total_seconds() / 3600)
+    chart_len = int(min(2400, max(700, hours * 14)))
+    header_w = 300
+    header = Canvas(header_w)
+    header.title(report.title, px=30)
+    start, end = to_local(report.start), to_local(report.end)
+    header.text(f"{start.strftime('%a %b %-d %-I:%M %p')}", px=16, align="center")
+    header.text(f"to {end.strftime('%a %b %-d %-I:%M %p')}", px=16, align="center")
+    header.space(6)
+    if len(group) > 1:
+        header.drawing(_legend(header_w, group))
+    for s in group:
+        if len(group) > 1:
+            header.text(s.name, px=18, bold=True)
+        for line in _summary_lines(s):
+            header.text(line, px=16)
+    if footer is not None:
+        header.space(6)
+        header.footer(*footer.fields())
+    head_img, _ = header.render()
+    page = Image.new("L", (header_w + chart_len, paper), 255)
+    page.paste(
+        head_img.convert("L").crop((0, 0, header_w, min(head_img.height, paper))),
+        (0, 8),
+    )
+    page.paste(line_chart(chart_len, paper, report, group, to_local), (header_w, 0))
+    return page.rotate(90, expand=True)
 
 
 def _hatch(draw: ImageDraw.ImageDraw, box: tuple[float, float, float, float]) -> None:
@@ -1254,17 +1293,63 @@ def _duration(delta: timedelta) -> str:
     return f"{days} d {hours} h"
 
 
+def table_image(
+    width: int, headers: list[str], rows: list[list[str]], px: int = 19
+) -> Image.Image:
+    """Draw a ruled table: header row, column and row divider lines."""
+    head_face = font("sans", px, True)
+    face = font("mono", px, False)
+    inner = width - 2 * MARGIN
+    first = (
+        max([head_face.getlength(headers[0]), *(face.getlength(r[0]) for r in rows)])
+        + 16
+    )
+    other = (inner - first) / max(1, len(headers) - 1)
+    widths = [first] + [other] * (len(headers) - 1)
+    row_h = int(px * 1.7)
+    img = Image.new("L", (width, row_h * (len(rows) + 1) + 4), 255)
+    draw = ImageDraw.Draw(img)
+    x_edges = [MARGIN]
+    for w in widths:
+        x_edges.append(x_edges[-1] + w)
+    bottom = row_h * (len(rows) + 1)
+    for r, cells in enumerate([headers, *rows]):
+        y = r * row_h
+        for c, cell in enumerate(cells):
+            cx = (x_edges[c] + x_edges[c + 1]) / 2 if c else x_edges[0] + 8
+            anchor = "mm" if c else "lm"
+            draw.text(
+                (cx, y + row_h / 2),
+                cell,
+                font=head_face if r == 0 else face,
+                fill=0,
+                anchor=anchor,
+            )
+        draw.line((MARGIN, y, x_edges[-1], y), fill=0, width=2 if r <= 1 else 1)
+    draw.line((MARGIN, bottom, x_edges[-1], bottom), fill=0, width=2)
+    for x in x_edges:
+        draw.line(
+            (x, 0, x, bottom), fill=0, width=2 if x in (x_edges[0], x_edges[-1]) else 1
+        )
+    return img
+
+
 def history_page(
     width: int, report: HistoryReport, footer: Footer, to_local: Any
 ) -> Canvas:
     """Lay out a history print: graphs/timelines, summaries and optional tables."""
     canvas = Canvas(width)
-    canvas.title(report.title, px=34)
-    start, end = to_local(report.start), to_local(report.end)
-    fmt = "%a %b %-d, %-I:%M %p"
-    canvas.text(f"{start.strftime(fmt)} to {end.strftime(fmt)}", px=18, align="center")
-    canvas.space(6)
     show_graph = report.style in ("graph", "both")
+    only_charts = all(s.numeric or s.empty for s in report.series)
+    if not (report.tall and show_graph and only_charts):
+        # Tall prints carry the header inside the rotated chart instead.
+        canvas.title(report.title, px=34)
+        start, end = to_local(report.start), to_local(report.end)
+        fmt = "%a %b %-d, %-I:%M %p"
+        canvas.text(
+            f"{start.strftime(fmt)} to {end.strftime(fmt)}", px=18, align="center"
+        )
+        canvas.space(6)
     show_table = report.style in ("table", "both")
     numeric = [s for s in report.series if s.numeric and s.points]
     others = [s for s in report.series if not s.numeric and s.segments]
@@ -1275,48 +1360,42 @@ def history_page(
         by_unit.setdefault(s.unit, []).append(s)
     for group in by_unit.values():
         if show_graph:
-            canvas.drawing(line_chart(width, report, group, to_local))
-            if len(group) > 1:
-                legend = Image.new("L", (width, 30 * len(group)), 255)
-                draw = ImageDraw.Draw(legend)
-                lf = font("sans", 20, False)
-                for i, s in enumerate(group):
-                    y = 15 + i * 30
-                    _styled_line(draw, [(MARGIN, y), (MARGIN + 60, y)], i, 3)
-                    draw.text((MARGIN + 72, y), s.name, font=lf, fill=0, anchor="lm")
-                canvas.drawing(legend)
+            if report.tall:
+                inline_footer = footer if only_charts and len(by_unit) == 1 else None
+                canvas.drawing(
+                    tall_block(width, report, group, to_local, inline_footer)
+                )
+            else:
+                height = 300 if width >= 500 else 250
+                canvas.drawing(line_chart(width, height, report, group, to_local))
+                if len(group) > 1:
+                    canvas.drawing(_legend(width, group))
         for s in group:
-            summary = summarize(s)
-            if len(report.series) > 1:
-                canvas.text(s.name, px=22, bold=True)
-            u = s.unit
-            canvas.text(
-                f"Now {_fmt_num(summary.now, u)}   Min {_fmt_num(summary.low, u)}   "
-                f"Max {_fmt_num(summary.high, u)}",
-                px=21,
-            )
-            change = summary.change
-            sign = "+" if change and change > 0 else ""
-            canvas.text(
-                f"Average {_fmt_num(summary.average, u)}   Change {sign}{_fmt_num(change, u)}",
-                px=21,
-            )
+            if not (show_graph and report.tall):
+                if len(report.series) > 1:
+                    canvas.text(s.name, px=22, bold=True)
+                for line in _summary_lines(s):
+                    canvas.text(line, px=21)
             if show_table:
                 rows = bucket_rows(s, report.by_day, to_local)
+                if show_graph and report.tall and len(group) > 1:
+                    canvas.text(s.name, px=22, bold=True)
+                canvas.space(4)
                 canvas.drawing(
-                    _rows(
+                    table_image(
                         width,
+                        ["Day" if report.by_day else "Hour", "Min", "Avg", "Max"],
                         [
-                            (
+                            [
                                 r.label,
-                                f"{_fmt_num(r.low)} / {_fmt_num(r.average)} / {_fmt_num(r.high)}",
-                            )
+                                _fmt_num(r.low),
+                                _fmt_num(r.average),
+                                _fmt_num(r.high),
+                            ]
                             for r in rows
                         ],
-                        px=19,
                     )
                 )
-                canvas.text("min / average / max", px=16, align="right")
             canvas.space(8)
     for s in others:
         canvas.rule(dashed=True)
@@ -1332,12 +1411,20 @@ def history_page(
             px=20,
         )
         if show_table:
-            canvas.drawing(_rows(width, changes(s, to_local, report.by_day), px=19))
+            canvas.space(4)
+            canvas.drawing(
+                table_image(
+                    width,
+                    ["Time", "State"],
+                    [list(row) for row in changes(s, to_local, report.by_day)],
+                )
+            )
         canvas.space(6)
     for s in missing:
         canvas.text(f"{s.name}: no history for this period.", px=20)
     for note in report.notes:
         canvas.text(note, px=18)
     canvas.space(4)
-    canvas.footer(*footer.fields())
+    if not (report.tall and show_graph and only_charts and len(by_unit) == 1):
+        canvas.footer(*footer.fields())
     return canvas

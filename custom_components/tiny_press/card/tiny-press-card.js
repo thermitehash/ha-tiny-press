@@ -277,6 +277,7 @@ class TinyPressCard extends HTMLElement {
     else data.hours = Number(item.hours || 24);
     if (item.style) data.style = item.style;
     if (item.tall) data.tall = true;
+    if (item.grid) data.grid = true;
     if (item.title || item.name) data.title = item.title || item.name;
     this._run(() => this._call("print_history", data, true), `Printing ${item.name || "history"}`);
   }

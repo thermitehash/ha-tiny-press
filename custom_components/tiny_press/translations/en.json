@@ -683,11 +683,15 @@
         },
         "tall": {
           "name": "Tall graph",
-          "description": "Turn the graph so time runs down the paper. Good for several days."
+          "description": "Draw the graph long and turn it onto the strip: turn the receipt sideways to read it, header at the bottom and time running along the paper. Good for several days."
         },
         "title": {
           "name": "Title",
           "description": "Optional heading. Default: the entities' names."
+        },
+        "grid": {
+          "name": "Grid",
+          "description": "Add time gridlines and a frame to the graph."
         }
       }
     }

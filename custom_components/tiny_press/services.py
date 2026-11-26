@@ -165,6 +165,7 @@ HISTORY_SCHEMA = vol.All(
             vol.Optional("end"): cv.datetime,
             vol.Optional("style", default="graph"): vol.In(("graph", "table", "both")),
             vol.Optional("tall", default=False): cv.boolean,
+            vol.Optional("grid", default=False): cv.boolean,
             vol.Optional("title"): vol.All(cv.string, vol.Length(max=60)),
         }
     ),
@@ -674,6 +675,7 @@ async def async_print_history(
     end: datetime,
     style: str = "graph",
     tall: bool = False,
+    grid: bool = False,
     title: str | None = None,
 ) -> dict[str, Any]:
     """Print one to three entities' history (not a kid print: never limited)."""
@@ -726,6 +728,7 @@ async def async_print_history(
         series=tuple(series),
         style=style,
         tall=tall,
+        grid=grid,
     )
     return await coordinator.async_print(jobs.history_job(report))
 
@@ -947,6 +950,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
             end=end,
             style=call.data["style"],
             tall=call.data["tall"],
+            grid=call.data["grid"],
             title=call.data.get("title"),
         )
 
