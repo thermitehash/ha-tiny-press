@@ -230,6 +230,13 @@
         "puzzle": "A small sudoku (adult profile's difficulty)",
         "none": "Nothing"
       }
+    },
+    "history_style": {
+      "options": {
+        "graph": "Graph and summary",
+        "table": "Table and summary",
+        "both": "Graph, summary and table"
+      }
     }
   },
   "entity": {
@@ -445,6 +452,12 @@
     },
     "morning_preview": {
       "message": "The morning slip can't be previewed. Print it with tiny_press.print_morning_slip."
+    },
+    "history_unavailable": {
+      "message": "History needs the Recorder integration, which isn't running."
+    },
+    "history_bad_period": {
+      "message": "The start of the period must be before the end."
     }
   },
   "services": {
@@ -633,6 +646,48 @@
         "kid_mode": {
           "name": "Kid mode",
           "description": "Set by kid-mode dashboard cards: allows one morning slip per day."
+        }
+      }
+    },
+    "print_history": {
+      "name": "Print history",
+      "description": "Prints the history of one to three entities over a period: a graph (or a timeline for on/off sensors) with a summary, and optionally a table.",
+      "fields": {
+        "config_entry_id": {
+          "name": "[%key:component::tiny_press::services::print::fields::config_entry_id::name%]",
+          "description": "[%key:component::tiny_press::services::print::fields::config_entry_id::description%]"
+        },
+        "entity_id": {
+          "name": "Entities",
+          "description": "One to three entities. Numeric sensors with the same unit share a graph."
+        },
+        "hours": {
+          "name": "Hours",
+          "description": "How many hours back (default 24)."
+        },
+        "days": {
+          "name": "Days",
+          "description": "How many days back, instead of hours. Periods over 3 days use hourly statistics."
+        },
+        "start": {
+          "name": "Start",
+          "description": "Start of a specific period (instead of hours or days)."
+        },
+        "end": {
+          "name": "End",
+          "description": "End of the period. Default: now."
+        },
+        "style": {
+          "name": "Style",
+          "description": "Graph and summary (default), table and summary, or both."
+        },
+        "tall": {
+          "name": "Tall graph",
+          "description": "Turn the graph so time runs down the paper. Good for several days."
+        },
+        "title": {
+          "name": "Title",
+          "description": "Optional heading. Default: the entities' names."
         }
       }
     }

@@ -11,7 +11,7 @@ A Home Assistant integration that turns an Epson receipt printer into a househol
 - **Home Assistant:** 2026.11.0 or newer
 - **Nothing prints automatically.** Tiny Press ships no schedules or time-based automations.
 
-> **Status: v0.6.0.** Morning slip. **v0.5.0:** Bedtime stories and choose-your-own-adventure chapters. **v0.4.0:** Adult puzzles (sudoku, crossword, cryptogram, puzzle pack) on top of v0.3.0. **v0.3.0:** Kid pack (profiles, maze, word search, math strip, jokes and fun facts), a dashboard card with kid mode, kid-mode print limits, previews and answer keys. See the [roadmap](docs/roadmap.md) for what's next.
+> **Status: v0.7.0.** Kid prints (maze, word search, math, kid sudoku, spelling, jokes, facts, kid pack), adult puzzles, bedtime stories, the morning slip, weather, sensor history, a dashboard card with kid mode, and kid-mode limits. See [docs/releases](docs/releases) for each version and the [roadmap](docs/roadmap.md) for what's next.
 
 <!-- Screenshot placeholders -->
 <!-- ![Device page](docs/images/device.png) -->
@@ -185,6 +185,19 @@ action: tiny_press.print_morning_slip
 
 Prints today's date, weather, calendar events, optional to-dos and the bottom section you chose. It's manual only, and it doesn't count toward kid-mode limits. Kid-mode dashboard cards may print one a day.
 
+### `tiny_press.print_history`
+
+```yaml
+action: tiny_press.print_history
+data:
+  entity_id: [sensor.bedroom_temperature, sensor.living_room_temperature]
+  hours: 24            # or days: 7, or start/end
+  style: graph         # graph (default), table or both
+  tall: false          # true: time runs down the paper
+```
+
+Numeric sensors print as a line graph with a summary (now, min, max, average, change). On/off and text sensors print as a timeline with time spent in each state. Periods over 3 days use hourly statistics.
+
 ### `tiny_press.preview`
 
 Draws a print without printing it. Returns `image` (a PNG data URI), `seed` and the usual fields. Call `tiny_press.print` with the same `seed` to print exactly what you saw.
@@ -227,6 +240,9 @@ kid_mode: true          # hold-to-print, no settings or answers, shows limits
 show_preview: false     # true: see the print first, then Shuffle or Print
 buttons: [maze, word_search, math, kid_sudoku, spelling, joke, kid_pack, story, next_chapter, sudoku, crossword, cryptogram, puzzle_pack, morning_slip, weather]
 # ignore_limits: true   # for a parents' dashboard
+history:                # optional one-tap history buttons (hidden in kid mode)
+  - {name: Freezer, entity: sensor.freezer_temperature, hours: 24}
+  - {name: Garage door, entity: binary_sensor.garage_door, days: 7, tall: true}
 ```
 
 <!-- ![Dashboard card](docs/images/card.png) -->
@@ -248,7 +264,7 @@ data:
 
 ## 5. Voice and Siri
 
-Assist voice phrases (an automation blueprint) and Siri shortcuts arrive in **v0.7.0**.
+Assist voice phrases (an automation blueprint) and Siri shortcuts arrive in **v0.8.0**.
 
 > **Heads-up for later:** the voice phrases use sentence triggers, which only run when Home Assistant's built-in conversation agent handles the sentence. If your Assist pipeline uses Claude/Anthropic (or another LLM) as its agent, turn on **"Prefer handling commands locally"** in the pipeline settings, or the phrases won't work.
 

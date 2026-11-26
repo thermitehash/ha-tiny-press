@@ -71,6 +71,7 @@ class PrintType(StrEnum):
     PUZZLE_PACK = "puzzle_pack"
     STORY = "story"
     MORNING_SLIP = "morning_slip"
+    HISTORY = "history"
     KID_SUDOKU = "kid_sudoku"
     SPELLING = "spelling"
     SPELLING_SEARCH = "spelling_search"

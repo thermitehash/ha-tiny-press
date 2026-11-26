@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import datetime, timedelta
 from functools import partial
 import logging
 from pathlib import Path
@@ -54,7 +55,7 @@ from .const import (
     PrintType,
 )
 from .coordinator import PrintJob, TinyPressConfigEntry, TinyPressCoordinator
-from .generators import morning, sudoku as sudoku_gen
+from .generators import history, morning, sudoku as sudoku_gen
 from .generators.story import pick_offline
 from .generators.weather import WeatherReport, build_report
 from .limits import KID_TYPES
@@ -146,6 +147,27 @@ CONTINUE_STORY_SCHEMA = vol.Schema(
 )
 MORNING_SCHEMA = vol.Schema(
     {**ENTRY_FIELD, vol.Optional("kid_mode", default=False): cv.boolean}
+)
+HISTORY_SCHEMA = vol.All(
+    vol.Schema(
+        {
+            **ENTRY_FIELD,
+            vol.Required("entity_id"): vol.All(
+                cv.entity_ids, vol.Length(min=1, max=history.MAX_SERIES)
+            ),
+            vol.Exclusive("hours", "period"): vol.All(
+                vol.Coerce(int), vol.Range(min=1, max=24 * 31)
+            ),
+            vol.Exclusive("days", "period"): vol.All(
+                vol.Coerce(int), vol.Range(min=1, max=31)
+            ),
+            vol.Exclusive("start", "period"): cv.datetime,
+            vol.Optional("end"): cv.datetime,
+            vol.Optional("style", default="graph"): vol.In(("graph", "table", "both")),
+            vol.Optional("tall", default=False): cv.boolean,
+            vol.Optional("title"): vol.All(cv.string, vol.Length(max=60)),
+        }
+    ),
 )
 PRINT_ANSWERS_SCHEMA = vol.Schema(
     {**ENTRY_FIELD, vol.Optional(ATTR_PRINT_ID): cv.string}
@@ -612,6 +634,102 @@ async def async_morning_slip(
     return response
 
 
+STATS_AFTER = timedelta(days=3)  # longer periods use hourly long-term statistics
+
+
+def _fetch_states(
+    hass: HomeAssistant, start: datetime, end: datetime, entity_ids: list[str]
+) -> dict[str, list[Any]]:
+    from homeassistant.components.recorder import history as rec_history  # noqa: PLC0415
+
+    return rec_history.get_significant_states(
+        hass,
+        start,
+        end,
+        entity_ids,
+        include_start_time_state=True,
+        significant_changes_only=False,
+        no_attributes=True,
+    )
+
+
+def _fetch_stats(
+    hass: HomeAssistant, start: datetime, end: datetime, entity_ids: list[str]
+) -> dict[str, list[Any]]:
+    from homeassistant.components.recorder.statistics import (  # noqa: PLC0415
+        statistics_during_period,
+    )
+
+    return statistics_during_period(
+        hass, start, end, set(entity_ids), "hour", None, {"mean", "min", "max"}
+    )
+
+
+async def async_print_history(
+    hass: HomeAssistant,
+    coordinator: TinyPressCoordinator,
+    entity_ids: list[str],
+    *,
+    start: datetime,
+    end: datetime,
+    style: str = "graph",
+    tall: bool = False,
+    title: str | None = None,
+) -> dict[str, Any]:
+    """Print one to three entities' history (not a kid print: never limited)."""
+    if "recorder" not in hass.config.components:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="history_unavailable"
+        )
+    from homeassistant.components.recorder import get_instance  # noqa: PLC0415
+
+    recorder = get_instance(hass)
+    raw = await recorder.async_add_executor_job(
+        _fetch_states, hass, start, end, entity_ids
+    )
+    stats: dict[str, list[Any]] = {}
+    if end - start > STATS_AFTER:
+        stats = await recorder.async_add_executor_job(
+            _fetch_stats, hass, start, end, entity_ids
+        )
+    series = []
+    for entity_id in entity_ids:
+        state = hass.states.get(entity_id)
+        name = (
+            str(state.attributes.get("friendly_name") or entity_id)
+            if state
+            else entity_id
+        )
+        unit = str(state.attributes.get("unit_of_measurement") or "") if state else ""
+        rows = [
+            (max(s.last_changed, start), s.state)
+            for s in raw.get(entity_id, [])
+            if hasattr(s, "state")
+        ]
+        known = [r for r in rows if r[1].lower() not in history.UNAVAILABLE]
+        numeric = bool(known) and sum(
+            history.to_float(v) is not None for _t, v in known
+        ) >= 0.8 * len(known)
+        if numeric and stats.get(entity_id):
+            series.append(history.stats_series(entity_id, name, unit, stats[entity_id]))
+        elif numeric:
+            series.append(history.numeric_series(entity_id, name, unit, rows))
+        elif known:
+            series.append(history.state_series(entity_id, name, rows, end, start))
+        else:
+            series.append(history.Series(entity_id, name, unit))
+    names = ", ".join(s.name for s in series)
+    report = history.HistoryReport(
+        title=title or (names if len(names) <= 40 else "Sensor history"),
+        start=start,
+        end=end,
+        series=tuple(series),
+        style=style,
+        tall=tall,
+    )
+    return await coordinator.async_print(jobs.history_job(report))
+
+
 async def async_print_type(
     hass: HomeAssistant,
     coordinator: TinyPressCoordinator,
@@ -799,6 +917,39 @@ def async_setup_services(hass: HomeAssistant) -> None:
             hass, coordinator, kid_mode=call.data["kid_mode"]
         )
 
+    async def handle_history(call: ServiceCall) -> ServiceResponse:
+        coordinator = _coordinator(hass, call)
+        now = dt_util.utcnow()
+        end = call.data.get("end")
+        end = (
+            dt_util.as_utc(dt_util.as_local(end) if end.tzinfo is None else end)
+            if end
+            else now
+        )
+        start = call.data.get("start")
+        if start is not None:
+            start = dt_util.as_utc(
+                dt_util.as_local(start) if start.tzinfo is None else start
+            )
+        elif "days" in call.data:
+            start = end - timedelta(days=call.data["days"])
+        else:
+            start = end - timedelta(hours=call.data.get("hours", 24))
+        if start >= end:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="history_bad_period"
+            )
+        return await async_print_history(
+            hass,
+            coordinator,
+            call.data["entity_id"],
+            start=start,
+            end=end,
+            style=call.data["style"],
+            tall=call.data["tall"],
+            title=call.data.get("title"),
+        )
+
     async def handle_print_answers(call: ServiceCall) -> ServiceResponse:
         coordinator = _coordinator(hass, call)
         entry = coordinator.store.find_answer(call.data.get(ATTR_PRINT_ID))
@@ -839,6 +990,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         ("print_story", handle_print_story, PRINT_STORY_SCHEMA),
         ("continue_story", handle_continue_story, CONTINUE_STORY_SCHEMA),
         ("print_morning_slip", handle_morning, MORNING_SCHEMA),
+        ("print_history", handle_history, HISTORY_SCHEMA),
         (SERVICE_PRINT_TEXT, handle_print_text, PRINT_TEXT_SCHEMA),
         (SERVICE_PRINT_IMAGE, handle_print_image, PRINT_IMAGE_SCHEMA),
     ):

@@ -6,15 +6,25 @@ Everything here is synchronous Pillow work; run it in the executor.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timedelta
+import itertools
 import math
 from pathlib import Path
 import random
+from typing import Any
 
 from PIL import Image, ImageDraw
 
 from ..generators.crossword import Crossword
 from ..generators.cryptogram import Cryptogram
+from ..generators.history import (
+    HistoryReport,
+    Series,
+    bucket_rows,
+    changes,
+    state_totals,
+    summarize,
+)
 from ..generators.jokes import Joke
 from ..generators.math_strip import MathStrip, Problem
 from ..generators.maze import Maze
@@ -1009,5 +1019,325 @@ def morning_page(width: int, slip: MorningSlip, footer: Footer) -> Canvas:
         half.paste(grid, ((width - grid.width) // 2, 0))
         canvas.drawing(half)
     canvas.space(6)
+    canvas.footer(*footer.fields())
+    return canvas
+
+
+DASHES = ((0, 0), (14, 8), (4, 6))  # solid, dashed, dotted (on, off) in px
+
+
+def _fmt_num(value: float | None, unit: str = "") -> str:
+    if value is None:
+        return "--"
+    text = (
+        f"{value:.0f}" if abs(value) >= 100 else f"{value:.1f}".rstrip("0").rstrip(".")
+    )
+    return (
+        f"{text}{unit}" if unit in ("%", "°F", "°C", "°") else f"{text} {unit}".rstrip()
+    )
+
+
+def _nice_ticks(low: float, high: float, count: int = 4) -> list[float]:
+    """Round tick values covering low..high."""
+    if high <= low:
+        high = low + 1
+    raw = (high - low) / count
+    magnitude = 10 ** math.floor(math.log10(raw))
+    step = next(m * magnitude for m in (1, 2, 2.5, 5, 10) if m * magnitude >= raw)
+    value = math.floor(low / step) * step
+    ticks = [round(value, 6)]
+    while ticks[-1] < high - step * 1e-6:
+        value += step
+        ticks.append(round(value, 6))
+    if len(ticks) == 1:
+        ticks.append(round(value + step, 6))
+    return ticks
+
+
+def _styled_line(
+    draw: ImageDraw.ImageDraw, pts: list[tuple[float, float]], style: int, width: int
+) -> None:
+    on, off = DASHES[style % len(DASHES)]
+    if not on:
+        draw.line(pts, fill=0, width=width, joint="curve")
+        return
+    carry = 0.0
+    drawing = True
+    for (x1, y1), (x2, y2) in itertools.pairwise(pts):
+        seg = math.hypot(x2 - x1, y2 - y1)
+        pos = 0.0
+        while pos < seg:
+            limit = (on if drawing else off) - carry
+            step = min(limit, seg - pos)
+            if drawing and seg:
+                a = pos / seg
+                b = (pos + step) / seg
+                draw.line(
+                    (
+                        x1 + (x2 - x1) * a,
+                        y1 + (y2 - y1) * a,
+                        x1 + (x2 - x1) * b,
+                        y1 + (y2 - y1) * b,
+                    ),
+                    fill=0,
+                    width=width,
+                )
+            pos += step
+            carry += step
+            if carry >= (on if drawing else off) - 1e-6:
+                drawing = not drawing
+                carry = 0.0
+
+
+def _time_ticks(
+    start: datetime, end: datetime, by_day: bool, to_local: Any, *, tall: bool = False
+) -> list[datetime]:
+    span = end - start
+    if by_day:
+        first = to_local(start).replace(hour=0, minute=0, second=0, microsecond=0)
+        days = max(1, round(span.total_seconds() / 86400))
+        every = 1 if tall else max(1, math.ceil(days / 6))
+        return [first + timedelta(days=i) for i in range(1, days + 1, every)]
+    hours = max(1, round(span.total_seconds() / 3600))
+    every = next(h for h in (1, 2, 3, 4, 6, 8, 12, 24) if hours / h <= 6)
+    first = to_local(start).replace(minute=0, second=0, microsecond=0)
+    ticks = []
+    t = first + timedelta(hours=1)
+    while t <= to_local(end):
+        if t.hour % every == 0:
+            ticks.append(t)
+        t += timedelta(hours=1)
+    return ticks
+
+
+def line_chart(
+    width: int,
+    report: HistoryReport,
+    series: list[Series],
+    to_local: Any,
+    *,
+    height: int | None = None,
+) -> Image.Image:
+    """Numeric series on one chart (same unit). Tall: time runs down the paper."""
+    tall = report.tall
+    values = [v for s in series for _t, v in (*s.points, *s.lows, *s.highs)]
+    ticks = _nice_ticks(min(values), max(values))
+    lo, hi = ticks[0], ticks[-1]
+    if hi == lo:
+        hi = lo + 1
+    label_font = font("sans", 18 if width >= 500 else 16, False)
+    unit = series[0].unit
+    t0, t1 = report.start.timestamp(), report.end.timestamp()
+    span_t = max(1.0, t1 - t0)
+    hours = span_t / 3600
+    if tall:
+        plot_len = int(min(2400, max(500, hours * 14)))
+        img = Image.new("L", (width, plot_len + 60), 255)
+        left, right, top, bottom = MARGIN + 92, width - MARGIN - 10, 34, plot_len + 34
+    else:
+        h = height or (300 if width >= 500 else 250)
+        img = Image.new("L", (width, h), 255)
+        left, right, top, bottom = MARGIN + 58, width - MARGIN - 26, 14, h - 34
+    draw = ImageDraw.Draw(img)
+
+    def place(t: float, v: float) -> tuple[float, float]:
+        ft = (t - t0) / span_t
+        fv = (v - lo) / (hi - lo)
+        if tall:
+            return left + fv * (right - left), top + ft * (bottom - top)
+        return left + ft * (right - left), bottom - fv * (bottom - top)
+
+    # value gridlines and labels
+    for tick in ticks:
+        if tall:
+            x, _ = place(t0, tick)
+            for yy in range(top, bottom, 6):
+                draw.point((x, yy), fill=0)
+            draw.text(
+                (x, top - 4), _fmt_num(tick), font=label_font, fill=0, anchor="md"
+            )
+        else:
+            _, y = place(t0, tick)
+            for xx in range(left, right, 6):
+                draw.point((xx, y), fill=0)
+            draw.text(
+                (left - 6, y), _fmt_num(tick), font=label_font, fill=0, anchor="rm"
+            )
+    # time labels
+    for tick in _time_ticks(
+        report.start, report.end, report.by_day, to_local, tall=tall
+    ):
+        label = (
+            tick.strftime("%a %-m/%-d") if report.by_day else tick.strftime("%-I %p")
+        )
+        if tall:
+            _, y = place(tick.timestamp(), lo)
+            draw.line((left - 4, y, left, y), fill=0, width=2)
+            draw.text((left - 8, y), label, font=label_font, fill=0, anchor="rm")
+        else:
+            x, _ = place(tick.timestamp(), lo)
+            draw.line((x, bottom, x, bottom + 4), fill=0, width=2)
+            draw.text((x, bottom + 8), label, font=label_font, fill=0, anchor="mt")
+    # axes
+    if tall:
+        draw.line((left, top, left, bottom), fill=0, width=2)
+    else:
+        draw.line((left, bottom, right, bottom), fill=0, width=2)
+    # min/max band for statistics (thin lines), then the series
+    for i, s in enumerate(series):
+        for band in (s.lows, s.highs):
+            if len(band) > 1:
+                _styled_line(draw, [place(t.timestamp(), v) for t, v in band], 2, 1)
+        pts = [place(t.timestamp(), v) for t, v in s.points]
+        if len(pts) == 1:
+            x, y = pts[0]
+            draw.ellipse((x - 4, y - 4, x + 4, y + 4), fill=0)
+        elif pts:
+            _styled_line(draw, pts, i, 3)
+    if unit:
+        if tall:
+            draw.text((left - 8, top - 4), unit, font=label_font, fill=0, anchor="rd")
+        else:
+            draw.text((MARGIN, 0), unit, font=label_font, fill=0)
+    return img
+
+
+def _hatch(draw: ImageDraw.ImageDraw, box: tuple[float, float, float, float]) -> None:
+    """Light diagonal hatching (solid black slows a thermal printer down)."""
+    x1, y1, x2, y2 = box
+    draw.rectangle(box, outline=0, width=2)
+    step = 7
+    height = y2 - y1
+    x = x1 - height
+    while x < x2:
+        a = (max(x, x1), y1 + max(0, x1 - x))
+        b = (min(x + height, x2), y1 + min(height, x2 - x))
+        if a[0] < b[0]:
+            draw.line((a, b), fill=0, width=1)
+        x += step
+
+
+def timeline_chart(width: int, report: HistoryReport, series: Series) -> Image.Image:
+    """One lane per state (up to four), hatched where that state was active."""
+    totals = [row[0] for row in state_totals(series)][:4]
+    lane_h = 34
+    label_font = font("sans", 18 if width >= 500 else 16, True)
+    label_w = int(max((label_font.getlength(s) for s in totals), default=40)) + 12
+    left, right = MARGIN + label_w, width - MARGIN
+    img = Image.new("L", (width, lane_h * len(totals) + 6), 255)
+    draw = ImageDraw.Draw(img)
+    t0, t1 = report.start.timestamp(), report.end.timestamp()
+    span_t = max(1.0, t1 - t0)
+    for lane, state in enumerate(totals):
+        y = lane * lane_h + 4
+        draw.text(
+            (MARGIN, y + lane_h / 2 - 2), state, font=label_font, fill=0, anchor="lm"
+        )
+        draw.line((left, y + lane_h - 4, right, y + lane_h - 4), fill=0, width=1)
+        for start, stop, seg_state in series.segments:
+            if seg_state != state:
+                continue
+            xa = left + (start.timestamp() - t0) / span_t * (right - left)
+            xb = left + (stop.timestamp() - t0) / span_t * (right - left)
+            _hatch(draw, (xa, y + 4, max(xa + 2, xb), y + lane_h - 6))
+    return img
+
+
+def _duration(delta: timedelta) -> str:
+    minutes = int(delta.total_seconds() // 60)
+    if minutes < 60:
+        return f"{minutes} min"
+    hours, minutes = divmod(minutes, 60)
+    if hours < 24:
+        return f"{hours} h {minutes} min" if minutes else f"{hours} h"
+    days, hours = divmod(hours, 24)
+    return f"{days} d {hours} h"
+
+
+def history_page(
+    width: int, report: HistoryReport, footer: Footer, to_local: Any
+) -> Canvas:
+    """Lay out a history print: graphs/timelines, summaries and optional tables."""
+    canvas = Canvas(width)
+    canvas.title(report.title, px=34)
+    start, end = to_local(report.start), to_local(report.end)
+    fmt = "%a %b %-d, %-I:%M %p"
+    canvas.text(f"{start.strftime(fmt)} to {end.strftime(fmt)}", px=18, align="center")
+    canvas.space(6)
+    show_graph = report.style in ("graph", "both")
+    show_table = report.style in ("table", "both")
+    numeric = [s for s in report.series if s.numeric and s.points]
+    others = [s for s in report.series if not s.numeric and s.segments]
+    missing = [s for s in report.series if s.empty]
+    # Numeric series share a chart per unit.
+    by_unit: dict[str, list[Series]] = {}
+    for s in numeric:
+        by_unit.setdefault(s.unit, []).append(s)
+    for group in by_unit.values():
+        if show_graph:
+            canvas.drawing(line_chart(width, report, group, to_local))
+            if len(group) > 1:
+                legend = Image.new("L", (width, 30 * len(group)), 255)
+                draw = ImageDraw.Draw(legend)
+                lf = font("sans", 20, False)
+                for i, s in enumerate(group):
+                    y = 15 + i * 30
+                    _styled_line(draw, [(MARGIN, y), (MARGIN + 60, y)], i, 3)
+                    draw.text((MARGIN + 72, y), s.name, font=lf, fill=0, anchor="lm")
+                canvas.drawing(legend)
+        for s in group:
+            summary = summarize(s)
+            if len(report.series) > 1:
+                canvas.text(s.name, px=22, bold=True)
+            u = s.unit
+            canvas.text(
+                f"Now {_fmt_num(summary.now, u)}   Min {_fmt_num(summary.low, u)}   "
+                f"Max {_fmt_num(summary.high, u)}",
+                px=21,
+            )
+            change = summary.change
+            sign = "+" if change and change > 0 else ""
+            canvas.text(
+                f"Average {_fmt_num(summary.average, u)}   Change {sign}{_fmt_num(change, u)}",
+                px=21,
+            )
+            if show_table:
+                rows = bucket_rows(s, report.by_day, to_local)
+                canvas.drawing(
+                    _rows(
+                        width,
+                        [
+                            (
+                                r.label,
+                                f"{_fmt_num(r.low)} / {_fmt_num(r.average)} / {_fmt_num(r.high)}",
+                            )
+                            for r in rows
+                        ],
+                        px=19,
+                    )
+                )
+                canvas.text("min / average / max", px=16, align="right")
+            canvas.space(8)
+    for s in others:
+        canvas.rule(dashed=True)
+        canvas.text(s.name, px=24, bold=True)
+        if show_graph:
+            canvas.drawing(timeline_chart(width, report, s))
+        totals = state_totals(s)
+        canvas.text(
+            "   ".join(
+                f"{state}: {_duration(spent)}" + (f" ({n}x)" if n > 1 else "")
+                for state, spent, n in totals[:4]
+            ),
+            px=20,
+        )
+        if show_table:
+            canvas.drawing(_rows(width, changes(s, to_local, report.by_day), px=19))
+        canvas.space(6)
+    for s in missing:
+        canvas.text(f"{s.name}: no history for this period.", px=20)
+    for note in report.notes:
+        canvas.text(note, px=18)
+    canvas.space(4)
     canvas.footer(*footer.fields())
     return canvas

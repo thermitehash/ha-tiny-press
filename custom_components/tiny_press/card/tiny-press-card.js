@@ -6,7 +6,7 @@
  * Nothing prints unless someone presses a button.
  */
 
-const CARD_VERSION = "0.6.0";
+const CARD_VERSION = "0.7.0";
 
 const PRINTS = {
   maze: { label: "Maze", icon: "mdi:map-marker-path" },
@@ -88,6 +88,7 @@ class TinyPressCard extends HTMLElement {
           },
         },
         { name: "kid_mode", selector: { boolean: {} } },
+        { name: "history", selector: { object: {} } },
         { name: "show_preview", selector: { boolean: {} } },
         { name: "ignore_limits", selector: { boolean: {} } },
       ],
@@ -99,6 +100,8 @@ class TinyPressCard extends HTMLElement {
           kid_mode: "Kid mode (hold to print, no settings or answers)",
           show_preview: "Preview before printing",
           ignore_limits: "Parent card: ignore kid-mode limits",
+          history:
+            "History buttons, e.g. - {name: Freezer, entity: sensor.freezer, hours: 24}",
         })[s.name],
     };
   }
@@ -266,6 +269,32 @@ class TinyPressCard extends HTMLElement {
     });
   }
 
+  _history(index) {
+    const item = (this._config.history || [])[index];
+    if (!item) return;
+    const data = { entity_id: item.entities || item.entity };
+    if (item.days) data.days = Number(item.days);
+    else data.hours = Number(item.hours || 24);
+    if (item.style) data.style = item.style;
+    if (item.tall) data.tall = true;
+    if (item.title || item.name) data.title = item.title || item.name;
+    this._run(() => this._call("print_history", data, true), `Printing ${item.name || "history"}`);
+  }
+
+  _historyHtml() {
+    const items = Array.isArray(this._config.history) ? this._config.history : [];
+    if (this._config.kid_mode || !items.length) return "";
+    const busy = this._state.busy ? "disabled" : "";
+    return `<div class="row-label">History</div><div class="history">${items
+      .map((item, i) => {
+        const span = item.days ? `${item.days} d` : `${item.hours || 24} h`;
+        return `<button class="chipbtn" data-history="${i}" ${busy}><ha-icon icon="${esc(
+          item.icon || "mdi:chart-line"
+        )}"></ha-icon>${esc(item.name || item.entity || "History")} · ${esc(span)}</button>`;
+      })
+      .join("")}</div>`;
+  }
+
   _answers() {
     this._run(() => this._call("print_answers", {}, true), "Printing the answers");
   }
@@ -419,6 +448,7 @@ class TinyPressCard extends HTMLElement {
               )
               .join("")}
           </div>`}
+        ${this._state.preview ? "" : this._historyHtml()}
         ${blocked ? `<div class="notice" data-countdown>${esc(this._countdownText(limits))}</div>` : ""}
         ${this._state.busy ? `<div class="notice">Working on it…</div>` : ""}
         ${this._state.message ? `<div class="notice ${this._state.tone}">${esc(this._state.message)}</div>` : ""}
@@ -451,6 +481,9 @@ class TinyPressCard extends HTMLElement {
     );
     const act = (name, fn) => root.querySelectorAll(`[data-action="${name}"]`).forEach((b) => b.addEventListener("click", fn));
     act("answers", () => this._answers());
+    root.querySelectorAll("[data-history]").forEach((b) =>
+      b.addEventListener("click", () => this._history(Number(b.dataset.history)))
+    );
     act("cancel", () => { this._state.preview = null; this._render(); });
     act("shuffle", () => this._preview(this._state.previewType));
     const printPreview = root.querySelector('[data-action="print-preview"]');
@@ -521,6 +554,11 @@ const STYLES = `
     padding: 0 14px; min-height: 48px; color: var(--primary-text-color); font: inherit; cursor: pointer; }
   .ghost ha-icon { --mdc-icon-size: 18px; }
   .empty { color: var(--secondary-text-color); padding: 12px 0; }
+  .history { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chipbtn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--divider-color); background: none;
+    border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 0.9rem; color: var(--primary-text-color); cursor: pointer; }
+  .chipbtn ha-icon { --mdc-icon-size: 18px; color: var(--primary-color); }
+  .chipbtn:disabled { opacity: 0.45; }
 `;
 
 if (!customElements.get("tiny-press-card")) {
