@@ -179,7 +179,7 @@ def kid_pack_job(
 def test_page_job(paper: str, info: dict[str, str]) -> PrintJob:
     """Build the test page: fonts, dither ramp, settings and a native QR code."""
     print_id = layout.make_print_id()
-    footer = layout.Footer("Test page", print_id, _today())
+    footer = layout.Footer("Test page", print_id, _today(), show_id=False)
     return PrintJob(
         type=PrintType.TEST_PAGE,
         label="Test page",
@@ -196,7 +196,7 @@ def test_page_job(paper: str, info: dict[str, str]) -> PrintJob:
 def text_job(text: str, title: str | None, size: str) -> PrintJob:
     """Build a free-text note."""
     print_id = layout.make_print_id()
-    footer = layout.Footer("Note", print_id, _today())
+    footer = layout.Footer("Note", print_id, _today(), show_id=False)
     return PrintJob(
         type="text",
         label="Note",
@@ -208,7 +208,7 @@ def text_job(text: str, title: str | None, size: str) -> PrintJob:
 def image_job(path: Path) -> PrintJob:
     """Build a picture print from /media or /config/www."""
     print_id = layout.make_print_id()
-    footer = layout.Footer("Picture", print_id, _today())
+    footer = layout.Footer("Picture", print_id, _today(), show_id=False)
     return PrintJob(
         type="image",
         label="Picture",
@@ -336,7 +336,7 @@ def answer_job(entry: dict) -> PrintJob:
 def weather_job(report: WeatherReport) -> PrintJob:
     """Build a weather print (current conditions + forecast)."""
     print_id = layout.make_print_id()
-    footer = layout.Footer("Weather", print_id, _today())
+    footer = layout.Footer("Weather", print_id, _today(), show_id=False)
     return PrintJob(
         type=PrintType.WEATHER,
         label="Weather",
@@ -574,7 +574,7 @@ def story_job(story: Story, profile: Profile, length: str) -> PrintJob:
     """Build a bedtime story (or serial chapter) print."""
     print_id = layout.make_print_id()
     label = f"Chapter {story.chapter}" if story.chapter else "Story"
-    footer = layout.Footer(label, print_id, _today(), length)
+    footer = layout.Footer(label, print_id, _today(), length, show_id=False)
     return PrintJob(
         type=PrintType.STORY,
         label=label,
@@ -595,7 +595,9 @@ def story_job(story: Story, profile: Profile, length: str) -> PrintJob:
 def morning_job(slip: MorningSlip) -> PrintJob:
     """Build the morning slip (with an answer key if it has a puzzle)."""
     print_id = layout.make_print_id()
-    footer = layout.Footer("Morning slip", print_id, slip.day)
+    footer = layout.Footer(
+        "Morning slip", print_id, slip.day, show_id=slip.puzzle is not None
+    )
     answers: tuple[dict, ...] = ()
     if slip.puzzle is not None:
         answers = (

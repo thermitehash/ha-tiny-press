@@ -45,6 +45,7 @@ class Footer:
     print_id: str
     day: date
     difficulty: str | None = None
+    show_id: bool = True  # only prints with an answer key show their ID
 
     def fields(self) -> tuple[str, ...]:
         """Footer pieces in print order."""
@@ -52,7 +53,7 @@ class Footer:
             self.label,
             self.difficulty.title() if self.difficulty else "",
             self.day.strftime("%b %-d, %Y"),
-            f"#{self.print_id}",
+            f"#{self.print_id}" if self.show_id else "",
         )
 
 
