@@ -4,7 +4,7 @@
 
 # Tiny Press
 
-A Home Assistant integration that turns an Epson receipt printer into a household fun-printer. It prints mazes, word searches, math strips, jokes, fun facts, notes and pictures today; adult puzzles, bedtime stories and a morning slip are coming. Everything is printed on demand: from buttons, actions, Assist voice phrases or Siri.
+A Home Assistant integration that turns an Epson receipt printer into a household fun-printer. It prints mazes, word searches, math strips, jokes, fun facts, puzzles, bedtime stories, a morning slip, weather, sensor history, notes and pictures. Everything is printed on demand: from buttons, the dashboard card, actions or Assist voice phrases.
 
 - **Printer:** Epson TM-m30III (other ESC/POS printers that answer `DLE EOT` on port 9100 should work)
 - **Paper:** 80 mm (576 dots, the default) or 58 mm (420 dots)
@@ -112,7 +112,7 @@ Every printout ends with a small footer: the print type, difficulty, date and a 
 
 ## 4. Actions
 
-Every action returns response data, so a script or an iOS Shortcut can speak the result:
+Every action returns response data, so a script or automation can speak the result:
 
 ```yaml
 print_id: K7Q2
@@ -122,7 +122,7 @@ length_mm: 148.5
 truncated: false
 ```
 
-Jokes and facts also return `setup`, `punchline` and `source` (`ai` or `offline`), so a Shortcut can read the joke aloud. A kid pack returns `print_ids` for its three puzzles.
+Jokes and facts also return `setup`, `punchline` and `source` (`ai` or `offline`), so a script can read the joke aloud. A kid pack returns `print_ids` for its three puzzles.
 
 Each successful or failed print also fires the event `tiny_press_printed` with `type`, `print_id`, `profile` and `success`.
 
@@ -252,7 +252,7 @@ history:                # optional one-tap history buttons (hidden in kid mode)
 
 Under **Configure → Kid-mode limits** you can turn on a wait between prints (default 2 minutes), prints per hour (4), prints per day (10) and a daily paper budget (1.5 m).
 
-- **Who they apply to:** kid prints from every button, card, action, voice phrase and Siri shortcut. Counts reset at midnight.
+- **Who they apply to:** kid prints from every button, card, action, and voice phrase. Counts reset at midnight.
 - **What she sees:** when a print is blocked, she gets a friendly message ("Just a moment! The next print is ready at 3:42 PM"), and Tiny Press fires `tiny_press_rate_limited` so you can be notified.
 - **Parents skip the limits** with `ignore_limits: true`:
 
@@ -263,9 +263,9 @@ data:
   ignore_limits: true
 ```
 
-## 5. Voice and Siri
+## 5. Voice
 
-Assist voice phrases (an automation blueprint) and Siri shortcuts arrive in **v0.8.0**.
+Assist voice phrases (an automation blueprint) arrive in **v0.8.0**.
 
 > **Heads-up for later:** the voice phrases use sentence triggers, which only run when Home Assistant's built-in conversation agent handles the sentence. If your Assist pipeline uses Claude/Anthropic (or another LLM) as its agent, turn on **"Prefer handling commands locally"** in the pipeline settings, or the phrases won't work.
 
