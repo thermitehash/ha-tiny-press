@@ -1,4 +1,4 @@
-"""Diagnostics (the printer's address is redacted)."""
+"""Diagnostics (the printer's address and household names are redacted)."""
 
 from __future__ import annotations
 
@@ -12,6 +12,8 @@ from homeassistant.core import HomeAssistant
 from .coordinator import TinyPressConfigEntry
 
 TO_REDACT = {CONF_HOST}
+# Profiles hold a child's name and interests.
+TO_REDACT_PEOPLE = {"name", "interests", "profile"}
 
 
 async def async_get_config_entry_diagnostics(
@@ -24,7 +26,7 @@ async def async_get_config_entry_diagnostics(
     return {
         "entry": {
             "data": async_redact_data(dict(entry.data), TO_REDACT),
-            "options": dict(entry.options),
+            "options": async_redact_data(dict(entry.options), TO_REDACT_PEOPLE),
         },
         "width_dots": coordinator.width,
         "state": {
@@ -34,7 +36,7 @@ async def async_get_config_entry_diagnostics(
         },
         "queue_busy": coordinator.queue.busy,
         "paper_used_mm": store.paper_used_mm,
-        "last_print": store.last_print,
+        "last_print": async_redact_data(store.last_print or {}, TO_REDACT_PEOPLE),
         "history": [
             {"print_id": h["print_id"], "type": h["type"]} for h in store.history
         ],

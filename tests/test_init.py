@@ -326,8 +326,20 @@ async def test_poll_interval_and_busy_skip(
 async def test_diagnostics_redacts_host(
     hass: HomeAssistant, hass_client, loaded_entry: MockConfigEntry
 ) -> None:
+    hass.config_entries.async_update_entry(
+        loaded_entry,
+        options={
+            "profiles": [
+                {"id": "r", "kind": "kid", "name": "Rosie", "interests": "cats"}
+            ]
+        },
+    )
+    await hass.async_block_till_done()
     diag = await get_diagnostics_for_config_entry(hass, hass_client, loaded_entry)
     assert diag["entry"]["data"]["host"] == "**REDACTED**"
+    profile = diag["entry"]["options"]["profiles"][0]
+    assert profile["name"] == "**REDACTED**" and profile["interests"] == "**REDACTED**"
+    assert "Rosie" not in str(diag)
     assert diag["state"]["paper"] == "ok"
     assert diag["width_dots"] == 576
 

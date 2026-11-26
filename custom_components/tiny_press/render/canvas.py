@@ -152,6 +152,12 @@ class Canvas:
             raise ValueError(f"drawing must be {self.width} px wide")
         self.blocks.append(img.convert("L"))
 
+    def extend(self, other: Canvas) -> None:
+        """Append another canvas's blocks (same width)."""
+        if other.width != self.width:
+            raise ValueError("canvas widths differ")
+        self.blocks.extend(other.blocks)
+
     def footer(self, *fields: str) -> None:
         """Add the small footer line: type, difficulty, date, ID."""
         self.rule(thickness=1, pad=6)

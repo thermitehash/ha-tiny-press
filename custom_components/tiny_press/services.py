@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from functools import partial
 from pathlib import Path
-import random
 import re
 from typing import Any
 
@@ -18,9 +18,10 @@ from homeassistant.core import (
 )
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
-from homeassistant.util import dt as dt_util
 import voluptuous as vol
 
+from . import jobs
+from .ai import async_ai_joke
 from .const import (
     ATTR_CONFIG_ENTRY_ID,
     ATTR_DIFFICULTY,
@@ -35,22 +36,17 @@ from .const import (
     DOMAIN,
     PAPER_80MM,
     PAPER_DOTS,
+    SETTING_MAZE_DIFFICULTY,
     TEXT_SIZES,
     Difficulty,
     PrintType,
 )
-from .coordinator import PrintJob, TinyPressConfigEntry, TinyPressCoordinator
-from .generators import maze
-from .printer import escpos
-from .render import layout
+from .coordinator import TinyPressConfigEntry, TinyPressCoordinator
 
 SERVICE_PRINT = "print"
 SERVICE_PRINT_TEXT = "print_text"
 SERVICE_PRINT_IMAGE = "print_image"
 
-SETTING_MAZE_DIFFICULTY = "maze_difficulty"
-REPO_URL = "https://github.com/thermitehash/ha-tiny-press"
-QR_MM = 32.0  # approximate paper used by the test page's native QR code
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"}
 
 _DIFFICULTY_WORDS: dict[Difficulty, tuple[str, ...]] = {
@@ -118,84 +114,74 @@ def normalize_difficulty(value: str | None, default: Difficulty) -> Difficulty:
     return default
 
 
-def _today() -> Any:
-    return dt_util.now().date()
-
-
-def maze_job(
-    coordinator: TinyPressCoordinator,
-    difficulty: Difficulty,
-    seed: int | None = None,
-    profile: str | None = None,
-) -> PrintJob:
-    """Build a maze print."""
-    seed = random.SystemRandom().randrange(2**31) if seed is None else seed
-    print_id = layout.make_print_id(random.Random(f"maze-{seed}"))
-    puzzle = maze.generate(difficulty, seed)
-    footer = layout.Footer("Maze", print_id, _today(), difficulty)
-    answer = {**puzzle.answer(), "seed": seed, "difficulty": difficulty.value}
-    return PrintJob(
-        type=PrintType.MAZE,
-        label="Maze",
-        print_id=print_id,
-        difficulty=difficulty.value,
-        profile=profile,
-        answer=answer,
-        build=lambda width: layout.maze_page(width, puzzle, footer),
-    )
-
-
-def test_page_job(coordinator: TinyPressCoordinator) -> PrintJob:
-    """The test page: fonts, dither ramp, settings and a native QR code."""
+def test_page_info(coordinator: TinyPressCoordinator) -> tuple[str, dict[str, str]]:
+    """Paper width and the details printed on the test page."""
     entry = coordinator.config_entry
     paper = entry.data.get(CONF_PAPER_WIDTH, PAPER_80MM)
-    info = {
+    return paper, {
         "Printer": f"{entry.data[CONF_HOST]}:{entry.data[CONF_PORT]}",
         "Paper": f"{paper} mm, {PAPER_DOTS[paper]} dots",
         "Longest print": f"{coordinator.max_length_mm} mm",
     }
-    return test_page_print(paper, info)
 
 
-def test_page_print(paper: str, info: dict[str, str]) -> PrintJob:
-    """Build the test page job (also used by the config flow)."""
-    print_id = layout.make_print_id()
-    footer = layout.Footer("Test page", print_id, _today())
-    return PrintJob(
-        type=PrintType.TEST_PAGE,
-        label="Test page",
-        print_id=print_id,
-        build=lambda width: layout.test_page(width, info, footer),
-        extra=escpos.align("center")
-        + escpos.qr_code(REPO_URL, module=5 if paper == PAPER_80MM else 4)
-        + escpos.feed(1)
-        + escpos.align("left"),
-        extra_mm=QR_MM,
+def maze_difficulty(coordinator: TinyPressCoordinator, value: str | None) -> Difficulty:
+    """Loose difficulty text, else the Maze difficulty select."""
+    default = Difficulty(
+        coordinator.store.get_setting(SETTING_MAZE_DIFFICULTY, Difficulty.EASY)
     )
+    return normalize_difficulty(value, default)
 
 
-def text_job(text: str, title: str | None, size: str) -> PrintJob:
-    """Free text."""
-    print_id = layout.make_print_id()
-    footer = layout.Footer("Note", print_id, _today())
-    return PrintJob(
-        type="text",
-        label="Note",
-        print_id=print_id,
-        build=lambda width: layout.text_page(width, text, title, size, footer),
-    )
-
-
-def image_job(path: Path) -> PrintJob:
-    """Build a picture print from /media or /config/www."""
-    print_id = layout.make_print_id()
-    footer = layout.Footer("Picture", print_id, _today())
-    return PrintJob(
-        type="image",
-        label="Picture",
-        print_id=print_id,
-        build=lambda width: layout.image_page(width, path, footer),
-    )
+async def async_print_type(
+    hass: HomeAssistant,
+    coordinator: TinyPressCoordinator,
+    kind: PrintType,
+    *,
+    profile: str | None = None,
+    difficulty: str | None = None,
+    seed: int | None = None,
+) -> dict[str, Any]:
+    """Print one type. Shared by the ``print`` action and the buttons."""
+    match kind:
+        case PrintType.MAZE:
+            level = maze_difficulty(coordinator, difficulty)
+            return await coordinator.async_print(
+                partial(jobs.maze_job, level, seed, profile)
+            )
+        case PrintType.WORD_SEARCH:
+            kid = coordinator.kid_profile(profile)
+            return await coordinator.async_print(
+                partial(jobs.word_search_job, kid, seed)
+            )
+        case PrintType.MATH:
+            kid = coordinator.kid_profile(profile)
+            return await coordinator.async_print(partial(jobs.math_job, kid, seed))
+        case PrintType.JOKE | PrintType.FACT:
+            kid = coordinator.kid_profile(profile)
+            joke = None
+            if seed is None:  # a seed asks for a repeatable (bundled) pick
+                joke = await async_ai_joke(
+                    hass, coordinator.ai_task_entity, kind.value, kid
+                )
+            if joke is None:
+                # A seeded pick ignores the rotation so it's repeatable.
+                recent = [] if seed is not None else coordinator.store.recent(kind)
+                joke = await hass.async_add_executor_job(
+                    jobs.offline_joke, kind.value, seed, recent
+                )
+                if seed is None and joke.index is not None:
+                    coordinator.store.remember(kind, joke.index)
+            return await coordinator.async_print(jobs.joke_job(joke, kid))
+        case PrintType.KID_PACK:
+            kid = coordinator.kid_profile(profile)
+            level = maze_difficulty(coordinator, difficulty)
+            return await coordinator.async_print(
+                partial(jobs.kid_pack_job, kid, level, seed)
+            )
+        case _:
+            paper, info = test_page_info(coordinator)
+            return await coordinator.async_print(jobs.test_page_job(paper, info))
 
 
 def _coordinator(hass: HomeAssistant, call: ServiceCall) -> TinyPressCoordinator:
@@ -253,21 +239,18 @@ def async_setup_services(hass: HomeAssistant) -> None:
 
     async def handle_print(call: ServiceCall) -> ServiceResponse:
         coordinator = _coordinator(hass, call)
-        kind = PrintType(call.data[ATTR_TYPE])
-        profile = call.data.get(ATTR_PROFILE)
-        if kind is PrintType.MAZE:
-            default = Difficulty(
-                coordinator.store.get_setting(SETTING_MAZE_DIFFICULTY, Difficulty.EASY)
-            )
-            difficulty = normalize_difficulty(call.data.get(ATTR_DIFFICULTY), default)
-            job = maze_job(coordinator, difficulty, call.data.get(ATTR_SEED), profile)
-        else:
-            job = test_page_job(coordinator)
-        return await coordinator.async_print(job)
+        return await async_print_type(
+            hass,
+            coordinator,
+            PrintType(call.data[ATTR_TYPE]),
+            profile=call.data.get(ATTR_PROFILE),
+            difficulty=call.data.get(ATTR_DIFFICULTY),
+            seed=call.data.get(ATTR_SEED),
+        )
 
     async def handle_print_text(call: ServiceCall) -> ServiceResponse:
         coordinator = _coordinator(hass, call)
-        job = text_job(
+        job = jobs.text_job(
             call.data[ATTR_TEXT], call.data.get(ATTR_TITLE), call.data[ATTR_SIZE]
         )
         return await coordinator.async_print(job)
@@ -277,7 +260,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         path = await hass.async_add_executor_job(
             resolve_image_path, hass, call.data[ATTR_PATH]
         )
-        return await coordinator.async_print(image_job(path))
+        return await coordinator.async_print(jobs.image_job(path))
 
     for name, handler, schema in (
         (SERVICE_PRINT, handle_print, PRINT_SCHEMA),

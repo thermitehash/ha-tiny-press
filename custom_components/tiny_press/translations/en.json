@@ -41,15 +41,86 @@
     "step": {
       "init": {
         "title": "Tiny Press options",
+        "menu_options": {
+          "settings": "Settings",
+          "add_kid": "Add a kid",
+          "add_adult": "Add an adult",
+          "edit_profile": "Edit a profile",
+          "remove_profile": "Remove profiles"
+        }
+      },
+      "settings": {
+        "title": "Settings",
         "data": {
           "max_length_mm": "Longest single print",
-          "poll_interval": "Status check interval"
+          "poll_interval": "Status check interval",
+          "ai_task_entity": "AI task entity"
         },
         "data_description": {
           "max_length_mm": "Any print longer than this is trimmed, so a runaway print can't empty the roll.",
-          "poll_interval": "How often to read paper and cover status. Status is never read while printing."
+          "poll_interval": "How often to read paper and cover status. Status is never read while printing.",
+          "ai_task_entity": "Optional. Used for fresh jokes and fun facts (and stories in a later version). Without it, Tiny Press uses its bundled lists."
+        }
+      },
+      "add_kid": {
+        "title": "Add a kid",
+        "description": "Profiles set the word lists and math level. Interests show up in word searches.",
+        "data": {
+          "name": "Name",
+          "grade": "Reading grade",
+          "interests": "Interests",
+          "stretch": "Stretch"
+        },
+        "data_description": {
+          "grade": "The grade they read and do math at.",
+          "interests": "Free text, for example: dinosaurs, space, horses.",
+          "stretch": "Make puzzles one grade harder."
+        }
+      },
+      "edit_kid": {
+        "title": "Edit {name}",
+        "data": {
+          "name": "Name",
+          "grade": "Reading grade",
+          "interests": "Interests",
+          "stretch": "Stretch"
+        },
+        "data_description": {
+          "grade": "The grade they read and do math at.",
+          "interests": "Free text, for example: dinosaurs, space, horses.",
+          "stretch": "Make puzzles one grade harder."
+        }
+      },
+      "add_adult": {
+        "title": "Add an adult",
+        "data": {
+          "name": "Name",
+          "difficulty": "Default puzzle difficulty"
+        }
+      },
+      "edit_adult": {
+        "title": "Edit {name}",
+        "data": {
+          "name": "Name",
+          "difficulty": "Default puzzle difficulty"
+        }
+      },
+      "edit_profile": {
+        "title": "Edit a profile",
+        "data": {
+          "profile": "Profile"
+        }
+      },
+      "remove_profile": {
+        "title": "Remove profiles",
+        "data": {
+          "profiles": "Profiles to remove"
         }
       }
+    },
+    "error": {
+      "name_required": "Enter a name.",
+      "name_exists": "A profile with this name already exists."
     }
   },
   "selector": {
@@ -62,6 +133,11 @@
     "print_type": {
       "options": {
         "maze": "Maze",
+        "word_search": "Word search",
+        "math": "Math strip",
+        "joke": "Joke",
+        "fact": "Fun fact",
+        "kid_pack": "Kid pack (maze, word search and math)",
         "test_page": "Test page"
       }
     },
@@ -70,6 +146,23 @@
         "small": "Small",
         "normal": "Normal",
         "large": "Large"
+      }
+    },
+    "grade": {
+      "options": {
+        "K": "Kindergarten",
+        "1": "Grade 1",
+        "2": "Grade 2",
+        "3": "Grade 3",
+        "4": "Grade 4",
+        "5": "Grade 5"
+      }
+    },
+    "difficulty": {
+      "options": {
+        "easy": "Easy",
+        "medium": "Medium",
+        "hard": "Hard"
       }
     }
   },
@@ -118,6 +211,18 @@
       "maze": {
         "name": "Maze"
       },
+      "word_search": {
+        "name": "Word search"
+      },
+      "math": {
+        "name": "Math strip"
+      },
+      "joke": {
+        "name": "Joke"
+      },
+      "kid_pack": {
+        "name": "Kid pack"
+      },
       "test_page": {
         "name": "Test page"
       }
@@ -130,6 +235,9 @@
           "medium": "Medium",
           "hard": "Hard"
         }
+      },
+      "kid_profile": {
+        "name": "Kid profile"
       }
     }
   },
@@ -177,15 +285,15 @@
         },
         "profile": {
           "name": "Profile",
-          "description": "Who it's for. Profiles arrive in a later version; the name is recorded with the print."
+          "description": "Kid profile name for word searches, math, jokes and kid packs. Leave empty to use the Kid profile select."
         },
         "difficulty": {
           "name": "Difficulty",
-          "description": "Loose words work: easy, medium, hard, harder, tricky. Leave empty to use the difficulty select."
+          "description": "For mazes. Loose words work: easy, medium, hard, harder, tricky. Leave empty to use the Maze difficulty select."
         },
         "seed": {
           "name": "Seed",
-          "description": "Prints the same puzzle again for the same seed."
+          "description": "Prints the same puzzle again for the same seed. Jokes with a seed come from the bundled list."
         }
       }
     },

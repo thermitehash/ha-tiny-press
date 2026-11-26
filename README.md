@@ -4,14 +4,14 @@
 
 # Tiny Press
 
-A Home Assistant integration that turns an Epson receipt printer into a household fun-printer. It prints mazes and notes today; puzzles, math strips, bedtime stories and a morning slip are coming. Everything is printed on demand: from buttons, actions, Assist voice phrases or Siri.
+A Home Assistant integration that turns an Epson receipt printer into a household fun-printer. It prints mazes, word searches, math strips, jokes, fun facts, notes and pictures today; adult puzzles, bedtime stories and a morning slip are coming. Everything is printed on demand: from buttons, actions, Assist voice phrases or Siri.
 
 - **Printer:** Epson TM-m30III (other ESC/POS printers that answer `DLE EOT` on port 9100 should work)
 - **Paper:** 80 mm (576 dots, the default) or 58 mm (420 dots)
 - **Home Assistant:** 2026.11.0 or newer
 - **Nothing prints automatically.** Tiny Press ships no schedules or time-based automations.
 
-> **Status: v0.1.0.** Printer connection, status, maze, notes, pictures and test page. See the [roadmap](docs/roadmap.md) for what's next.
+> **Status: v0.2.0.** Kid pack: profiles, maze, word search, math strip, jokes and fun facts, plus notes, pictures and the test page. See the [roadmap](docs/roadmap.md) for what's next.
 
 <!-- Screenshot placeholders -->
 <!-- ![Device page](docs/images/device.png) -->
@@ -40,6 +40,31 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 |---|---|---|
 | Longest single print | 600 mm | Any print longer than this is trimmed and ends with a "trimmed" note, so a runaway print can't empty the roll. |
 | Status check interval | 60 s | How often paper and cover status are read. Status is never read while a job is printing. |
+| AI task entity | none | Optional. Any `ai_task` entity (for example the Anthropic integration's). Used for fresh jokes and fun facts now, and stories later. Without it, Tiny Press uses its bundled lists. |
+
+### Profiles
+
+Open **Settings → Devices & services → Tiny Press → Configure** to add, edit or remove people.
+
+| Kid profile | |
+|---|---|
+| Name | Shown on the Kid profile select; may be used in stories later |
+| Reading grade | K–5 (default 3). Sets word lists, grid size and math level. |
+| Interests | Free text such as `dinosaurs, space, horses`. Themed words appear in word searches; the AI uses them for jokes. |
+| Stretch | Makes puzzles one grade harder (reading stays at their grade) |
+
+An adult profile has a name and a default puzzle difficulty (used by the adult puzzles in v0.3.0). Add as many profiles as you like, for example a younger sibling later.
+
+What each grade gets:
+
+| Grade | Word search | Math strip |
+|---|---|---|
+| K–1 | 10×10, across and down | add/subtract within 10 (K) or 20 (1) |
+| 2 | 10×10, across and down | two-digit add/subtract, every problem needs regrouping |
+| 3 | 10×10, plus diagonals | adds ×/÷ facts to 10 and two word problems |
+| 4–5 | 12×12, more diagonals | bigger numbers, ×/÷ to 12, multi-digit × |
+
+Every math strip ends with a harder ★ bonus problem.
 
 ## 3. Entities
 
@@ -50,7 +75,12 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 | `sensor.tiny_press_paper_used` | Millimetres printed in total (estimated from each print's length) |
 | `sensor.tiny_press_last_print` | Type of the last print. Attributes: `print_id`, `printed_at`, `length_mm`, `profile`, `difficulty` |
 | `button.tiny_press_maze` | Prints a maze at the selected difficulty |
+| `button.tiny_press_word_search` | Prints a word search for the selected kid |
+| `button.tiny_press_math` | Prints a math strip for the selected kid |
+| `button.tiny_press_joke` | Prints a joke (punchline upside down below a fold line) |
+| `button.tiny_press_kid_pack` | Prints a maze, word search and math strip in one go |
 | `button.tiny_press_test_page` | Prints the test page |
+| `select.tiny_press_kid_profile` | Who the buttons print for |
 | `select.tiny_press_maze_difficulty` | Easy, medium or hard |
 
 If the printer is unreachable for more than 24 hours, a **Repairs** issue appears. It clears itself once the printer answers again.
@@ -64,9 +94,12 @@ Every action returns response data, so a script or an iOS Shortcut can speak the
 ```yaml
 print_id: K7Q2
 type: maze
+profile: null
 length_mm: 148.5
 truncated: false
 ```
+
+Jokes and facts also return `setup`, `punchline` and `source` (`ai` or `offline`), so a Shortcut can read the joke aloud. A kid pack returns `print_ids` for its three puzzles.
 
 Each successful or failed print also fires the event `tiny_press_printed` with `type`, `print_id`, `profile` and `success`.
 
@@ -78,10 +111,10 @@ This is the general entry point that every button and voice phrase uses.
 
 | Field | Notes |
 |---|---|
-| `type` | `maze` or `test_page` (more types arrive with each version) |
-| `difficulty` | Loose words work: `easy`, `medium`, `hard`, `harder`, `tricky`, `a little harder`. Empty uses the difficulty select. |
-| `profile` | Recorded with the print (profiles arrive in v0.2.0) |
-| `seed` | The same seed prints the same puzzle again |
+| `type` | `maze`, `word_search`, `math`, `joke`, `fact`, `kid_pack` or `test_page` |
+| `profile` | Kid profile name for word searches, math, jokes and kid packs. Empty uses the Kid profile select. |
+| `difficulty` | For mazes (and the maze in a kid pack). Loose words work: `easy`, `medium`, `hard`, `harder`, `tricky`, `a little harder`. Empty uses the Maze difficulty select. |
+| `seed` | The same seed prints the same puzzle again (and the same bundled joke) |
 
 ```yaml
 action: tiny_press.print
@@ -89,6 +122,13 @@ data:
   type: maze
   difficulty: tricky
 response_variable: printed
+```
+
+```yaml
+action: tiny_press.print
+data:
+  type: kid_pack
+  profile: Rosie
 ```
 
 ### `tiny_press.print_text`

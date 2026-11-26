@@ -12,6 +12,11 @@ print:
           translation_key: print_type
           options:
             - maze
+            - word_search
+            - math
+            - joke
+            - fact
+            - kid_pack
             - test_page
     profile:
       example: Kid

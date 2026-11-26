@@ -10,7 +10,7 @@ from PIL import Image
 import pytest
 
 from custom_components.tiny_press.const import PAPER_DOTS
-from custom_components.tiny_press.generators import maze
+from custom_components.tiny_press.generators import jokes, math_strip, maze, word_search
 from custom_components.tiny_press.render import layout
 from custom_components.tiny_press.render.canvas import Canvas, font, wrap
 
@@ -29,6 +29,19 @@ def test_every_page_is_exact_width(width: int, tmp_path: Path) -> None:
         layout.text_page(width, "x", None, "small", FOOTER),
         layout.test_page(width, {"a": "b"}, FOOTER),
         layout.image_page(width, pic, FOOTER),
+    ]
+    for grade in ("K", "2", "3", "5"):
+        puzzle = word_search.generate(grade, 1, interests="space")
+        sheet = math_strip.generate(grade, 1)
+        pages += [
+            layout.word_search_page(width, puzzle, FOOTER),
+            layout.word_search_page(width, puzzle, FOOTER, answer=True),
+            layout.math_page(width, sheet, FOOTER),
+            layout.math_page(width, sheet, FOOTER, answer=True),
+        ]
+    pages += [
+        layout.joke_page(width, jokes.pick("joke", 1), FOOTER),
+        layout.joke_page(width, jokes.pick("fact", 1), FOOTER),
     ]
     for page in pages:
         image, truncated = page.render()
@@ -87,3 +100,15 @@ def test_maze_solution_drawn_only_on_answer() -> None:
         return sum(img.histogram()[:128])
 
     assert dark(answer) > dark(plain)
+
+
+def test_canvas_extend_checks_width() -> None:
+    with pytest.raises(ValueError):
+        Canvas(576).extend(Canvas(420))
+
+
+def test_word_search_answers_mark_letters() -> None:
+    puzzle = word_search.generate("3", 2)
+    plain = layout.word_search_drawing(576, puzzle)
+    marked = layout.word_search_drawing(576, puzzle, show_answers=True)
+    assert sum(marked.histogram()[:128]) > sum(plain.histogram()[:128])

@@ -9,6 +9,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN
 from .coordinator import TinyPressConfigEntry, TinyPressCoordinator
+from .generators.data import preload
 from .repairs import async_clear_offline_issue
 from .services import async_setup_services
 from .store import TinyPressStore
@@ -26,6 +27,8 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register the actions once for all printers."""
     async_setup_services(hass)
+    # Read the bundled word lists, jokes and facts once, off the event loop.
+    await hass.async_add_executor_job(preload)
     return True
 
 
