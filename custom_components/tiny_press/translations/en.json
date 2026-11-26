@@ -47,7 +47,9 @@
           "add_kid": "Add a kid",
           "add_adult": "Add an adult",
           "edit_profile": "Edit a profile",
-          "remove_profile": "Remove profiles"
+          "remove_profile": "Remove profiles",
+          "add_feed": "Add a feed",
+          "remove_feed": "Remove feeds"
         }
       },
       "settings": {
@@ -60,7 +62,9 @@
           "weather_entity": "Weather entity",
           "calendar_entities": "Morning slip calendars",
           "todo_entities": "Morning slip to-do lists",
-          "morning_bottom": "Bottom of the morning slip"
+          "morning_bottom": "Bottom of the morning slip",
+          "live_quote": "Live quote of the day",
+          "morning_feed": "Morning slip feed"
         },
         "data_description": {
           "max_length_mm": "Any print longer than this is trimmed, so a runaway print can't empty the roll.",
@@ -70,7 +74,9 @@
           "weather_entity": "Used by the Weather print and the morning slip. Not needed if you only have one weather entity.",
           "calendar_entities": "Today's events from these calendars print on the morning slip, all-day events first.",
           "todo_entities": "Optional. Unchecked items from these lists print as checkboxes. Leave empty for no to-dos.",
-          "morning_bottom": "What prints at the end of the morning slip."
+          "morning_bottom": "What prints at the end of the morning slip.",
+          "live_quote": "For the Quote bottom: try Wikiquote's quote of the day first (credited on the print), and use the bundled public-domain quotes if it can't be read.",
+          "morning_feed": "For the Feed bottom: whose headlines print. Empty uses the first feed."
         }
       },
       "add_kid": {
@@ -151,11 +157,34 @@
           "limit_per_hour": "0 means no hourly limit.",
           "limit_admins_skip": "Leave off if a shared wall tablet is signed in as an admin."
         }
+      },
+      "add_feed": {
+        "title": "Add a feed",
+        "description": "Any RSS or Atom feed (news, a blog, a podcast). Tiny Press reads it only when you print it, and prints headlines, dates and short summaries, never pictures.",
+        "data": {
+          "name": "Name",
+          "url": "Feed URL",
+          "items": "Items per print"
+        },
+        "data_description": {
+          "name": "Shown on the print and used by voice: \"print the headlines from BBC News\".",
+          "url": "The feed's address, usually ending in /rss, /feed or .xml.",
+          "items": "How many of the newest items to print (1–10)."
+        }
+      },
+      "remove_feed": {
+        "title": "Remove feeds",
+        "data": {
+          "feeds": "Feeds to remove"
+        }
       }
     },
     "error": {
       "name_required": "Enter a name.",
-      "name_exists": "A profile with this name already exists."
+      "name_exists": "A profile with this name already exists.",
+      "feed_exists": "A feed with this name already exists.",
+      "invalid_url": "Enter a web address starting with https:// or http://.",
+      "cannot_read_feed": "Couldn't read an RSS or Atom feed at that address. Check the URL."
     }
   },
   "selector": {
@@ -227,8 +256,9 @@
       "options": {
         "joke": "A joke",
         "fact": "A fun fact",
-        "quote": "A quote of the day (public domain)",
+        "quote": "A quote of the day (Wikiquote when Live quote is on, else public domain)",
         "word": "A hard vocabulary word with its definition",
+        "feed": "Headlines from a feed (Configure → Add a feed)",
         "puzzle": "A small sudoku (adult profile's difficulty)",
         "none": "Nothing"
       }
@@ -258,7 +288,8 @@
         "puzzle_pack": "Puzzle pack",
         "morning_slip": "Morning slip",
         "weather": "Weather",
-        "note": "Note"
+        "note": "Note",
+        "feed": "Feed headlines"
       }
     }
   },
@@ -481,6 +512,18 @@
     },
     "history_bad_period": {
       "message": "The start of the period must be before the end."
+    },
+    "no_feeds": {
+      "message": "No feeds are set up yet. Add one under Configure → Add a feed."
+    },
+    "feed_not_found": {
+      "message": "There's no feed called {feed}."
+    },
+    "feed_failed": {
+      "message": "Couldn't read {feed}: {error}"
+    },
+    "history_print_type": {
+      "message": "Print sensor history with tiny_press.print_history."
     }
   },
   "services": {
@@ -749,6 +792,32 @@
         "sentence": {
           "name": "Sentence",
           "description": "The whole spoken sentence. A difficulty word in it (\"print a hard maze\") is used when difficulty isn't given."
+        },
+        "feed": {
+          "name": "Feed",
+          "description": "Feed name, as spoken, for type feed. Empty uses the first feed."
+        }
+      }
+    },
+    "print_feed": {
+      "name": "Print feed",
+      "description": "Prints the newest items from a feed set up under Configure → Add a feed: headline, date and a short summary, with an optional QR code per item.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Printer",
+          "description": "Only needed when more than one Tiny Press printer is set up."
+        },
+        "feed": {
+          "name": "Feed",
+          "description": "Feed name or ID. Empty prints the first feed."
+        },
+        "items": {
+          "name": "Items",
+          "description": "How many of the newest items (1–10). Empty uses the feed's setting."
+        },
+        "qr": {
+          "name": "QR codes",
+          "description": "Print a small QR code under each item that opens it on a phone. Makes the print longer."
         }
       }
     }

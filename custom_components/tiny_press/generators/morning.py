@@ -13,13 +13,15 @@ import random
 from typing import Any
 
 from .data import load_json
+from .feeds import FeedItem
 from .jokes import Joke
 from .sudoku import Sudoku
 from .weather import WeatherReport
 
 MAX_EVENTS = 10
 MAX_TODOS_PER_LIST = 8
-BOTTOM_OPTIONS = ("joke", "fact", "quote", "word", "puzzle", "none")
+BOTTOM_OPTIONS = ("joke", "fact", "quote", "word", "feed", "puzzle", "none")
+MORNING_HEADLINES = 3
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,6 +41,7 @@ class Quote:
     text: str
     author: str
     index: int | None = None
+    credit: str | None = None  # printed under the author, e.g. Wikiquote
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,6 +92,7 @@ class MorningSlip:
     puzzle: Sudoku | None = None
     quote: Quote | None = None
     word: Word | None = None
+    headlines: tuple[str, tuple[FeedItem, ...]] | None = None  # (feed, items)
     calendars_set: bool = True
     notes: tuple[str, ...] = field(default=())
 

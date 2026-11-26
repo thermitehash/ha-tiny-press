@@ -31,7 +31,7 @@ blueprint:
     turned_on:
       name: Phrases to use
       description: Untick a group to turn its phrases off.
-      default: [maze, word_search, math, kid_pack, kid_sudoku, spelling, joke, fact, story, story_topic, next_chapter, sudoku, crossword, cryptogram, puzzle_pack, morning_slip, weather, note]
+      default: [maze, word_search, math, kid_pack, kid_sudoku, spelling, joke, fact, story, story_topic, next_chapter, sudoku, crossword, cryptogram, puzzle_pack, morning_slip, weather, feed, note]
       selector:
         select:
           multiple: true
@@ -53,6 +53,7 @@ blueprint:
             - {label: Puzzle pack, value: puzzle_pack}
             - {label: Morning slip, value: morning_slip}
             - {label: Weather, value: weather}
+            - {label: Feed headlines, value: feed}
             - {label: "Note (adult print, not limited)", value: note}
     kid_phrases:
       name: Kid print phrases
@@ -158,6 +159,15 @@ blueprint:
           default:
             - "print the (weather|forecast)"
           selector: {text: {multiple: true}}
+        feed_phrases:
+          name: Feed headlines
+          description: >-
+            Feeds are set up under Tiny Press's Configure → Add a feed. {feed}
+            is the feed's name; without it, the first feed prints.
+          default:
+            - "print the (news|headlines)"
+            - "print [the] (news|headlines) from {feed}"
+          selector: {text: {multiple: true}}
         note_phrases:
           name: Note
           description: The dictated note goes in {text}.
@@ -190,6 +200,7 @@ triggers:
   - {trigger: conversation, id: puzzle_pack, command: !input puzzle_pack_phrases, enabled: "{{ 'puzzle_pack' in turned_on }}"}
   - {trigger: conversation, id: morning_slip, command: !input morning_slip_phrases, enabled: "{{ 'morning_slip' in turned_on }}"}
   - {trigger: conversation, id: weather, command: !input weather_phrases, enabled: "{{ 'weather' in turned_on }}"}
+  - {trigger: conversation, id: feed, command: !input feed_phrases, enabled: "{{ 'feed' in turned_on }}"}
   - {trigger: conversation, id: note, command: !input note_phrases, enabled: "{{ 'note' in turned_on }}"}
 
 variables:
@@ -203,6 +214,7 @@ actions:
       profile: "{{ trigger.slots.name | default('') }}"
       topic: "{{ trigger.slots.topic | default('') }}"
       text: "{{ trigger.slots.text | default('') }}"
+      feed: "{{ trigger.slots.feed | default('') }}"
       sentence: "{{ trigger.sentence }}"
     response_variable: result
   - set_conversation_response: "{{ result.speech }}"

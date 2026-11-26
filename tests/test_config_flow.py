@@ -148,7 +148,13 @@ async def test_options_settings(
 ) -> None:
     result = await hass.config_entries.options.async_init(loaded_entry.entry_id)
     assert result["type"] is FlowResultType.MENU
-    assert result["menu_options"] == ["settings", "kid_limits", "add_kid", "add_adult"]
+    assert result["menu_options"] == [
+        "settings",
+        "kid_limits",
+        "add_kid",
+        "add_adult",
+        "add_feed",
+    ]
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"next_step_id": "settings"}
     )
@@ -172,6 +178,8 @@ async def test_options_settings(
         "calendar_entities": [],
         "todo_entities": [],
         "morning_bottom": "joke",
+        "live_quote": True,
+        "morning_feed": None,
     }
     coordinator = loaded_entry.runtime_data
     assert coordinator.max_length_mm == 450

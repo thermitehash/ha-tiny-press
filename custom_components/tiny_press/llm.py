@@ -23,6 +23,7 @@ import probatio
 
 from .const import DOMAIN
 from .coordinator import TinyPressConfigEntry
+from .fetch import feeds_from_options
 from .voice import MAX_NOTE, MAX_TOPIC, NOTE, VOICE_TYPES, async_voice_print
 
 PRINT_TYPES = [kind for kind in VOICE_TYPES if kind != NOTE]
@@ -45,6 +46,18 @@ def _printer_field(entries: list[TinyPressConfigEntry]) -> dict[Any, Any]:
         probatio.Optional(
             "printer", description="Which printer, if the user names one."
         ): probatio.In([entry.title for entry in entries])
+    }
+
+
+def _feed_field(entries: list[TinyPressConfigEntry]) -> dict[Any, Any]:
+    """Offer the configured feed names, for type feed."""
+    names = sorted({f.name for e in entries for f in feeds_from_options(e.options)})
+    if not names:
+        return {}
+    return {
+        probatio.Optional(
+            "feed", description="Which feed, for type feed. Empty uses the first."
+        ): probatio.In(names)
     }
 
 
@@ -77,6 +90,7 @@ class _TinyPressTool(Tool):
             difficulty=args.get("difficulty"),
             topic=args.get("topic"),
             text=args.get("text"),
+            feed=args.get("feed"),
         )
 
 
@@ -90,8 +104,9 @@ class PrintTool(_TinyPressTool):
         "puzzles (maze, word_search, math, kid_pack, kid_sudoku, spelling), a "
         "joke or fun fact, a bedtime story (optionally about a topic) or the "
         "next chapter of the story in progress, adult puzzles (sudoku, "
-        "crossword, cryptogram, puzzle_pack), the morning slip, or the "
-        "weather. Kid prints follow the household's kid-mode limits. Say the "
+        "crossword, cryptogram, puzzle_pack), the morning slip, the "
+        "weather, or the newest headlines from one of the household's feeds "
+        "(type feed, with the feed's name). Kid prints follow the household's kid-mode limits. Say the "
         "returned 'speech' to the user; when 'printed' is false it explains "
         "why nothing printed."
     )
@@ -117,6 +132,7 @@ class PrintTool(_TinyPressTool):
                 probatio.Optional(
                     "topic", description="Story topic, for type story only."
                 ): probatio.All(str, probatio.Length(max=MAX_TOPIC)),
+                **_feed_field(entries),
                 **_printer_field(entries),
             }
         )

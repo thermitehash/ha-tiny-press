@@ -26,6 +26,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
     TextSelector,
     TextSelectorConfig,
+    TextSelectorType,
 )
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 import voluptuous as vol
@@ -34,8 +35,11 @@ from .const import (
     CONF_AI_JOKES,
     CONF_AI_TASK,
     CONF_CALENDARS,
+    CONF_FEEDS,
+    CONF_LIVE_QUOTE,
     CONF_MAX_LENGTH_MM,
     CONF_MORNING_BOTTOM,
+    CONF_MORNING_FEED,
     CONF_PAPER_WIDTH,
     CONF_POLL_INTERVAL,
     CONF_PRINT_TEST_PAGE,
@@ -53,6 +57,8 @@ from .const import (
     Difficulty,
 )
 from .coordinator import TinyPressConfigEntry
+from .fetch import FetchError, async_fetch_feed, feeds_from_options
+from .generators.feeds import DEFAULT_ITEMS, MAX_ITEMS
 from .generators.morning import BOTTOM_OPTIONS
 from .jobs import test_page_job
 from .limits import (
@@ -278,6 +284,13 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
     def _profiles(self) -> list[Profile]:
         return load_profiles(dict(self.config_entry.options))
 
+    @property
+    def _feeds(self) -> list[dict[str, Any]]:
+        return [
+            {"id": f.id, "name": f.name, "url": f.url, "items": f.items}
+            for f in feeds_from_options(dict(self.config_entry.options))
+        ]
+
     def _save(
         self, profiles: list[Profile] | None = None, **changes: Any
     ) -> ConfigFlowResult:
@@ -294,6 +307,9 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
         menu = ["settings", "kid_limits", "add_kid", "add_adult"]
         if self._profiles:
             menu += ["edit_profile", "remove_profile"]
+        menu.append("add_feed")
+        if self._feeds:
+            menu.append("remove_feed")
         return self.async_show_menu(step_id="init", menu_options=menu)
 
     async def async_step_settings(
@@ -311,6 +327,8 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                     CONF_CALENDARS: list(user_input.get(CONF_CALENDARS) or []),
                     CONF_TODOS: list(user_input.get(CONF_TODOS) or []),
                     CONF_MORNING_BOTTOM: user_input.get(CONF_MORNING_BOTTOM, "joke"),
+                    CONF_LIVE_QUOTE: bool(user_input.get(CONF_LIVE_QUOTE, True)),
+                    CONF_MORNING_FEED: user_input.get(CONF_MORNING_FEED) or None,
                 }
             )
         options = self.config_entry.options
@@ -371,8 +389,20 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                         mode=SelectSelectorMode.LIST,
                     )
                 ),
+                vol.Required(
+                    CONF_LIVE_QUOTE, default=bool(options.get(CONF_LIVE_QUOTE, True))
+                ): BooleanSelector(),
             }
         )
+        if self._feeds:
+            schema = schema.extend(
+                {
+                    vol.Optional(
+                        CONF_MORNING_FEED,
+                        description={"suggested_value": options.get(CONF_MORNING_FEED)},
+                    ): self._feed_selector()
+                }
+            )
         return self.async_show_form(step_id="settings", data_schema=schema)
 
     async def async_step_kid_limits(
@@ -579,5 +609,96 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
             step_id="remove_profile",
             data_schema=vol.Schema(
                 {vol.Required("profiles"): self._profile_selector(multiple=True)}
+            ),
+        )
+
+    def _feed_selector(self, multiple: bool = False) -> SelectSelector:
+        return SelectSelector(
+            SelectSelectorConfig(
+                options=[
+                    SelectOptionDict(value=f["id"], label=f["name"])
+                    for f in self._feeds
+                ],
+                multiple=multiple,
+                mode=SelectSelectorMode.LIST
+                if multiple
+                else SelectSelectorMode.DROPDOWN,
+            )
+        )
+
+    async def async_step_add_feed(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Add an RSS or Atom feed (checked by reading it once)."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            name = user_input[CONF_NAME].strip()
+            url = user_input["url"].strip()
+            feeds = self._feeds
+            if not name:
+                errors[CONF_NAME] = "name_required"
+            elif any(f["name"].lower() == name.lower() for f in feeds):
+                errors[CONF_NAME] = "feed_exists"
+            elif not url.startswith(("https://", "http://")):
+                errors["url"] = "invalid_url"
+            else:
+                try:
+                    await async_fetch_feed(self.hass, url, 1)
+                except FetchError as err:
+                    _LOGGER.info("Feed %s didn't load: %s", url, err)
+                    errors["url"] = "cannot_read_feed"
+                else:
+                    base = slugify(name) or "feed"
+                    taken = {f["id"] for f in feeds}
+                    feed_id, n = base, 2
+                    while feed_id in taken:
+                        feed_id, n = f"{base}_{n}", n + 1
+                    feeds.append(
+                        {
+                            "id": feed_id,
+                            "name": name,
+                            "url": url,
+                            "items": int(user_input["items"]),
+                        }
+                    )
+                    return self._save(**{CONF_FEEDS: feeds})
+        defaults = user_input or {}
+        return self.async_show_form(
+            step_id="add_feed",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "")): str,
+                    vol.Required("url", default=defaults.get("url", "")): TextSelector(
+                        TextSelectorConfig(type=TextSelectorType.URL)
+                    ),
+                    vol.Required(
+                        "items", default=defaults.get("items", DEFAULT_ITEMS)
+                    ): NumberSelector(
+                        NumberSelectorConfig(
+                            min=1, max=MAX_ITEMS, step=1, mode=NumberSelectorMode.BOX
+                        )
+                    ),
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_remove_feed(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Remove one or more feeds."""
+        if user_input is not None:
+            gone = set(user_input.get("feeds") or [])
+            options = dict(self.config_entry.options)
+            changes: dict[str, Any] = {
+                CONF_FEEDS: [f for f in self._feeds if f["id"] not in gone]
+            }
+            if options.get(CONF_MORNING_FEED) in gone:
+                changes[CONF_MORNING_FEED] = None
+            return self._save(**changes)
+        return self.async_show_form(
+            step_id="remove_feed",
+            data_schema=vol.Schema(
+                {vol.Required("feeds"): self._feed_selector(multiple=True)}
             ),
         )

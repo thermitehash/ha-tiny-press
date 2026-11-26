@@ -17,6 +17,7 @@ from PIL import Image, ImageDraw
 
 from ..generators.crossword import Crossword
 from ..generators.cryptogram import Cryptogram
+from ..generators.feeds import FeedItem
 from ..generators.history import (
     HistoryReport,
     Series,
@@ -1011,6 +1012,8 @@ def morning_page(width: int, slip: MorningSlip, footer: Footer) -> Canvas:
         canvas.text("Quote of the day", px=24, bold=True, align="center")
         canvas.text(f"\u201c{slip.quote.text}\u201d", px=26, align="center")
         canvas.text(f"\u2014 {slip.quote.author}", px=22, align="right")
+        if slip.quote.credit:
+            canvas.text(slip.quote.credit, px=14, align="right")
     if slip.word is not None:
         canvas.rule(dashed=True)
         canvas.text("Word of the day", px=24, bold=True, align="center")
@@ -1024,6 +1027,14 @@ def morning_page(width: int, slip: MorningSlip, footer: Footer) -> Canvas:
         canvas.text(
             "Definition: Open English WordNet (CC BY 4.0)", px=14, align="center"
         )
+    if slip.headlines is not None:
+        name, items = slip.headlines
+        canvas.rule(dashed=True)
+        canvas.text(f"Headlines \u00b7 {name}", px=24, bold=True, align="center")
+        if not items:
+            canvas.text("Nothing new in this feed right now.", px=20, align="center")
+        for item in items:
+            canvas.text(f"\u2022 {item.title}", px=22)
     if slip.puzzle is not None:
         canvas.rule(dashed=True)
         canvas.text("Puzzle of the day", px=24, bold=True, align="center")
@@ -1446,3 +1457,52 @@ def history_page(
     if not (report.tall and show_graph and only_charts and len(by_unit) == 1):
         canvas.footer(*footer.fields())
     return canvas
+
+
+def feed_parts(
+    width: int,
+    name: str,
+    items: tuple[FeedItem, ...],
+    footer: Footer,
+    *,
+    to_local: Any,
+    printed_at: datetime,
+    qr: bool = False,
+) -> list[tuple[Canvas, str | None]]:
+    """Lay out a feed print as parts, each optionally followed by an item's QR.
+
+    Returns ``[(canvas, link for a QR after it or None)]``.
+    """
+    head = Canvas(width)
+    head.title(name, px=36)
+    head.text(
+        to_local(printed_at).strftime("%A, %B %-d · %-I:%M %p"),
+        px=20,
+        align="center",
+    )
+    head.rule()
+    parts: list[tuple[Canvas, str | None]] = []
+    canvas = head
+    if not items:
+        canvas.text("Nothing new in this feed right now.", px=24)
+    for i, item in enumerate(items):
+        if i:
+            canvas.rule(dashed=True)
+        if item.title:
+            canvas.text(item.title, px=26, bold=True)
+        if item.published is not None:
+            canvas.text(
+                to_local(item.published).strftime("%a %b %-d, %-I:%M %p"), px=18
+            )
+        if item.summary:
+            canvas.space(4)
+            canvas.text(item.summary, px=22)
+        if qr and item.link:
+            canvas.space(6)
+            parts.append((canvas, item.link))
+            canvas = Canvas(width)
+            canvas.space(4)
+    canvas.space(6)
+    canvas.footer(*footer.fields())
+    parts.append((canvas, None))
+    return parts

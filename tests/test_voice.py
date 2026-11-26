@@ -12,6 +12,7 @@ from homeassistant.helpers import llm as llm_helper
 from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 from custom_components.tiny_press.const import DOMAIN
 from custom_components.tiny_press.voice import difficulty_in
@@ -112,9 +113,27 @@ async def test_voice_print_without_a_printer(hass: HomeAssistant) -> None:
 
 
 async def test_blueprint_phrases(
-    hass: HomeAssistant, config_entry: MockConfigEntry, printer: FakePrinter
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    printer: FakePrinter,
+    aioclient_mock: AiohttpClientMocker,
 ) -> None:
-    await _setup(hass, config_entry)
+    aioclient_mock.get(
+        "https://news.example.com/rss",
+        content=b"<rss><channel><title>N</title><item><title>Hi</title></item>"
+        b"</channel></rss>",
+    )
+    await _setup(
+        hass,
+        config_entry,
+        feeds=[
+            {
+                "id": "news",
+                "name": "Example News",
+                "url": "https://news.example.com/rss",
+            }
+        ],
+    )
     folder = Path(hass.config.path("blueprints/automation/tiny_press"))
     await hass.async_add_executor_job(lambda: folder.mkdir(parents=True, exist_ok=True))
     await hass.async_add_executor_job(shutil.copy, BLUEPRINT, folder)
@@ -130,7 +149,14 @@ async def test_blueprint_phrases(
                     "path": "tiny_press/voice_phrases.yaml",
                     "input": {
                         "printer": config_entry.entry_id,
-                        "turned_on": ["maze", "joke", "story_topic", "note", "sudoku"],
+                        "turned_on": [
+                            "maze",
+                            "joke",
+                            "story_topic",
+                            "note",
+                            "sudoku",
+                            "feed",
+                        ],
                     },
                 },
             }
@@ -154,6 +180,10 @@ async def test_blueprint_phrases(
     assert store.data["last_print"]["type"] == "text"
     assert await say("print an easy sudoku") == "Printing a sudoku."
     assert store.data["last_print"]["difficulty"] == "easy"
+    assert await say("print the news") == "Printing 1 headline from Example News."
+    assert await say("print the headlines from example news") == (
+        "Printing 1 headline from Example News."
+    )
     last = store.data["last_print"]["print_id"]
     # Word search phrases are turned off in this blueprint instance.
     assert await say("print a word search") != "Printing a word search for Rosie."

@@ -314,6 +314,7 @@ voice_print:
             - puzzle_pack
             - morning_slip
             - weather
+            - feed
             - note
     profile:
       example: Rosie
@@ -332,7 +333,33 @@ voice_print:
       selector:
         text:
           multiline: true
+    feed:
+      example: BBC News
+      selector:
+        text:
     sentence:
       example: print a hard maze
       selector:
         text:
+
+print_feed:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: tiny_press
+    feed:
+      example: BBC News
+      selector:
+        text:
+    items:
+      example: 5
+      selector:
+        number:
+          min: 1
+          max: 10
+          mode: box
+    qr:
+      default: false
+      selector:
+        boolean:
