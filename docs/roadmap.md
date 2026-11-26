@@ -70,6 +70,7 @@ Both build on `print_image`'s existing 1-bit rendering. Like everything else, th
 - Strip HTML down to plain text; never print images or scripts from a feed.
 - Always print the feed's title and link as attribution. Leave paywalled or "no reuse" feeds to the user's judgment and say so in the docs.
 - Manual prints only, like everything else.
+- **Morning slip option:** add "News from a feed" to the morning slip's bottom choices (Configure → Settings), with a feed picked in setup. It prints the newest few headlines with the feed's name, and a QR code for each item if it fits. It falls back to the bundled quotes when the feed can't be read.
 
 ### Live quote of the day (with the bundled quotes as fallback)
 - A "live" choice for the morning slip's quote: fetch today's quote from a source whose terms allow reuse with attribution. If the fetch fails, times out or returns nothing printable, fall back to the bundled public-domain quotes and print no error.
