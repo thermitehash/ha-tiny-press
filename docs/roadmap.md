@@ -8,7 +8,9 @@
 | 3 | 0.4.0 ✅ | Adult puzzles: sudoku, criss-cross crossword, cryptogram, puzzle pack |
 | 4 | 0.5.0 ✅ | Bedtime story (short/medium/long) and serial choose-your-own-adventure via `ai_task`, with offline fallback |
 | 5 | 0.6.0 ✅ | Morning slip (manual only) |
-| 6 | 0.7.0 | Voice blueprint and Siri docs |
+| — | 0.7.0 ✅ | Sensor history prints (graph, table, timeline) |
+| 6 | 0.8.0 | Voice blueprint and Siri docs |
+| — | 0.9.0 | RSS/Atom feed prints and live quote of the day from Wikiquote (planned, below) |
 | 7 | — | Skylight (planning only, below) |
 | later | — | Selfie prints and AI-generated kid-safe pictures (planning only, below) |
 
@@ -59,6 +61,23 @@ Both build on `print_image`'s existing 1-bit rendering. Like everything else, th
   - Which `ai_task` providers support image generation, and at what cost per image.
   - Whether to cache generated pages for re-printing.
   - A per-day limit so a voice command can't run up a bill.
+
+## v0.9.0: RSS/Atom feeds and a live quote of the day (planned)
+
+### Feed prints
+- A `tiny_press.print_feed` action (and card buttons) that prints the newest items from any RSS or Atom feed: headline, date, a short summary, the source's name and a QR code linking to the item.
+- Reuse Home Assistant's `feedreader` integration where it's set up (its events and entities), or fetch a feed URL directly with HA's shared HTTP session, with a timeout and size cap.
+- Strip HTML down to plain text; never print images or scripts from a feed.
+- Always print the feed's title and link as attribution. Leave paywalled or "no reuse" feeds to the user's judgment and say so in the docs.
+- Manual prints only, like everything else.
+- **Morning slip option:** add "News from a feed" to the morning slip's bottom choices (Configure → Settings), with a feed picked in setup. It prints the newest few headlines with the feed's name, and a QR code for each item if it fits. It falls back to the bundled quotes when the feed can't be read.
+
+### Live quote of the day (with the bundled quotes as fallback)
+- A "live" choice for the morning slip's quote: fetch today's quote from a source whose terms allow reuse with attribution. If the fetch fails, times out or returns nothing printable, fall back to the bundled public-domain quotes and print no error.
+- **Chosen source: Wikiquote Quote of the Day** (MediaWiki `featuredfeed`, `feed=qotd`, RSS). The page text is CC BY-SA; print the author and "Wikiquote (CC BY-SA)". Send a descriptive User-Agent, as Wikimedia asks. (Not yet tested from the build environment, whose network blocks it.)
+- Considered: **ZenQuotes** `today` API (needs a visible "Inspirational quotes provided by ZenQuotes API" credit; run by one person, so less dependable). Any user-chosen feed will also work through the generic feed support above.
+- Not used: sites whose terms forbid reuse of their quotes (for example BrainyQuote).
+- Cache one quote per day so reprints don't refetch, and filter by length so it fits the slip.
 
 ## Dashboard card (built in v0.3.0)
 

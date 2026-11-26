@@ -14,6 +14,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.tiny_press.const import DOMAIN, PAPER_DOTS
 from custom_components.tiny_press.generators import jokes, morning, sudoku
+from custom_components.tiny_press.generators.data import load_json
 from custom_components.tiny_press.generators.weather import build_report
 from custom_components.tiny_press.render import layout
 
@@ -109,6 +110,11 @@ def test_morning_page_widths(width: int) -> None:
         morning.MorningSlip(
             DAY, None, (), 0, puzzle=sudoku.generate(6, "easy", 1), calendars_set=False
         ),
+        morning.MorningSlip(DAY, None, (), 0, quote=morning.pick_quote(1)),
+        morning.MorningSlip(DAY, None, (), 0, word=morning.pick_word(1)),
+        morning.MorningSlip(
+            DAY, None, (), 0, word=morning.Word("terse", "adjective", "brief")
+        ),
     ]
     for slip in variants:
         assert layout.morning_page(width, slip, footer).render()[0].width == width
@@ -157,6 +163,29 @@ def _services(hass: HomeAssistant, calls: list[str]) -> None:
         hass.services.async_register(
             domain, name, fn, supports_response=SupportsResponse.ONLY
         )
+
+
+def test_vocab_data() -> None:
+    items = load_json("vocab.json")
+    assert len(items) >= 150
+    assert len({i["word"] for i in items}) == len(items)
+    for item in items:
+        assert item["pos"] in ("noun", "verb", "adjective")
+        assert item["definition"] and len(item["definition"]) < 150
+        assert item["word"] in item.get("example", item["word"]).lower()
+
+
+def test_pick_quote_and_word() -> None:
+    assert morning.pick_word(5) == morning.pick_word(5)
+    assert morning.pick_quote(5) == morning.pick_quote(5)
+    count = len(load_json("vocab.json"))
+    recent = list(range(count // 2))
+    for seed in range(50):
+        assert morning.pick_word(seed, recent).index not in recent
+    quotes = len(load_json("quotes.json"))
+    everything = list(range(quotes))  # more than the list: still picks
+    assert morning.pick_quote(1, everything).index is not None
+    assert morning.pick_quote(1, everything).index not in everything[: quotes // 2]
 
 
 async def _setup(hass: HomeAssistant, entry: MockConfigEntry, **options: Any) -> None:
@@ -219,7 +248,7 @@ async def test_morning_slip_full(
     await _slip(hass, kid_mode=True)
 
 
-@pytest.mark.parametrize("bottom", ["joke", "fact", "none"])
+@pytest.mark.parametrize("bottom", ["joke", "fact", "quote", "word", "none"])
 async def test_morning_slip_minimal(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,

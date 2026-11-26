@@ -24,6 +24,7 @@ from .generators import (
     sudoku,
     word_search,
 )
+from .generators.history import HistoryReport
 from .generators.jokes import Joke
 from .generators.morning import MorningSlip
 from .generators.story import Story
@@ -618,4 +619,24 @@ def morning_job(slip: MorningSlip) -> PrintJob:
             "todos": sum(len(items) for _n, items in slip.todos),
         },
         build=lambda width: layout.morning_page(width, slip, footer),
+    )
+
+
+def history_job(report: HistoryReport) -> PrintJob:
+    """Build a sensor-history print."""
+    print_id = layout.make_print_id()
+    footer = layout.Footer("History", print_id, _today(), show_id=False)
+    return PrintJob(
+        type=PrintType.HISTORY,
+        label="History",
+        print_id=print_id,
+        response={
+            "entities": [s.entity_id for s in report.series],
+            "start": report.start.isoformat(),
+            "end": report.end.isoformat(),
+            "empty": [s.entity_id for s in report.series if s.empty],
+        },
+        build=lambda width: layout.history_page(
+            width, report, footer, dt_util.as_local
+        ),
     )

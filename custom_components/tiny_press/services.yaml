@@ -230,3 +230,57 @@ print_morning_slip:
       default: false
       selector:
         boolean:
+
+print_history:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: tiny_press
+    entity_id:
+      required: true
+      selector:
+        entity:
+          multiple: true
+    hours:
+      example: 24
+      selector:
+        number:
+          min: 1
+          max: 744
+          unit_of_measurement: h
+          mode: box
+    days:
+      selector:
+        number:
+          min: 1
+          max: 31
+          unit_of_measurement: d
+          mode: box
+    start:
+      selector:
+        datetime:
+    end:
+      selector:
+        datetime:
+    style:
+      default: graph
+      selector:
+        select:
+          translation_key: history_style
+          options:
+            - graph
+            - table
+            - both
+    tall:
+      default: false
+      selector:
+        boolean:
+    grid:
+      default: false
+      selector:
+        boolean:
+    title:
+      example: Freezer
+      selector:
+        text:

@@ -126,6 +126,9 @@
     },
     "print_morning_slip": {
       "service": "mdi:weather-sunset-up"
+    },
+    "print_history": {
+      "service": "mdi:chart-line"
     }
   }
 }

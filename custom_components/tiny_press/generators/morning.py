@@ -9,15 +9,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date, datetime, time
+import random
 from typing import Any
 
+from .data import load_json
 from .jokes import Joke
 from .sudoku import Sudoku
 from .weather import WeatherReport
 
 MAX_EVENTS = 10
 MAX_TODOS_PER_LIST = 8
-BOTTOM_OPTIONS = ("joke", "fact", "puzzle", "none")
+BOTTOM_OPTIONS = ("joke", "fact", "quote", "word", "puzzle", "none")
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,6 +33,50 @@ class Event:
 
 
 @dataclass(frozen=True, slots=True)
+class Quote:
+    """A public-domain quote (from ``quotes.json``)."""
+
+    text: str
+    author: str
+    index: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class Word:
+    """A hard vocabulary word with its Open English WordNet definition."""
+
+    word: str
+    pos: str
+    definition: str
+    example: str | None = None
+    index: int | None = None
+
+
+def _pick_index(count: int, seed: int, recent: list[int] | None) -> int:
+    """Pick a random index, avoiding the most recent picks (at most half the list)."""
+    avoid = set((recent or [])[: count // 2])
+    rng = random.Random(seed)
+    return rng.choice([i for i in range(count) if i not in avoid])
+
+
+def pick_quote(seed: int, recent: list[int] | None = None) -> Quote:
+    """Quote of the day (executor: may read the data file)."""
+    items = load_json("quotes.json")
+    index = _pick_index(len(items), seed, recent)
+    return Quote(items[index]["text"], items[index]["author"], index)
+
+
+def pick_word(seed: int, recent: list[int] | None = None) -> Word:
+    """Word of the day (executor: may read the data file)."""
+    items = load_json("vocab.json")
+    index = _pick_index(len(items), seed, recent)
+    item = items[index]
+    return Word(
+        item["word"], item["pos"], item["definition"], item.get("example"), index
+    )
+
+
+@dataclass(frozen=True, slots=True)
 class MorningSlip:
     """Everything on the slip."""
 
@@ -41,6 +87,8 @@ class MorningSlip:
     todos: tuple[tuple[str, tuple[str, ...]], ...] = ()  # (list name, items)
     joke: Joke | None = None
     puzzle: Sudoku | None = None
+    quote: Quote | None = None
+    word: Word | None = None
     calendars_set: bool = True
     notes: tuple[str, ...] = field(default=())
 

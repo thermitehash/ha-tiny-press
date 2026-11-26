@@ -11,7 +11,7 @@ A Home Assistant integration that turns an Epson receipt printer into a househol
 - **Home Assistant:** 2026.11.0 or newer
 - **Nothing prints automatically.** Tiny Press ships no schedules or time-based automations.
 
-> **Status: v0.6.0.** Morning slip. **v0.5.0:** Bedtime stories and choose-your-own-adventure chapters. **v0.4.0:** Adult puzzles (sudoku, crossword, cryptogram, puzzle pack) on top of v0.3.0. **v0.3.0:** Kid pack (profiles, maze, word search, math strip, jokes and fun facts), a dashboard card with kid mode, kid-mode print limits, previews and answer keys. See the [roadmap](docs/roadmap.md) for what's next.
+> **Status: v0.7.0.** Kid prints (maze, word search, math, kid sudoku, spelling, jokes, facts, kid pack), adult puzzles, bedtime stories, the morning slip, weather, sensor history, a dashboard card with kid mode, and kid-mode limits. See [docs/releases](docs/releases) for each version and the [roadmap](docs/roadmap.md) for what's next.
 
 <!-- Screenshot placeholders -->
 <!-- ![Device page](docs/images/device.png) -->
@@ -44,7 +44,7 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 | Weather entity | none | Used by the Weather print and the morning slip. Not needed if you only have one weather entity. |
 | Morning slip calendars | none | Today's events from these calendars print on the morning slip |
 | Morning slip to-do lists | none | Optional: unchecked items print as checkboxes |
-| Bottom of the morning slip | joke | Joke, fun fact, small sudoku or nothing |
+| Bottom of the morning slip | joke | Joke, fun fact, quote of the day, vocabulary word, small sudoku or nothing |
 | Use AI for jokes and fun facts | off | Off: jokes and facts come from bundled, human-written lists (facts from NOAA, NASA and the National Park Service, with credits). On: the AI is asked first. |
 
 ### Profiles
@@ -95,7 +95,7 @@ Every math strip ends with a harder ★ bonus problem. Kid sudoku (numbers) is 4
 | `button.tiny_press_puzzle_pack` | Prints sudoku, crossword and cryptogram in one go |
 | `button.tiny_press_bedtime_story` | Prints a bedtime story (Story length select) |
 | `button.tiny_press_next_chapter` | Prints the next chapter of the kid's adventure (gentler choice) |
-| `button.tiny_press_morning_slip` | Prints today's date, weather, events, to-dos and a joke, fact or puzzle |
+| `button.tiny_press_morning_slip` | Prints today's date, weather, events, to-dos and a joke, fact, quote, vocabulary word or puzzle |
 | `button.tiny_press_weather` | Prints current weather and a forecast of up to 10 days |
 | `button.tiny_press_answers` | Prints the answer key for the newest puzzle |
 | `button.tiny_press_test_page` | Prints the test page |
@@ -185,6 +185,20 @@ action: tiny_press.print_morning_slip
 
 Prints today's date, weather, calendar events, optional to-dos and the bottom section you chose. It's manual only, and it doesn't count toward kid-mode limits. Kid-mode dashboard cards may print one a day.
 
+### `tiny_press.print_history`
+
+```yaml
+action: tiny_press.print_history
+data:
+  entity_id: [sensor.bedroom_temperature, sensor.living_room_temperature]
+  hours: 24            # or days: 7, or start/end
+  style: graph         # graph (default), table or both
+  tall: false          # true: long graph turned onto the strip (read it sideways)
+  grid: false          # true: time gridlines and a frame
+```
+
+Numeric sensors print as a line graph with a summary (now, min, max, average, change). On/off and text sensors print as a timeline with time spent in each state. Tables are ruled into clear columns and rows. Periods over 3 days use hourly statistics. A tall graph reads like a landscape page when you turn the receipt sideways, with the header at the bottom of the strip.
+
 ### `tiny_press.preview`
 
 Draws a print without printing it. Returns `image` (a PNG data URI), `seed` and the usual fields. Call `tiny_press.print` with the same `seed` to print exactly what you saw.
@@ -227,6 +241,9 @@ kid_mode: true          # hold-to-print, no settings or answers, shows limits
 show_preview: false     # true: see the print first, then Shuffle or Print
 buttons: [maze, word_search, math, kid_sudoku, spelling, joke, kid_pack, story, next_chapter, sudoku, crossword, cryptogram, puzzle_pack, morning_slip, weather]
 # ignore_limits: true   # for a parents' dashboard
+history:                # optional one-tap history buttons (hidden in kid mode)
+  - {name: Freezer, entity: sensor.freezer_temperature, hours: 24}
+  - {name: Garage door, entity: binary_sensor.garage_door, days: 7, tall: true}
 ```
 
 <!-- ![Dashboard card](docs/images/card.png) -->
@@ -248,7 +265,7 @@ data:
 
 ## 5. Voice and Siri
 
-Assist voice phrases (an automation blueprint) and Siri shortcuts arrive in **v0.7.0**.
+Assist voice phrases (an automation blueprint) and Siri shortcuts arrive in **v0.8.0**.
 
 > **Heads-up for later:** the voice phrases use sentence triggers, which only run when Home Assistant's built-in conversation agent handles the sentence. If your Assist pipeline uses Claude/Anthropic (or another LLM) as its agent, turn on **"Prefer handling commands locally"** in the pipeline settings, or the phrases won't work.
 
@@ -279,7 +296,7 @@ Versioning is SemVer. `manifest.json` is the single source of truth: bump the mi
 
 ## Content sources
 
-Bundled content comes from sources that allow redistribution: fun facts from NOAA, NASA and the National Park Service (U.S. government works, public domain), K–3 words from the Dolch sight-word lists, and cryptogram quotes from public-domain works (Roosevelt, Muir, Lincoln, Shakespeare) as collected by the National Park Service. Jokes and the NYT-style crossword clues were written for Tiny Press. See [`data/LICENSE.md`](custom_components/tiny_press/data/LICENSE.md) for every source.
+Bundled content comes from sources that allow redistribution: fun facts from NOAA, NASA and the National Park Service (U.S. government works, public domain), K–3 words from the Dolch sight-word lists, and cryptogram quotes from public-domain works (Roosevelt, Muir, Lincoln, Shakespeare) as collected by the National Park Service, and vocabulary definitions from Open English WordNet (CC BY 4.0). Jokes and the NYT-style crossword clues were written for Tiny Press. See [`data/LICENSE.md`](custom_components/tiny_press/data/LICENSE.md) for every source.
 
 ## License
 
