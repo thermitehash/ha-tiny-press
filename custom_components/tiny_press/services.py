@@ -302,6 +302,10 @@ async def async_themed_joke(
     """
     if theme is None or not recognized or not (theme.jokes or theme.fact_sources):
         return None
+    if kind == "joke" and any(
+        o.solemn for o in recognized_days(hass, coordinator, dt_util.now().date())
+    ):
+        return None
     seed = jobs.new_seed()
     return await hass.async_add_executor_job(
         pick_themed,
@@ -850,6 +854,8 @@ async def async_morning_slip(
     bottom = options.get(CONF_MORNING_BOTTOM, "joke")
     if bottom == "feed":  # v0.9.0's headlines bottom: headlines are their own part now
         bottom = "quote"
+    if bottom == "joke" and any(o.solemn for o in found):
+        bottom = "fact"  # no jokes on a solemn day such as Yom Kippur
     joke = None
     puzzle = None
     quote = None

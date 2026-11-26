@@ -225,7 +225,7 @@
         "data_description": {
           "theme": "Auto themes word searches, crosswords, mazes, jokes and facts for today's holiday, or else the season (which follows your hemisphere). Kid interests still mix in.",
           "secular_days": "On by default: seasons and solstices, fun science days, public holidays, and the first day of school.",
-          "holiday_calendars": "Calendars from the Holidays integration (Settings → Devices & services → Add → Holidays). Today's all-day events print as banners.",
+          "holiday_calendars": "Calendars from the Holidays integration (Settings → Devices & services → Add → Holidays). Today's all-day events print as banners. Note: a country's public holidays can include religious days (for example Christmas or Good Friday), which print even if that holiday group is off.",
           "school_day": "Prints a back-to-school banner on this date.",
           "holiday_groups": "Tick the groups your household celebrates or wants to learn about. Next, you can untick single days."
         }
@@ -394,11 +394,11 @@
         "jewish": "Jewish holidays (Rosh Hashanah, Yom Kippur, Sukkot, Hanukkah, Purim, Passover)",
         "muslim": "Muslim holidays (start of Ramadan, Eid al-Fitr, Eid al-Adha)",
         "hindu": "Hindu festivals (Makar Sankranti and Pongal, Holi, Dussehra, Diwali, Onam)",
-        "sikh": "Sikh holidays (Vaisakhi, Guru Nanak's birthday)",
+        "sikh": "Sikh holidays (Vaisakhi, Guru Nanak's birthday, Diwali as Bandi Chhor Divas)",
         "buddhist": "Buddhist holidays (Losar, Vesak, Bodhi Day)",
         "christian": "Christian holidays (Easter, Orthodox Easter, Christmas)",
-        "persian": "Persian New Year (Nowruz)",
-        "heritage": "Cultural and heritage days (Juneteenth, Indigenous Peoples' Day, Día de los Muertos, Kwanzaa)",
+        "persian": "Nowruz (the spring-equinox new year)",
+        "heritage": "Cultural and heritage days, US (Juneteenth, Indigenous Peoples' Day, Día de los Muertos, Kwanzaa)",
         "fun": "Fun days (Valentine's Day, Halloween, New Year's Eve)"
       }
     }

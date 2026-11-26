@@ -47,11 +47,10 @@
    "   _|_|_"
   ],
   "harvest_hut": [
-   "    /\\/\\/\\/\\/\\",
-   "   /__________\\",
-   "   |  o    o  |",
-   "   |   (__)   |",
-   "   |__________|"
+   "  \\|/\\|/\\|/\\|/\\|/",
+   "  ===============",
+   "  |  o   @   o  |",
+   "  |_____________|"
   ],
   "dreidel": [
    "     |",
@@ -399,11 +398,11 @@
   },
   {
    "id": "persian",
-   "name": "Persian New Year"
+   "name": "Nowruz"
   },
   {
    "id": "heritage",
-   "name": "Cultural and heritage days"
+   "name": "Cultural and heritage days (US)"
   },
   {
    "id": "fun",
@@ -925,7 +924,7 @@
    "id": "juneteenth",
    "group": "heritage",
    "name": "Juneteenth",
-   "banner": "Juneteenth marks June 19, 1865, when news that enslaved people were free reached Galveston, Texas.",
+   "banner": "Juneteenth marks June 19, 1865, when Union troops in Galveston, Texas announced that enslaved people there were free.",
    "art": "sunrise",
    "when": {
     "fixed": "06-19"
@@ -951,7 +950,7 @@
    "id": "indigenous_peoples",
    "group": "heritage",
    "name": "Indigenous Peoples' Day",
-   "banner": "Indigenous Peoples' Day honors the histories and cultures of Native peoples.",
+   "banner": "Indigenous Peoples' Day, observed in many US states, honors the histories and cultures of Native peoples.",
    "art": "land_river",
    "when": {
     "nth": [
@@ -981,7 +980,7 @@
    "id": "dia_de_los_muertos",
    "group": "heritage",
    "name": "Día de los Muertos",
-   "banner": "Día de los Muertos is a Mexican tradition of remembering loved ones with marigolds, food and music.",
+   "banner": "Día de los Muertos is a Mexican tradition, also kept across Latin America, of remembering loved ones who have died, with ofrendas, marigolds, food and music.",
    "art": "marigold",
    "when": {
     "fixed": [
@@ -1036,7 +1035,7 @@
    "id": "lunar_new_year",
    "group": "east_asian",
    "name": "Lunar New Year",
-   "banner": "Lunar New Year starts the new year on the lunar calendar, with lanterns, dumplings and red envelopes.",
+   "banner": "Lunar New Year begins the new year on the lunisolar calendar, celebrated in China, Korea, Vietnam and beyond, with family meals, lanterns and red envelopes.",
    "art": "lantern",
    "when": {
     "table": true
@@ -1114,7 +1113,7 @@
    "id": "obon",
    "group": "east_asian",
    "name": "Obon",
-   "banner": "Obon is a Japanese summer festival for remembering family, with lanterns and dancing.",
+   "banner": "Obon is a Japanese festival honoring the spirits of ancestors, with lanterns and dancing. Some regions keep it in July.",
    "art": "floating_lanterns",
    "when": {
     "fixed": "08-15"
@@ -1166,7 +1165,7 @@
    "id": "yom_kippur",
    "group": "jewish",
    "name": "Yom Kippur",
-   "banner": "Yom Kippur is a Jewish day of reflection and fasting.",
+   "banner": "Yom Kippur, the Day of Atonement, is the most solemn day of the Jewish year, kept with fasting, prayer and reflection.",
    "art": "candle",
    "when": {
     "table": true
@@ -1186,7 +1185,8 @@
     "QUIET": "Not loud",
     "HOPE": "Wish for good things",
     "KIND": "Caring"
-   }
+   },
+   "solemn": true
   },
   {
    "id": "sukkot",
@@ -1218,7 +1218,7 @@
    "id": "hanukkah",
    "group": "jewish",
    "name": "Hanukkah",
-   "banner": "Hanukkah is the Jewish festival of lights, celebrated for eight nights with candles, dreidels and latkes.",
+   "banner": "Hanukkah is the Jewish festival of lights, eight nights remembering the rededication of the Temple in Jerusalem, with candles, dreidels and latkes.",
    "art": "dreidel",
    "when": {
     "table": true
@@ -1270,7 +1270,7 @@
    "id": "passover",
    "group": "jewish",
    "name": "Passover",
-   "banner": "Passover is a spring Jewish holiday that retells the story of the Exodus at a festive meal called a seder.",
+   "banner": "Passover is a Jewish holiday that retells the story of the Exodus at a festive meal called a seder.",
    "art": "flatbread",
    "when": {
     "table": true
@@ -1278,7 +1278,7 @@
    "words": [
     "MATZAH",
     "SEDER",
-    "SPRING",
+    "QUESTIONS",
     "FAMILY",
     "STORY",
     "MEAL",
@@ -1288,7 +1288,7 @@
    "clues": {
     "SEDER": "Passover meal",
     "STORY": "Tale retold",
-    "SPRING": "Season of Passover",
+    "MATZAH": "Flat Passover bread",
     "MEAL": "Family dinner"
    }
   },
@@ -1348,7 +1348,7 @@
    "id": "eid_al_adha",
    "group": "muslim",
    "name": "Eid al-Adha",
-   "banner": "Eid al-Adha is a Muslim holiday of prayer, sharing food with others and family gatherings.",
+   "banner": "Eid al-Adha, the Festival of Sacrifice, comes at the time of the Hajj pilgrimage and remembers Ibrahim's (Abraham's) faith, with prayer, sharing food and family gatherings.",
    "art": "shared_meal",
    "when": {
     "table": true
@@ -1374,7 +1374,7 @@
    "id": "makar_sankranti",
    "group": "hindu",
    "name": "Makar Sankranti and Pongal",
-   "banner": "Makar Sankranti and Pongal are January harvest festivals in India, with kites, sweets and rice cooked until it boils over.",
+   "banner": "Makar Sankranti and Pongal are January harvest festivals across India, kept by people of many faiths, with kites, sweets and rice cooked until it boils over.",
    "art": "sun_pot",
    "when": {
     "table": true
@@ -1400,7 +1400,7 @@
    "id": "holi",
    "group": "hindu",
    "name": "Holi",
-   "banner": "Holi is the Hindu festival of colors, welcoming spring with colored powder, music and sweets.",
+   "banner": "Holi is the Hindu festival of colors, marking the arrival of spring in India with colored powder, music and sweets.",
    "art": "color_splash",
    "when": {
     "table": true
@@ -1452,7 +1452,7 @@
    "id": "diwali",
    "group": "hindu",
    "name": "Diwali",
-   "banner": "Diwali is the festival of lights, celebrated by Hindus, Sikhs, Jains and some Buddhists with lamps, sweets and fireworks.",
+   "banner": "Diwali is the festival of lights, celebrated by Hindus, Sikhs (as Bandi Chhor Divas), Jains and some Buddhists, with lamps, sweets and fireworks.",
    "art": "diya",
    "when": {
     "table": true
@@ -1472,13 +1472,16 @@
     "GLOW": "Soft light",
     "RANGOLI": "Colorful floor pattern",
     "LIGHT": "Diwali brings it"
-   }
+   },
+   "also_groups": [
+    "sikh"
+   ]
   },
   {
    "id": "onam",
    "group": "hindu",
    "name": "Onam",
-   "banner": "Onam is a harvest festival in Kerala, India, with flower carpets, boat races and a big shared meal.",
+   "banner": "Onam is Kerala's harvest festival, celebrated by people of all faiths there, with flower carpets, boat races and a big shared meal.",
    "art": "flower_carpet",
    "when": {
     "table": true
@@ -1504,7 +1507,7 @@
    "id": "vaisakhi",
    "group": "sikh",
    "name": "Vaisakhi",
-   "banner": "Vaisakhi is a spring harvest festival in Punjab and an important day for Sikhs, with parades, music and dancing.",
+   "banner": "Vaisakhi is a harvest festival in Punjab; for Sikhs it also marks the founding of the Khalsa in 1699, with processions, music and dancing.",
    "art": "wheat",
    "when": {
     "table": true
@@ -1515,7 +1518,7 @@
     "PARADE",
     "DANCE",
     "DRUM",
-    "SPRING",
+    "BHANGRA",
     "MUSIC",
     "FESTIVAL"
    ],
@@ -1523,7 +1526,7 @@
     "WHEAT": "Golden grain",
     "DRUM": "Dhol, for one",
     "PARADE": "Street procession",
-    "SPRING": "Vaisakhi's season"
+    "BHANGRA": "Lively Punjabi dance"
    }
   },
   {
@@ -1556,7 +1559,7 @@
    "id": "losar",
    "group": "buddhist",
    "name": "Losar",
-   "banner": "Losar is the Tibetan New Year, with family gatherings, special foods and prayer flags.",
+   "banner": "Losar is the Tibetan, Bhutanese and Sherpa New Year, with family gatherings, special foods and prayer flags.",
    "art": "mountain_sun",
    "when": {
     "table": true
@@ -1582,7 +1585,7 @@
    "id": "vesak",
    "group": "buddhist",
    "name": "Vesak",
-   "banner": "Vesak, or Buddha Day, is a Buddhist festival with lanterns, flowers and acts of kindness. Its date varies by country.",
+   "banner": "Vesak, or Buddha Day, remembers the Buddha's birth, enlightenment and passing, with lanterns, flowers and kindness. Dates vary by country (this uses Indonesia's).",
    "art": "lotus_lantern",
    "when": {
     "table": true
@@ -1608,7 +1611,7 @@
    "id": "bodhi_day",
    "group": "buddhist",
    "name": "Bodhi Day",
-   "banner": "Bodhi Day is a Buddhist day of reflection, often marked with a decorated tree.",
+   "banner": "Bodhi Day remembers the Buddha's enlightenment under the Bodhi tree; many Japanese and other Mahayana Buddhists mark it on December 8.",
    "art": "tree_leaf",
    "when": {
     "fixed": "12-08"
@@ -1634,14 +1637,14 @@
    "id": "easter",
    "group": "christian",
    "name": "Easter",
-   "banner": "Easter is a Christian holiday in spring, often celebrated with painted eggs and family meals.",
+   "banner": "Easter is the Christian holiday celebrating the resurrection of Jesus, often also marked with painted eggs and family meals.",
    "art": "egg",
    "when": {
     "easter": "western"
    },
    "words": [
     "EGG",
-    "SPRING",
+    "SUNDAY",
     "BUNNY",
     "BASKET",
     "FLOWERS",
@@ -1660,14 +1663,14 @@
    "id": "orthodox_easter",
    "group": "christian",
    "name": "Orthodox Easter",
-   "banner": "Orthodox Easter is celebrated by Orthodox Christians in spring, often with red-dyed eggs and family feasts.",
+   "banner": "Orthodox Easter, or Pascha, is when Orthodox Christians celebrate the resurrection of Jesus, often with red-dyed eggs and family feasts.",
    "art": "egg",
    "when": {
     "easter": "orthodox"
    },
    "words": [
     "EGG",
-    "SPRING",
+    "SUNDAY",
     "BREAD",
     "FAMILY",
     "FEAST",
@@ -1679,14 +1682,14 @@
     "RED": "Color of dyed eggs",
     "FEAST": "Big meal",
     "BREAD": "Sweet Easter loaf",
-    "SPRING": "Season of Easter"
+    "BASKET": "It holds the eggs"
    }
   },
   {
    "id": "christmas",
    "group": "christian",
    "name": "Christmas",
-   "banner": "Christmas is celebrated on December 25 by Christians and many others, often with lights, gifts and family meals.",
+   "banner": "Christmas, on December 25, marks the birth of Jesus for Christians and is also widely kept as a cultural holiday, with lights, gifts and family meals.",
    "art": "fir_tree",
    "when": {
     "fixed": "12-25"
@@ -1695,7 +1698,7 @@
     "TREE",
     "LIGHTS",
     "GIFTS",
-    "SNOW",
+    "CAROL",
     "COOKIES",
     "FAMILY",
     "STAR",
@@ -1704,7 +1707,7 @@
    "clues": {
     "GIFTS": "Presents",
     "BELLS": "They jingle",
-    "SNOW": "Winter white",
+    "CAROL": "Holiday song",
     "STAR": "Tree topper"
    }
   },
@@ -1712,24 +1715,24 @@
    "id": "nowruz",
    "group": "persian",
    "name": "Nowruz",
-   "banner": "Nowruz is the Persian New Year, celebrated on the first day of spring with new beginnings, family visits and sprouted greens.",
+   "banner": "Nowruz is the new year at the March equinox, celebrated in Iran, Afghanistan, Central Asia and the Caucasus and by Kurdish, Zoroastrian and Baha'i communities, with family visits and sprouted greens.",
    "art": "flower",
    "when": {
     "table": true
    },
    "words": [
-    "SPRING",
+    "EQUINOX",
     "NEWYEAR",
     "SPROUTS",
     "FAMILY",
     "VISIT",
     "FLOWERS",
     "CLEAN",
-    "GOLDFISH"
+    "MIRROR"
    ],
    "clues": {
     "SPROUTS": "New green shoots",
-    "SPRING": "Nowruz's season",
+    "MIRROR": "Reflective table item",
     "VISIT": "Drop by",
     "CLEAN": "Spick and span"
    }
@@ -1932,7 +1935,7 @@
   "hanukkah": [
    "2026-12-05",
    "2027-12-25",
-   "2028-01-01",
+   "2028-12-13",
    "2029-12-02",
    "2030-12-21",
    "2031-12-10",
@@ -1940,7 +1943,7 @@
    "2033-12-17",
    "2034-12-07",
    "2035-12-26",
-   "2036-01-01"
+   "2036-12-14"
   ],
   "holi": [
    "2026-03-04",

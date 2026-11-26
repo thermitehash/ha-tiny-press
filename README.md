@@ -70,8 +70,8 @@ Configure → **Holidays and themes**:
 - **Holiday groups** (off by default, all treated the same way):
   - East Asian festivals
   - Jewish, Muslim, Hindu, Sikh, Buddhist and Christian holidays
-  - Persian New Year
-  - Cultural and heritage days
+  - Nowruz
+  - Cultural and heritage days (US)
   - Fun days
 
   After picking groups, untick any single day you don't want.

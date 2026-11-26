@@ -16,6 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from functools import cache
+import hashlib
 import math
 from typing import Any
 
@@ -194,6 +195,7 @@ class Observance:
     banner: str
     art: tuple[str, ...] = ()
     theme: Theme | None = None
+    solemn: bool = False  # no jokes on this day
 
 
 def _theme_from(item: dict[str, Any], theme_id: str, name: str) -> Theme:
@@ -262,8 +264,9 @@ def todays(
 ) -> list[Observance]:
     """Days recognized on ``day``, most specific first.
 
-    Order: custom family days, faith and cultural days, first day of school,
-    public holidays, science days, then the season.
+    Order: custom family days, faith and cultural days, fun days, first day
+    of school, public holidays, science days, then the season. Days of the
+    same rank take turns by date.
     """
     data = _data()
     out: list[Observance] = []
@@ -282,7 +285,11 @@ def todays(
     secular_groups = {g["id"] for g in data["groups"] if g.get("secular")}
     for item in data["observances"]:
         group = item["group"]
-        on = group in secular if group in secular_groups else group in picked_groups
+        member_of = [group, *item.get("also_groups", ())]
+        on = any(
+            g in secular if g in secular_groups else g in picked_groups
+            for g in member_of
+        )
         if on and item["id"] not in excluded and falls_on(item, day):
             out.append(
                 Observance(
@@ -292,6 +299,7 @@ def todays(
                     item["banner"],
                     art(item.get("art")),
                     _theme_from(item, item["id"], item["name"]),
+                    bool(item.get("solemn")),
                 )
             )
     if "school" in secular and school_day == day.isoformat():
@@ -331,6 +339,19 @@ def todays(
                     theme(season),
                 )
             )
-    order = {"custom": 0, "seasons": 5, "science": 4, "public": 3, "school": 2}
-    out.sort(key=lambda o: order.get(o.group, 1))
+    # Faith and cultural days rank together, above fun days; days of the same
+    # rank take turns by date, so no tradition always wins a shared day.
+    order = {
+        "custom": 0,
+        "fun": 2,
+        "school": 3,
+        "public": 4,
+        "science": 5,
+        "seasons": 6,
+    }
+
+    def turn(obs: Observance) -> str:
+        return hashlib.sha256(f"{day.isoformat()}|{obs.id}".encode()).hexdigest()
+
+    out.sort(key=lambda o: (order.get(o.group, 1), turn(o)))
     return out

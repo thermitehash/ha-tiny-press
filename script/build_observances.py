@@ -14,6 +14,7 @@ their first full day.
 
 from __future__ import annotations
 
+from datetime import date, timedelta
 import json
 from pathlib import Path
 
@@ -71,23 +72,24 @@ EXACT = {"Dussehra"}
 
 
 def _country_dates(country: str, name: str) -> list[str]:
+    """Start days only: a multi-day holiday that runs over New Year (Hanukkah)
+    counts for the year it starts in, not the year it ends in."""
     cls = holidays.country_holidays(country)
-    found = []
-    for year in range(FIRST, LAST + 1):
+    days: set[date] = set()
+    for year in range(FIRST - 1, LAST + 2):
         table = holidays.country_holidays(
             country,
             years=year,
             categories=cls.supported_categories,
             language="en_US",
         )
-        days = sorted(
+        days |= {
             day
             for day, label in table.items()
             if any(_matches(part.strip(), name) for part in label.split(";"))
-        )
-        if days:
-            found.append(days[0].isoformat())  # the first day only
-    return found
+        }
+    starts = sorted(d for d in days if d - timedelta(days=1) not in days)
+    return [d.isoformat() for d in starts if FIRST <= d.year <= LAST]
 
 
 def main() -> None:

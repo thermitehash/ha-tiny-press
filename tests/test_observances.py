@@ -59,7 +59,7 @@ def test_data_is_complete() -> None:
         assert item["group"] in groups
         assert ob.art(item["art"]), item["id"]
         assert len(item["words"]) >= 6 and item.get("clues"), item["id"]
-        assert len(item["banner"]) <= 170, item["id"]
+        assert len(item["banner"]) <= 200, item["id"]
         if item["when"].get("table"):
             years = {d[:4] for d in ob._data()["dates"][item["id"]]}
             assert {str(y) for y in range(2026, 2036)} <= years, item["id"]
@@ -104,6 +104,42 @@ def test_todays_groups_and_order() -> None:
     dead = [date(2026, 11, 1), date(2026, 11, 2)]
     assert all(
         ids(d, picked_groups={"heritage"}) == ["dia_de_los_muertos"] for d in dead
+    )
+
+
+def test_review_fixes() -> None:
+    """Fixes from the cultural-sensitivity review."""
+
+    def ids(day: date, groups: set[str]) -> list[str]:
+        return [
+            o.id
+            for o in ob.todays(day, to_local=utc, latitude=40, picked_groups=groups)
+        ]
+
+    # Hanukkah counts for the year it starts in (not a Jan 1 tail end).
+    assert ids(date(2028, 12, 13), {"jewish"}) == ["hanukkah"]
+    assert ids(date(2028, 1, 1), {"jewish"}) == []
+    # Faith and cultural days outrank fun days on a shared date.
+    shared = ids(date(2029, 2, 14), {"fun", "muslim", "buddhist"})
+    assert shared[-1] == "valentines" and len(shared) == 3
+    # Days of the same rank take turns: neither always wins over the years.
+    firsts = {
+        ids(day, {"east_asian"})[0]
+        for day in (
+            date(y, *map(int, d.split("-")[1:]))
+            for y, d in [(int(d[:4]), d) for d in ob._data()["dates"]["chuseok"]]
+        )
+    }
+    assert firsts == {"mid_autumn", "chuseok"}
+    # Diwali belongs to the Sikh group too (Bandi Chhor Divas).
+    assert ids(date(2026, 11, 8), {"sikh"}) == ["diwali"]
+    # Yom Kippur is solemn: no jokes.
+    yom = ob.todays(
+        date(2026, 9, 21), to_local=utc, latitude=40, picked_groups={"jewish"}
+    )
+    assert yom[0].solemn and not yom[0].theme.jokes
+    assert "Union troops" in next(
+        o["banner"] for o in ob.all_observances() if o["id"] == "juneteenth"
     )
 
 
@@ -295,3 +331,27 @@ async def test_holiday_options(
     )
     await hass.async_block_till_done()
     assert config_entry.options["custom_days"] == []
+
+
+async def test_no_jokes_on_a_solemn_day(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    printer: FakePrinter,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    await hass.config.async_set_time_zone("UTC")
+    freezer.move_to("2026-09-21 12:00:00+00:00")  # Yom Kippur
+    await _setup(hass, config_entry, holiday_groups=["jewish"], morning_bottom="joke")
+    captured: list[morning.MorningSlip] = []
+    real = jobs.morning_job
+
+    def spy(slip: morning.MorningSlip) -> Any:
+        captured.append(slip)
+        return real(slip)
+
+    with patch.object(jobs, "morning_job", spy):
+        await hass.services.async_call(
+            DOMAIN, "print_morning_slip", {}, blocking=True, return_response=True
+        )
+    assert captured[0].banner.id == "yom_kippur"
+    assert captured[0].joke.kind == "fact"  # the joke bottom becomes a fact
