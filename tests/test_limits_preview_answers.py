@@ -246,24 +246,89 @@ async def test_limits_options_flow(
     assert config_entry.runtime_data.limiter.enabled
 
 
-async def test_card_is_served(
+async def test_card_is_served_yaml_fallback(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
     printer: FakePrinter,
     hass_client,
 ) -> None:
-    # The real frontend package isn't installed in tests: stand in for it.
+    # No storage-mode dashboards: fall back to the frontend's extra-module hook.
     assert await async_setup_component(hass, "http", {})
     hass.config.components.add("frontend")
     with patch("homeassistant.components.frontend.add_extra_js_url") as add_js:
         assert await async_setup_component(hass, DOMAIN, {})
         await hass.async_block_till_done()
     add_js.assert_called_once()
-    assert add_js.call_args[0][1] == f"{CARD_URL}?v=0.5.0"
+    assert add_js.call_args[0][1] == f"{CARD_URL}?v=0.5.1"
     client = await hass_client()
     response = await client.get(CARD_URL)
     assert response.status == 200
     assert 'customElements.define("tiny-press-card"' in await response.text()
+
+
+class FakeResources:
+    """Stands in for Lovelace's storage-mode resource collection."""
+
+    def __init__(self, items: list[dict[str, str]]) -> None:
+        self.items = {i["id"]: dict(i) for i in items}
+
+    async def async_get_info(self) -> dict[str, int]:
+        return {"resources": len(self.items)}
+
+    def async_items(self) -> list[dict[str, str]]:
+        return list(self.items.values())
+
+    async def async_create_item(self, data: dict[str, str]) -> dict[str, str]:
+        item = {
+            "id": f"id{len(self.items)}",
+            "type": data["res_type"],
+            "url": data["url"],
+        }
+        self.items[item["id"]] = item
+        return item
+
+    async def async_update_item(self, item_id: str, data: dict[str, str]) -> dict:
+        self.items[item_id]["url"] = data["url"]
+        return self.items[item_id]
+
+    async def async_delete_item(self, item_id: str) -> None:
+        del self.items[item_id]
+
+
+@pytest.mark.parametrize(
+    "existing",
+    [
+        [],
+        [{"id": "old", "type": "module", "url": f"{CARD_URL}?v=0.3.0"}],
+        [
+            {"id": "a", "type": "module", "url": f"{CARD_URL}?v=0.3.0"},
+            {"id": "b", "type": "module", "url": CARD_URL},
+            {"id": "other", "type": "module", "url": "/local/other.js"},
+        ],
+    ],
+)
+async def test_card_added_to_dashboard_resources(
+    hass: HomeAssistant, config_entry: MockConfigEntry, printer: FakePrinter, existing
+) -> None:
+    from types import SimpleNamespace
+
+    from homeassistant.components.lovelace.const import LOVELACE_DATA
+
+    resources = FakeResources(existing)
+    hass.data[LOVELACE_DATA] = SimpleNamespace(
+        resource_mode="storage", resources=resources
+    )
+    assert await async_setup_component(hass, "http", {})
+    assert await async_setup_component(hass, DOMAIN, {})
+    await hass.async_block_till_done()
+    mine = [i for i in resources.async_items() if i["url"].startswith(CARD_URL)]
+    assert [i["url"] for i in mine] == [f"{CARD_URL}?v=0.5.1"]
+    assert len(resources.items) == len(mine) + sum(
+        1 for i in existing if not i["url"].startswith(CARD_URL)
+    )
+    # Removing the last printer removes the resource.
+    assert await hass.config_entries.async_remove(config_entry.entry_id)
+    assert not [i for i in resources.async_items() if i["url"].startswith(CARD_URL)]
 
 
 def test_card_version_matches_manifest() -> None:

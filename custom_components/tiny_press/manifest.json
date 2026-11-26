@@ -6,7 +6,8 @@
     "weather",
     "calendar",
     "frontend",
-    "http"
+    "http",
+    "lovelace"
   ],
   "codeowners": [
     "@thermitehash"
@@ -38,5 +39,5 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/thermitehash/ha-tiny-press/issues",
   "requirements": [],
-  "version": "0.5.0"
+  "version": "0.5.1"
 }

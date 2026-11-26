@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
-from .card import async_register_card
+from .card import async_register_card, async_unregister_card
 from .const import DOMAIN
 from .coordinator import TinyPressConfigEntry, TinyPressCoordinator
 from .generators.data import preload
@@ -58,3 +58,10 @@ async def async_remove_entry(hass: HomeAssistant, entry: TinyPressConfigEntry) -
     """Delete stored data and any open issue when a printer is removed."""
     await TinyPressStore(hass, entry.entry_id).async_remove()
     async_clear_offline_issue(hass, entry.entry_id)
+    remaining = [
+        e
+        for e in hass.config_entries.async_entries(DOMAIN)
+        if e.entry_id != entry.entry_id
+    ]
+    if not remaining:
+        await async_unregister_card(hass)
