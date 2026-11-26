@@ -1,9 +1,11 @@
 """Kid-mode rate limiter: cooldown, prints per hour/day and a daily paper budget.
 
-Enforced in the integration, so buttons, dashboard cards, voice phrases and
-Siri all share the same limits. Only kid prints count. Parents bypass the
-limits with ``ignore_limits: true`` on an action (or, if the option is on,
-by being an admin user). Counts reset at local midnight.
+Enforced in the integration, so buttons, dashboard cards and voice phrases
+all share the same limits. Only kid prints count, and each kid has their own
+counts (a print counts against the kid it's for). Parents bypass the limits
+with ``ignore_limits: true`` on an action; admin users and adults linked to a
+profile never count. A kid's own Home Assistant user can't bypass them.
+Counts reset at local midnight.
 """
 
 from __future__ import annotations
@@ -64,6 +66,7 @@ class LimitStatus:
     paper_left_mm: float | None = None
     next_print_at: datetime | None = None  # None: a print is allowed now
     reason: str | None = None  # why the next print would be blocked
+    blocked_since: datetime | None = None  # when the wait began (the last print)
 
     def as_attributes(self) -> dict[str, Any]:
         """State attributes for the sensor (and the dashboard card)."""
@@ -75,6 +78,9 @@ class LimitStatus:
             if self.next_print_at
             else None,
             "blocked_reason": self.reason,
+            "blocked_since": self.blocked_since.isoformat()
+            if self.blocked_since
+            else None,
         }
 
 
@@ -99,20 +105,23 @@ class RateLimiter:
         """True when admin users aren't limited."""
         return bool(self.options[CONF_ADMINS_SKIP])
 
-    def _today(self, now: datetime) -> dict[str, Any]:
+    def _today(self, now: datetime, kid: str | None) -> dict[str, Any]:
+        """Today's counts for one kid (each kid has their own)."""
         day = dt_util.as_local(now).date().isoformat()
         data = self.store.data.setdefault("limits", {})
-        if data.get("day") != day:
-            data.clear()
-            data.update({"day": day, "prints": [], "paper_mm": 0.0})
-        return data
+        if data.get("day") != day or "kids" not in data:
+            data.clear()  # a new day (or counts from before per-kid limits)
+            data.update({"day": day, "kids": {}})
+        return data["kids"].setdefault(kid or "", {"prints": [], "paper_mm": 0.0})
 
-    def status(self, now: datetime | None = None) -> LimitStatus:
-        """Compute what's allowed at ``now``."""
+    def status(
+        self, kid: str | None = None, now: datetime | None = None
+    ) -> LimitStatus:
+        """Compute what a kid (profile ID) may print at ``now``."""
         if not self.enabled:
             return LimitStatus(enabled=False)
         now = now or dt_util.utcnow()
-        data = self._today(now)
+        data = self._today(now, kid)
         prints = sorted(datetime.fromisoformat(p) for p in data["prints"])
         per_day = int(self.options[CONF_PER_DAY])
         per_hour = int(self.options[CONF_PER_HOUR])
@@ -132,14 +141,19 @@ class RateLimiter:
         if prints and prints[-1] + cooldown > now:
             waits.append((prints[-1] + cooldown, REASON_COOLDOWN))
         next_at, reason = max(waits) if waits else (None, None)
-        return LimitStatus(True, len(prints), left, round(paper_left), next_at, reason)
+        since = prints[-1] if next_at and prints else None
+        return LimitStatus(
+            True, len(prints), left, round(paper_left), next_at, reason, since
+        )
 
-    def record(self, length_mm: float, now: datetime | None = None) -> None:
-        """Count a finished kid print."""
+    def record(
+        self, length_mm: float, kid: str | None = None, now: datetime | None = None
+    ) -> None:
+        """Count a finished print against a kid (profile ID)."""
         if not self.enabled:
             return
         now = now or dt_util.utcnow()
-        data = self._today(now)
+        data = self._today(now, kid)
         data["prints"].append(now.isoformat())
         data["paper_mm"] = round(data["paper_mm"] + length_mm, 1)
         self.store.save()

@@ -188,22 +188,50 @@ def maze_drawing(width: int, maze: Maze, *, show_solution: bool = False) -> Imag
     return img
 
 
-def ascii_art(width: int, lines: tuple[str, ...], px: int = 20) -> Image.Image:
-    """Monospaced ASCII art, centered, as a drawing."""
-    face = font("mono", px, False)
+def kid_title(title: str, who: str | None) -> str:
+    """Title a print for a kid: "Maze" becomes "Rosie's maze" (or "James' maze")."""
+    if not who:
+        return title
+    owner = f"{who}'" if who.endswith(("s", "S")) else f"{who}'s"
+    return f"{owner} {title[:1].lower()}{title[1:]}"
+
+
+ART_MAX_PX = 26
+
+
+def ascii_art(width: int, lines: tuple[str, ...], px: int = ART_MAX_PX) -> Image.Image:
+    """Monospaced ASCII art, centered, as a drawing.
+
+    Bold and slightly thickened, as large as fits (up to ``px``): thin
+    anti-aliased strokes come out faint once the page is turned into 1-bit
+    printer dots.
+    """
+    cols = max((len(line) for line in lines), default=1) or 1
+    room = width - 2 * MARGIN - 4
+    while px > 12 and font("mono", px, True).getlength("M") * cols > room:
+        px -= 1
+    face = font("mono", px, True)
+    stroke = 1 if px >= 16 else 0
     ascent, descent = face.getmetrics()
-    line_h = ascent + descent
+    line_h = ascent + descent + 2 * stroke
     advance = face.getlength("M")  # monospaced
-    widest = max((len(line) for line in lines), default=0) * advance
-    img = Image.new("L", (width, line_h * len(lines) + 4), 255)
+    widest = cols * advance
+    img = Image.new("L", (width, line_h * len(lines) + 4 + 2 * stroke), 255)
     draw = ImageDraw.Draw(img)
-    left = max(0, (width - widest) / 2)
+    left = max(MARGIN, (width - widest) / 2)
     for i, line in enumerate(lines):
         # One character at a time, so the font can't join "_|_" or "-|" into
         # ligatures.
         for j, ch in enumerate(line):
             if ch != " ":
-                draw.text((left + j * advance, i * line_h), ch, font=face, fill=0)
+                draw.text(
+                    (left + j * advance, i * line_h + stroke),
+                    ch,
+                    font=face,
+                    fill=0,
+                    stroke_width=stroke,
+                    stroke_fill=0,
+                )
     return img
 
 
@@ -214,13 +242,14 @@ def maze_page(
     *,
     answer: bool = False,
     theme: Theme | None = None,
+    who: str | None = None,
 ) -> Canvas:
     """Lay out a maze printout (or its answer key), themed when given one."""
     canvas = Canvas(width)
     if theme is not None and theme.art and not answer:
-        canvas.drawing(ascii_art(width, theme.art, px=18))
+        canvas.drawing(ascii_art(width, theme.art, px=22))
     name = f"{theme.name} maze" if theme is not None and not answer else "Maze"
-    canvas.title("Maze answer" if answer else name)
+    canvas.title("Maze answer" if answer else kid_title(name, who))
     canvas.text("Start at the dot. Find the star!", px=24, align="center")
     canvas.space(4)
     canvas.drawing(maze_drawing(width, maze, show_solution=answer))
@@ -284,11 +313,16 @@ def _checkbox_columns(width: int, words: list[str], px: int = 26) -> Image.Image
 
 
 def word_search_page(
-    width: int, puzzle: WordSearch, footer: Footer, *, answer: bool = False
+    width: int,
+    puzzle: WordSearch,
+    footer: Footer,
+    *,
+    answer: bool = False,
+    who: str | None = None,
 ) -> Canvas:
     """Lay out a word search (or its answer key)."""
     canvas = Canvas(width)
-    canvas.title("Word search answers" if answer else "Word search")
+    canvas.title("Word search answers" if answer else kid_title("Word search", who))
     canvas.space(6)
     canvas.drawing(word_search_drawing(width, puzzle, show_answers=answer))
     canvas.space(10)
@@ -363,11 +397,16 @@ def _grid(width: int, tiles: list[Image.Image], cols: int) -> Image.Image:
 
 
 def math_page(
-    width: int, sheet: MathStrip, footer: Footer, *, answer: bool = False
+    width: int,
+    sheet: MathStrip,
+    footer: Footer,
+    *,
+    answer: bool = False,
+    who: str | None = None,
 ) -> Canvas:
     """Lay out a math strip (or its answer key)."""
     canvas = Canvas(width)
-    canvas.title("Math answers" if answer else "Math")
+    canvas.title("Math answers" if answer else kid_title("Math", who))
     canvas.space(8)
     inner = width - 2 * MARGIN
     px = 40 if width >= 500 else 34
@@ -413,10 +452,15 @@ def math_page(
     return canvas
 
 
-def joke_page(width: int, joke: Joke, footer: Footer) -> Canvas:
+def joke_page(width: int, joke: Joke, footer: Footer, who: str | None = None) -> Canvas:
     """Lay out a joke (punchline upside down below a fold) or a fun fact."""
     canvas = Canvas(width)
-    canvas.title("Joke time!" if joke.punchline else "Fun fact!")
+    if who:
+        canvas.title(
+            f"Joke time, {who}!" if joke.punchline else f"A fun fact for {who}!"
+        )
+    else:
+        canvas.title("Joke time!" if joke.punchline else "Fun fact!")
     canvas.space(10)
     canvas.text(joke.setup, px=34, align="center")
     if joke.punchline:
@@ -717,11 +761,16 @@ def sudoku_drawing(
 
 
 def sudoku_page(
-    width: int, puzzle: Sudoku, footer: Footer, *, answer: bool = False
+    width: int,
+    puzzle: Sudoku,
+    footer: Footer,
+    *,
+    answer: bool = False,
+    who: str | None = None,
 ) -> Canvas:
     """Lay out a kid sudoku (or its answer key)."""
     canvas = Canvas(width)
-    canvas.title("Sudoku answers" if answer else "Sudoku")
+    canvas.title("Sudoku answers" if answer else kid_title("Sudoku", who))
     n = puzzle.size
     canvas.text(
         f"Write 1 to {n} once in every row, column and box.", px=24, align="center"
@@ -734,11 +783,16 @@ def sudoku_page(
 
 
 def spelling_page(
-    width: int, sheet: SpellingSheet, footer: Footer, *, answer: bool = False
+    width: int,
+    sheet: SpellingSheet,
+    footer: Footer,
+    *,
+    answer: bool = False,
+    who: str | None = None,
 ) -> Canvas:
     """Lay out unscramble and missing-letter practice (or the answer key)."""
     canvas = Canvas(width)
-    canvas.title("Spelling answers" if answer else "Spelling practice")
+    canvas.title("Spelling answers" if answer else kid_title("Spelling practice", who))
     canvas.space(4)
     px = 30 if width >= 500 else 26
     mono = font("mono", px, True)

@@ -57,6 +57,7 @@ from .const import (
     PAPER_DOTS,
     SETTING_MAZE_DIFFICULTY,
     SETTING_MORNING_KID_DAY,
+    SETTING_MORNING_LAST,
     SETTING_STORY_LENGTH,
     SETTING_SUDOKU_DIFFICULTY,
     TEXT_SIZES,
@@ -78,6 +79,7 @@ from .generators.jokes import Joke, pick_themed
 from .generators.story import pick_offline
 from .generators.weather import WeatherReport, build_report
 from .limits import KID_TYPES
+from .profiles import ADULT, KID, Profile, load_profiles
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -239,11 +241,18 @@ def test_page_info(coordinator: TinyPressCoordinator) -> tuple[str, dict[str, st
     }
 
 
-def maze_difficulty(coordinator: TinyPressCoordinator, value: str | None) -> Difficulty:
-    """Loose difficulty text, else the Maze difficulty select."""
-    default = Difficulty(
-        coordinator.store.get_setting(SETTING_MAZE_DIFFICULTY, Difficulty.EASY)
-    )
+def maze_difficulty(
+    coordinator: TinyPressCoordinator,
+    value: str | None,
+    kid: Profile | None = None,
+) -> Difficulty:
+    """Loose difficulty text, else the kid's maze setting, else the select."""
+    if kid is not None and kid.maze_difficulty:
+        default = Difficulty(kid.maze_difficulty)
+    else:
+        default = Difficulty(
+            coordinator.store.get_setting(SETTING_MAZE_DIFFICULTY, Difficulty.EASY)
+        )
     return normalize_difficulty(value, default)
 
 
@@ -331,8 +340,11 @@ async def async_build_job(
     theme = current_theme(hass, coordinator)
     match kind:
         case PrintType.MAZE:
-            level = maze_difficulty(coordinator, difficulty)
-            return partial(jobs.maze_job, level, seed, profile, theme[0])
+            kid = coordinator.kid_profile(profile)
+            level = maze_difficulty(coordinator, difficulty, kid)
+            return partial(
+                jobs.maze_job, level, seed, kid.name, theme[0], kid.display_name
+            )
         case PrintType.WORD_SEARCH:
             return partial(
                 jobs.word_search_job, coordinator.kid_profile(profile), seed, theme[0]
@@ -361,7 +373,7 @@ async def async_build_job(
             return jobs.joke_job(joke, kid)
         case PrintType.KID_PACK:
             kid = coordinator.kid_profile(profile)
-            level = maze_difficulty(coordinator, difficulty)
+            level = maze_difficulty(coordinator, difficulty, kid)
             return partial(jobs.kid_pack_job, kid, level, seed, theme[0])
         case PrintType.KID_SUDOKU:
             kid = coordinator.kid_profile(profile)
@@ -528,15 +540,16 @@ def check_limits(
     kind: PrintType,
     profile: str | None,
 ) -> None:
-    """Raise if kid-mode limits block this print (and fire an event)."""
-    status = coordinator.limiter.status()
+    """Raise if this kid's limits block the print (and fire an event)."""
+    kid = coordinator.kid_profile(profile)
+    status = coordinator.limiter.status(kid.id)
     if status.next_print_at is None:
         return
     hass.bus.async_fire(
         EVENT_RATE_LIMITED,
         {
             "type": kind.value,
-            "profile": profile,
+            "profile": kid.name,
             "reason": status.reason,
             "next_print_at": status.next_print_at.isoformat(),
         },
@@ -642,7 +655,7 @@ async def async_story(
             )
     response = await coordinator.async_print(jobs.story_job(story, kid, length))
     if limited:
-        coordinator.limiter.record(response["length_mm"])
+        coordinator.limiter.record(response["length_mm"], kid.id)
         coordinator.async_update_listeners()
     return response
 
@@ -782,14 +795,16 @@ async def _async_public_holidays(
 
 
 async def async_morning_slip(
-    hass: HomeAssistant, coordinator: TinyPressCoordinator, *, kid_mode: bool = False
+    hass: HomeAssistant,
+    coordinator: TinyPressCoordinator,
+    *,
+    kid_mode: bool = False,
+    kid: str | None = None,
 ) -> dict[str, Any]:
-    """Print the morning slip. Never counts toward kid limits; once a day from kid mode."""
+    """Print the morning slip (never limited; once a day per kid from kid mode)."""
     today = dt_util.now().date()
-    if (
-        kid_mode
-        and coordinator.store.get_setting(SETTING_MORNING_KID_DAY) == today.isoformat()
-    ):
+    kid_key = f"{SETTING_MORNING_KID_DAY}:{kid}" if kid else SETTING_MORNING_KID_DAY
+    if kid_mode and coordinator.store.get_setting(kid_key) == today.isoformat():
         raise ServiceValidationError(
             translation_domain=DOMAIN, translation_key="morning_once_a_day"
         )
@@ -907,7 +922,10 @@ async def async_morning_slip(
     )
     response = await coordinator.async_print(jobs.morning_job(slip))
     if kid_mode:
-        coordinator.store.set_setting(SETTING_MORNING_KID_DAY, today.isoformat())
+        coordinator.store.set_setting(kid_key, today.isoformat())
+    # Cards grey the Morning slip out once it's printed today, for everyone.
+    coordinator.store.set_setting(SETTING_MORNING_LAST, dt_util.utcnow().isoformat())
+    coordinator.async_update_listeners()
     return response
 
 
@@ -1047,7 +1065,9 @@ async def async_print_type(
     if seed is None and response.get("quote_index") is not None:
         coordinator.store.remember("cryptogram", response["quote_index"])
     if limited:
-        coordinator.limiter.record(response["length_mm"])
+        coordinator.limiter.record(
+            response["length_mm"], coordinator.kid_profile(profile).id
+        )
         coordinator.async_update_listeners()
     return response
 
@@ -1081,6 +1101,49 @@ async def _is_admin(hass: HomeAssistant, call: ServiceCall) -> bool:
         return False
     user = await hass.auth.async_get_user(call.context.user_id)
     return bool(user and user.is_admin)
+
+
+async def caller_rules(
+    hass: HomeAssistant, call: ServiceCall, coordinator: TinyPressCoordinator
+) -> tuple[str | None, bool]:
+    """Return the profile and ignore-limits flag to use, given who's calling.
+
+    - A kid's own Home Assistant user always prints as that kid, and kid-mode
+      limits always apply (they can't pick another profile or skip limits).
+    - Admins and adults linked to a profile never count against limits.
+    - Anyone else (automations, voice, shared accounts) works as before.
+    """
+    profile = call.data.get(ATTR_PROFILE)
+    ignore = bool(call.data.get(ATTR_IGNORE_LIMITS))
+    user_id = call.context.user_id
+    if not user_id:
+        return profile, ignore
+    user = await hass.auth.async_get_user(user_id)
+    admin = bool(user and user.is_admin)
+    linked = linked_profile(coordinator, user_id)
+    if linked is not None and linked.kind == KID and not admin:
+        return linked.id, False
+    if admin or (linked is not None and linked.kind == ADULT):
+        ignore = True
+    if profile is None and linked is not None:
+        profile = linked.id
+    return profile, ignore
+
+
+def linked_profile(
+    coordinator: TinyPressCoordinator, user_id: str | None
+) -> Profile | None:
+    """Find the profile linked to a Home Assistant user, if any."""
+    if not user_id:
+        return None
+    return next(
+        (
+            p
+            for p in load_profiles(dict(coordinator.config_entry.options))
+            if p.ha_user == user_id
+        ),
+        None,
+    )
 
 
 def _coordinator(hass: HomeAssistant, call: ServiceCall) -> TinyPressCoordinator:
@@ -1136,16 +1199,22 @@ def resolve_image_path(hass: HomeAssistant, raw: str) -> Path:
 def async_setup_services(hass: HomeAssistant) -> None:
     """Register all actions."""
 
-    async def handle_print(call: ServiceCall) -> ServiceResponse:
-        coordinator = _coordinator(hass, call)
-        ignore = bool(call.data.get(ATTR_IGNORE_LIMITS)) or (
+    async def _rules(
+        call: ServiceCall, coordinator: TinyPressCoordinator
+    ) -> tuple[str | None, bool]:
+        profile, ignore = await caller_rules(hass, call, coordinator)
+        return profile, ignore or (
             coordinator.limiter.admins_skip and await _is_admin(hass, call)
         )
+
+    async def handle_print(call: ServiceCall) -> ServiceResponse:
+        coordinator = _coordinator(hass, call)
+        profile, ignore = await _rules(call, coordinator)
         return await async_print_type(
             hass,
             coordinator,
             PrintType(call.data[ATTR_TYPE]),
-            profile=call.data.get(ATTR_PROFILE),
+            profile=profile,
             difficulty=call.data.get(ATTR_DIFFICULTY),
             seed=call.data.get(ATTR_SEED),
             ignore_limits=ignore,
@@ -1154,50 +1223,55 @@ def async_setup_services(hass: HomeAssistant) -> None:
 
     async def handle_preview(call: ServiceCall) -> ServiceResponse:
         coordinator = _coordinator(hass, call)
+        profile, _ignore = await caller_rules(hass, call, coordinator)
         return await async_preview_type(
             hass,
             coordinator,
             PrintType(call.data[ATTR_TYPE]),
-            profile=call.data.get(ATTR_PROFILE),
+            profile=profile,
             difficulty=call.data.get(ATTR_DIFFICULTY),
             seed=call.data.get(ATTR_SEED),
             words=call.data.get(ATTR_WORDS),
         )
 
-    async def _ignore(call: ServiceCall, coordinator: TinyPressCoordinator) -> bool:
-        return bool(call.data.get(ATTR_IGNORE_LIMITS)) or (
-            coordinator.limiter.admins_skip and await _is_admin(hass, call)
-        )
-
     async def handle_print_story(call: ServiceCall) -> ServiceResponse:
         coordinator = _coordinator(hass, call)
+        profile, ignore = await _rules(call, coordinator)
         return await async_story(
             hass,
             coordinator,
-            profile=call.data.get(ATTR_PROFILE),
+            profile=profile,
             topic=call.data.get("topic"),
             length=call.data.get("length"),
             mode=call.data["mode"],
-            ignore_limits=await _ignore(call, coordinator),
+            ignore_limits=ignore,
         )
 
     async def handle_continue_story(call: ServiceCall) -> ServiceResponse:
         coordinator = _coordinator(hass, call)
+        profile, ignore = await _rules(call, coordinator)
         return await async_story(
             hass,
             coordinator,
-            profile=call.data.get(ATTR_PROFILE),
+            profile=profile,
             length=call.data.get("length"),
             continuing=True,
             choice=call.data.get("choice"),
             final=call.data["final"],
-            ignore_limits=await _ignore(call, coordinator),
+            ignore_limits=ignore,
         )
 
     async def handle_morning(call: ServiceCall) -> ServiceResponse:
         coordinator = _coordinator(hass, call)
+        linked = linked_profile(coordinator, call.context.user_id)
+        kid_user = linked is not None and linked.kind == KID
+        if kid_user and await _is_admin(hass, call):
+            kid_user = False
         return await async_morning_slip(
-            hass, coordinator, kid_mode=call.data["kid_mode"]
+            hass,
+            coordinator,
+            kid_mode=call.data["kid_mode"] or kid_user,
+            kid=linked.id if kid_user and linked else None,
         )
 
     async def handle_history(call: ServiceCall) -> ServiceResponse:

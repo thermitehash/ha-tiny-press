@@ -11,7 +11,7 @@ A Home Assistant integration that turns an Epson receipt printer into a househol
 - **Home Assistant:** 2026.11.0 or newer
 - **Nothing prints on a schedule.** Tiny Press ships no schedules or time-based automations. The only automatic printing is feed auto-print, which is off until you switch it on for a feed.
 
-> **Status: v0.10.0.** Kid prints (maze, word search, math, kid sudoku, spelling, jokes, facts, kid pack), adult puzzles, bedtime stories, the morning slip, weather, sensor history, a dashboard card with kid mode, and kid-mode limits, Assist voice phrases, AI-agent print tools, feed prints, a live quote of the day, and holidays and themes. See [docs/releases](docs/releases) for each version and the [roadmap](docs/roadmap.md) for what's next.
+> **Status: v0.11.0.** Kid prints (maze, word search, math, kid sudoku, spelling, jokes, facts, kid pack), adult puzzles, bedtime stories, the morning slip, weather, sensor history, a dashboard card with kid mode, and kid-mode limits, Assist voice phrases, AI-agent print tools, feed prints, a live quote of the day, and holidays and themes. See [docs/releases](docs/releases) for each version and the [roadmap](docs/roadmap.md) for what's next.
 
 <!-- Screenshot placeholders -->
 <!-- ![Device page](docs/images/device.png) -->
@@ -124,25 +124,29 @@ Open **Settings → Devices & services → Tiny Press → Configure** to add, ed
 
 | Kid profile | |
 |---|---|
-| Name | Shown on the Kid profile select; may be used in stories later |
-| Reading grade | K–5 (default 3). Sets word lists, grid size and math level. |
+| Name | Shown on the Kid profile select, and in the header of their prints ("Rosie's maze", "Joke time, Rosie!") |
+| Reading grade | K–5 (default 3). Sets word lists and word search size, spelling, and story reading level. |
+| Math grade | K–5 (default: same as the reading grade). Sets the math strip and kid sudoku. A kid can read at grade 3 and do grade 1 math. |
+| Home Assistant user | Optional: link this kid to their own login. The card then shows only their prints, limits and story, and limits always apply to them |
+| Maze difficulty | This kid's mazes: Easy, Medium or Hard, or follow the Maze difficulty select (the default). Asking for a level, as in "print a hard maze", still wins. |
 | Interests | Free text such as `dinosaurs, space, horses`. Themed words appear in word searches (and in AI jokes if switched on). |
-| Stretch | Makes puzzles one grade harder (reading stays at their grade) |
+| Stretch | Makes puzzles one grade harder, for both reading and math puzzles (stories stay at their reading grade) |
 | Spelling list (to-do list) | Optional: a `todo` list, one word per item. Check a word off when it's learned; prints use the unchecked words. Add words by voice: "Add *because* to Rosie's spelling list". |
 | Spelling words | Optional typed list (commas or new lines), used when no to-do list is set |
 
-An adult profile has a name and a default puzzle difficulty (used by the adult puzzles). Add as many profiles as you like, for example a younger sibling later.
+An adult profile has a name, a default puzzle difficulty (used by the adult puzzles) and an optional Home Assistant user. A linked adult's card prints as them, and never counts against kid-mode limits. Add as many profiles as you like, for example a younger sibling later.
 
-What each grade gets:
+What each grade gets (word searches follow the reading grade, math strips the math grade):
 
 | Grade | Word search | Math strip |
 |---|---|---|
-| K–1 | 10×10, across and down | add/subtract within 10 (K) or 20 (1) |
+| K | 10×10, across and down | add/subtract within 10 |
+| 1 | 10×10, across and down | single-digit add/subtract (0–9 and 0–9, no negative answers); bonus within 20 |
 | 2 | 10×10, across and down | two-digit add/subtract, every problem needs regrouping |
 | 3 | 10×10, plus diagonals | adds ×/÷ facts to 10 and two word problems |
 | 4–5 | 12×12, more diagonals | bigger numbers, ×/÷ to 12, multi-digit × |
 
-Every math strip ends with a harder ★ bonus problem. Kid sudoku (numbers) is 4×4 for K–1, 6×6 for grades 2–3, and a harder 6×6 for grades 4–5.
+Every math strip ends with a harder ★ bonus problem. Kid sudoku (numbers) follows the math grade: 4×4 for K–1, 6×6 for grades 2–3, and a harder 6×6 for grades 4–5.
 
 ## 3. Entities
 
@@ -331,15 +335,30 @@ feeds:                  # optional feed buttons (hidden in kid mode)
   - {name: News, feed: BBC News, items: 5, qr: true}
 ```
 
+**The card follows who's logged in:**
+- **A kid linked to their Home Assistant user:** the card switches to kid mode for them. That means hold-to-print, no adult puzzles or settings, and only their own prints left, their own time bar and their own story.
+- **An admin:** a **Print as** row at the top lists every kid and adult. Print as anyone, and it never counts against limits.
+- **An adult linked to their user:** prints as them, never limited.
+- **Anyone else (a shared tablet account):** the card's own settings decide (`kid_mode`, `ignore_limits`), using the Kid profile select.
+
+**Also on the card:**
+- **Time bar:** while a print has to wait, a live bar sits at the top with the countdown inside it ("Next print in 0:44"), filling until the next print is allowed.
+- **Next chapter button:** shows the kid's story in progress ("Chapter 3 · The Lighthouse Fox"), or is greyed out with "No story yet".
+- **Header:** shows whose card it is: the logged-in person, the admin's Print as pick, or the active kid.
+- **Prints left today:** the chip turns yellow with bold black text for the last three prints, and red with bold white text for the last one.
+- **Morning slip:** greyed out as "Printed today" on every card once it has printed that day. Actions and automations can still print it.
+
 <!-- ![Dashboard card](docs/images/card.png) -->
 
 ## Kid-mode limits
 
 Under **Configure → Kid-mode limits** you can turn on a wait between prints (default 2 minutes), prints per hour (4), prints per day (10) and a daily paper budget (1.5 m).
 
-- **Who they apply to:** kid prints from every button, card, action, and voice phrase. Counts reset at midnight.
-- **What she sees:** when a print is blocked, she gets a friendly message ("Just a moment! The next print is ready at 3:42 PM"), and Tiny Press fires `tiny_press_rate_limited` so you can be notified.
-- **Parents skip the limits** with `ignore_limits: true`:
+- **Each kid has their own limits.** A print counts against the kid it's for, so one kid's cooldown never blocks another. Counts reset at midnight.
+- **Who they apply to:** kid prints from every button, card, action and voice phrase.
+- **When a print is blocked:** the kid gets a friendly message ("Just a moment! The next print is ready at 3:42 PM"), and Tiny Press fires `tiny_press_rate_limited` (with the kid's name) so you can be notified.
+- **A kid's own login:** if a kid profile is linked to a Home Assistant user (Configure → Edit a profile → Home Assistant user), that account always prints as that kid and can't skip the limits, whatever the card or action asks.
+- **Parents skip the limits:** admin users and adults linked to a profile never count. Automations and scripts can skip them with `ignore_limits: true`:
 
 ```yaml
 action: tiny_press.print

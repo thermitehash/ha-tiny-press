@@ -63,8 +63,9 @@ def maze_job(
     seed: int | None = None,
     profile: str | None = None,
     theme: Theme | None = None,
+    who: str | None = None,
 ) -> PrintJob:
-    """Build a maze print (with a themed title and art when given a theme)."""
+    """Build a maze print (themed, and titled with the kid's name, when given)."""
     seed = new_seed() if seed is None else seed
     print_id = _id("maze", seed)
     puzzle = maze.generate(difficulty, seed)
@@ -77,7 +78,9 @@ def maze_job(
         difficulty=difficulty.value,
         profile=profile,
         answers=({"print_id": print_id, "type": PrintType.MAZE, "answer": answer},),
-        build=lambda width: layout.maze_page(width, puzzle, footer, theme=theme),
+        build=lambda width: layout.maze_page(
+            width, puzzle, footer, theme=theme, who=who
+        ),
     )
 
 
@@ -105,7 +108,9 @@ def word_search_job(
         answers=(
             {"print_id": print_id, "type": PrintType.WORD_SEARCH, "answer": answer},
         ),
-        build=lambda width: layout.word_search_page(width, puzzle, footer),
+        build=lambda width: layout.word_search_page(
+            width, puzzle, footer, who=profile.display_name
+        ),
     )
 
 
@@ -113,7 +118,7 @@ def math_job(profile: Profile, seed: int | None = None) -> PrintJob:
     """Build a math strip for a kid profile."""
     seed = new_seed() if seed is None else seed
     print_id = _id("math", seed)
-    grade = profile.puzzle_grade
+    grade = profile.math_level
     sheet = math_strip.generate(grade, seed)
     footer = layout.Footer("Math", print_id, _today(), _grade_label(grade))
     answer = {**sheet.answer(), "seed": seed}
@@ -124,7 +129,9 @@ def math_job(profile: Profile, seed: int | None = None) -> PrintJob:
         difficulty=_grade_label(grade),
         profile=profile.name,
         answers=({"print_id": print_id, "type": PrintType.MATH, "answer": answer},),
-        build=lambda width: layout.math_page(width, sheet, footer),
+        build=lambda width: layout.math_page(
+            width, sheet, footer, who=profile.display_name
+        ),
     )
 
 
@@ -151,7 +158,7 @@ def joke_job(joke: Joke, profile: Profile) -> PrintJob:
             "punchline": joke.punchline,
             "source": joke.source,
         },
-        build=lambda width: layout.joke_page(width, joke, footer),
+        build=lambda width: layout.joke_page(width, joke, footer, profile.display_name),
     )
 
 
@@ -165,7 +172,13 @@ def kid_pack_job(
     seed = new_seed() if seed is None else seed
     rng = random.Random(f"kid-pack-{seed}")
     parts = [
-        maze_job(maze_difficulty, rng.randrange(2**31), profile.name, theme),
+        maze_job(
+            maze_difficulty,
+            rng.randrange(2**31),
+            profile.name,
+            theme,
+            profile.display_name,
+        ),
         word_search_job(profile, rng.randrange(2**31), theme),
         math_job(profile, rng.randrange(2**31)),
     ]
@@ -374,8 +387,8 @@ KID_SUDOKU_LEVELS = {
 
 
 def kid_sudoku_level(profile: Profile) -> Difficulty:
-    """Default level by grade: K-1 easy (4x4), 2-3 medium, 4-5 hard (6x6)."""
-    n = grade_number(profile.puzzle_grade)
+    """Default level by math grade: K-1 easy (4x4), 2-3 medium, 4-5 hard (6x6)."""
+    n = grade_number(profile.math_level)
     return (
         Difficulty.EASY if n <= 1 else Difficulty.MEDIUM if n <= 3 else Difficulty.HARD
     )
@@ -403,7 +416,9 @@ def kid_sudoku_job(
         answers=(
             {"print_id": print_id, "type": PrintType.KID_SUDOKU, "answer": answer},
         ),
-        build=lambda width: layout.sudoku_page(width, puzzle, footer),
+        build=lambda width: layout.sudoku_page(
+            width, puzzle, footer, who=profile.display_name
+        ),
     )
 
 
@@ -443,7 +458,9 @@ def spelling_job(
                 "answer": {**sheet.answer(), "seed": seed},
             },
         ),
-        build=lambda width: layout.spelling_page(width, sheet, footer),
+        build=lambda width: layout.spelling_page(
+            width, sheet, footer, who=profile.display_name
+        ),
     )
 
 
@@ -470,7 +487,9 @@ def spelling_search_job(
                 "answer": {**puzzle.answer(), "seed": seed, "grade": grade},
             },
         ),
-        build=lambda width: layout.word_search_page(width, puzzle, footer),
+        build=lambda width: layout.word_search_page(
+            width, puzzle, footer, who=profile.display_name
+        ),
     )
 
 

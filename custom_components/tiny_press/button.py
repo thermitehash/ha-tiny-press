@@ -4,17 +4,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import partial
+from typing import Any
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN, PrintType
+from .const import DOMAIN, SETTING_MORNING_LAST, PrintType
 from .coordinator import TinyPressConfigEntry, TinyPressCoordinator
 from .entity import TinyPressEntity
 from .jobs import answer_job
+from .profiles import KID, profiles_of
 from .services import async_print_type, async_story
 
 PARALLEL_UPDATES = 1
@@ -77,6 +80,37 @@ class TinyPressButton(TinyPressEntity, ButtonEntity):
         """Store the description."""
         super().__init__(coordinator, description.key)
         self.entity_description = description
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Card details: the morning slip's last print, or the kids' stories."""
+        if self.entity_description.key == "morning_slip":
+            last = self.coordinator.store.get_setting(SETTING_MORNING_LAST)
+            when = dt_util.parse_datetime(last) if last else None
+            today = dt_util.now().date()
+            return {
+                "last_printed": last,
+                "printed_today": bool(when and dt_util.as_local(when).date() == today),
+            }
+        if self.entity_description.key != "next_chapter":
+            return None
+        store = self.coordinator.store
+        kid = self.coordinator.kid_profile()
+        series = store.series(kid.id) or {}
+        stories = {}
+        for each in profiles_of(dict(self.coordinator.config_entry.options), KID):
+            if found := store.series(each.id):
+                stories[each.id] = {
+                    "story": found.get("title"),
+                    "chapter": found.get("chapter"),
+                }
+        return {
+            "profile": kid.name,
+            "story": series.get("title"),
+            "chapter": series.get("chapter"),
+            "choices": series.get("choices"),
+            "stories": stories,  # every kid's story in progress, by profile ID
+        }
 
     async def async_press(self) -> None:
         """Print."""

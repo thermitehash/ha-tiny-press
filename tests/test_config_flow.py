@@ -211,6 +211,7 @@ async def test_profiles_add_edit_remove(
         {
             "name": " Rosie ",
             "grade": "2",
+            "math_grade": "1",
             "interests": "dinosaurs, space",
             "stretch": False,
         },
@@ -228,6 +229,9 @@ async def test_profiles_add_edit_remove(
             "spelling_words": "",
             "spelling_todo": "",
             "difficulty": "medium",
+            "math_grade": "1",  # separate from the reading grade
+            "maze_difficulty": "",  # follows the Maze difficulty select
+            "ha_user": "",
         }
     ]
     assert hass.states.get("select.tiny_press_kid_profile").state == "Rosie"
@@ -254,15 +258,23 @@ async def test_profiles_add_edit_remove(
     assert result["step_id"] == "edit_kid"
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
-        {"name": "Rosie", "grade": "3", "interests": "horses", "stretch": True},
+        {
+            "name": "Rosie",
+            "grade": "3",
+            "math_grade": "2",
+            "maze_difficulty": "hard",
+            "interests": "horses",
+            "stretch": True,
+        },
     )
     await hass.async_block_till_done()
     rosie = loaded_entry.options["profiles"][0]
-    assert (rosie["grade"], rosie["interests"], rosie["stretch"]) == (
+    assert (rosie["grade"], rosie["math_grade"], rosie["interests"]) == (
         "3",
+        "2",
         "horses",
-        True,
     )
+    assert rosie["stretch"] is True and rosie["maze_difficulty"] == "hard"
 
     result = await _menu(hass, loaded_entry, "edit_profile")
     result = await hass.config_entries.options.async_configure(

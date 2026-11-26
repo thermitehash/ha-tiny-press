@@ -16,6 +16,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .const import PaperState
 from .coordinator import TinyPressConfigEntry
 from .entity import TinyPressEntity
+from .profiles import KID, profiles_of
 
 PARALLEL_UPDATES = 0
 
@@ -91,10 +92,25 @@ class TinyPressPrintsLeft(TinyPressEntity, SensorEntity):
 
     @property
     def native_value(self) -> int | None:
-        """Prints left today."""
-        return self.coordinator.limiter.status().prints_left_today
+        """Prints left today for the active kid (the Kid profile select)."""
+        kid = self.coordinator.kid_profile()
+        return self.coordinator.limiter.status(kid.id).prints_left_today
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Limit details."""
-        return self.coordinator.limiter.status().as_attributes()
+        """The active kid's limit details, plus every kid's under ``kids``."""
+        limiter = self.coordinator.limiter
+        active = self.coordinator.kid_profile()
+        kids = {
+            kid.id: {
+                "name": kid.name,
+                "prints_left": (status := limiter.status(kid.id)).prints_left_today,
+                **status.as_attributes(),
+            }
+            for kid in profiles_of(dict(self.coordinator.config_entry.options), KID)
+        }
+        return {
+            **limiter.status(active.id).as_attributes(),
+            "profile": active.name,
+            "kids": kids,
+        }

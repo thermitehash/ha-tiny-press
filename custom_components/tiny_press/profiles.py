@@ -43,17 +43,35 @@ class Profile:
     id: str
     kind: Literal["kid", "adult"]
     name: str
-    grade: str = DEFAULT_GRADE  # kids
+    grade: str = DEFAULT_GRADE  # kids: reading grade
     interests: str = ""  # kids
-    stretch: bool = False  # kids: +1 grade on puzzles
+    stretch: bool = False  # kids: +1 grade on puzzles (reading and math)
     spelling_words: str = ""  # kids: this week's list, comma or line separated
     spelling_todo: str = ""  # kids: a todo entity holding the list (one word per item)
     difficulty: str = Difficulty.MEDIUM.value  # adults
+    math_grade: str = ""  # kids: empty means the same as the reading grade
+    maze_difficulty: str = ""  # kids: empty follows the Maze difficulty select
+    ha_user: str = ""  # the Home Assistant user this profile belongs to, if any
+
+    @property
+    def display_name(self) -> str | None:
+        """The name to print in headers (None for the built-in default kid)."""
+        return (
+            None
+            if self.id in ("kid", "adult") and self.name in ("Kid", "Adult")
+            else self.name
+        )
 
     @property
     def puzzle_grade(self) -> str:
-        """Grade used for puzzles (one higher with "stretch")."""
+        """Reading grade used for word puzzles (one higher with "stretch")."""
         return grade_label(grade_number(self.grade) + (1 if self.stretch else 0))
+
+    @property
+    def math_level(self) -> str:
+        """Math grade used for math and number puzzles (one higher with "stretch")."""
+        base = grade_number(self.math_grade or self.grade)
+        return grade_label(base + (1 if self.stretch else 0))
 
     @property
     def reading_grade(self) -> str:
@@ -77,6 +95,17 @@ class Profile:
             spelling_words=str(data.get("spelling_words") or ""),
             spelling_todo=str(data.get("spelling_todo") or ""),
             difficulty=str(data.get("difficulty") or Difficulty.MEDIUM.value),
+            math_grade=(
+                grade_label(grade_number(data["math_grade"]))
+                if data.get("math_grade") not in (None, "")
+                else ""
+            ),
+            ha_user=str(data.get("ha_user") or ""),
+            maze_difficulty=(
+                str(data["maze_difficulty"])
+                if data.get("maze_difficulty") in {d.value for d in Difficulty}
+                else ""
+            ),
         )
 
 

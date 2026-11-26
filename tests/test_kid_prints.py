@@ -177,3 +177,62 @@ async def test_ai_not_used_unless_switched_on(
     response = await _print(hass, type="fact")
     assert response["source"] == "offline"
     assert calls == []
+
+
+def test_math_grade_is_separate_from_reading() -> None:
+    from custom_components.tiny_press.profiles import Profile
+
+    kid = Profile.from_dict({"name": "Rosie", "grade": "3", "math_grade": "1"})
+    assert (kid.puzzle_grade, kid.math_level) == ("3", "1")
+    stretched = Profile.from_dict(
+        {"name": "Rosie", "grade": "3", "math_grade": "1", "stretch": True}
+    )
+    assert (stretched.puzzle_grade, stretched.math_level) == ("4", "2")
+    older = Profile.from_dict({"name": "Max", "grade": "4"})  # saved before v0.11
+    assert older.math_grade == "" and older.math_level == "4"
+
+
+def test_kid_names_in_print_headers() -> None:
+    from custom_components.tiny_press.profiles import (
+        DEFAULT_KID,
+        Profile,
+    )
+    from custom_components.tiny_press.render.layout import kid_title
+
+    assert kid_title("Maze", "Rosie") == "Rosie's maze"
+    assert kid_title("Word search", "James") == "James' word search"
+    assert kid_title("Maze", None) == "Maze"
+    assert DEFAULT_KID.display_name is None  # the built-in "Kid" isn't printed
+    assert Profile.from_dict({"name": "Rosie"}).display_name == "Rosie"
+
+
+async def test_per_kid_maze_difficulty_and_names(
+    hass: HomeAssistant, kid_entry: MockConfigEntry, printer: FakePrinter
+) -> None:
+    from unittest.mock import patch
+
+    from custom_components.tiny_press.render import layout
+
+    options = dict(kid_entry.options)
+    options["profiles"] = [
+        {**p, "maze_difficulty": "hard"} if p["id"] == "max" else p
+        for p in options["profiles"]
+    ]
+    hass.config_entries.async_update_entry(kid_entry, options=options)
+    await hass.async_block_till_done()
+    store = kid_entry.runtime_data.store
+    titles: list[str | None] = []
+    real = layout.maze_page
+
+    def spy(*args, **kwargs):
+        titles.append(kwargs.get("who"))
+        return real(*args, **kwargs)
+
+    with patch.object(layout, "maze_page", spy):
+        await _print(hass, type="maze", profile="max", seed=1)
+        assert store.history[0]["answer"]["difficulty"] == "hard"  # Max's own level
+        await _print(hass, type="maze", profile="rosie", seed=1)
+        assert store.history[0]["answer"]["difficulty"] == "easy"  # the select
+        await _print(hass, type="maze", profile="max", difficulty="easy", seed=1)
+        assert store.history[0]["answer"]["difficulty"] == "easy"  # asked wins
+    assert titles == ["Max", "Rosie", "Max"]

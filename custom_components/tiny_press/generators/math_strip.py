@@ -3,7 +3,7 @@
 Pure and deterministic for a given seed.
 
 * K: add/subtract within 10.
-* 1: add/subtract within 20.
+* 1: single-digit add/subtract (0-9 and 0-9, no negative answers).
 * 2: two-digit add/subtract, every problem needs regrouping.
 * 3: grade-2 style add/subtract, x/÷ facts to 10, simple word problems.
 * 4: three-digit add/subtract, x/÷ to 12, two-digit x one-digit, word problems.
@@ -112,6 +112,17 @@ def _sub_within(rng: random.Random, total: int) -> Problem:
     return Problem(a, SUB, b, a - b)
 
 
+def _add_single(rng: random.Random) -> Problem:
+    a, b = rng.randint(0, 9), rng.randint(0, 9)
+    return Problem(a, ADD, b, a + b)
+
+
+def _sub_single(rng: random.Random) -> Problem:
+    a = rng.randint(1, 9)
+    b = rng.randint(0, a)
+    return Problem(a, SUB, b, a - b)
+
+
 def _sub(rng: random.Random, lo: int, hi: int, *, regroup: bool = False) -> Problem:
     while True:
         a, b = rng.randint(lo, hi), rng.randint(lo, hi)
@@ -156,7 +167,7 @@ Maker = Callable[[random.Random], Problem]
 
 MAKERS: dict[int, list[Maker]] = {
     0: [lambda r: _add_within(r, 10), lambda r: _sub_within(r, 10)],
-    1: [lambda r: _add_within(r, 20), lambda r: _sub_within(r, 20)],
+    1: [_add_single, _sub_single],
     2: [
         lambda r: _add(r, 11, 88, regroup=True, max_total=99),
         lambda r: _sub(r, 20, 99, regroup=True),
@@ -201,6 +212,11 @@ WORD_MAKERS: dict[int, list[Maker]] = {
     ],
 }
 WORD_PROBLEMS = {3: 2, 4: 2, 5: 2}
+# A gentler bonus where the next grade is a big jump: grade 1 (single digits)
+# gets add/subtract within 20 rather than two-digit regrouping.
+BONUS_MAKERS: dict[int, list[Maker]] = {
+    1: [lambda r: _add_within(r, 20), lambda r: _sub_within(r, 20)],
+}
 
 
 def generate(grade: str, seed: int, count: int = 10) -> MathStrip:
@@ -226,6 +242,6 @@ def generate(grade: str, seed: int, count: int = 10) -> MathStrip:
     for j in range(words):
         maker = WORD_MAKERS[n][j % len(WORD_MAKERS[n])]
         problems.append(_word(rng, maker(rng)))
-    harder = MAKERS[min(5, n + 1)]
+    harder = BONUS_MAKERS.get(n) or MAKERS[min(5, n + 1)]
     bonus = rng.choice(harder)(rng) if n < 5 else _mul(rng, (101, 499), (12, 49))
     return MathStrip(grade_label(n), tuple(problems), bonus)

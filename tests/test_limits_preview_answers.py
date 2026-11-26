@@ -79,6 +79,7 @@ async def test_cooldown_hour_and_day(
     assert state.state == "3"
     assert state.attributes["blocked_reason"] == "cooldown"
     assert state.attributes["next_print_at"].startswith("2026-11-26T15:01:00")
+    assert state.attributes["blocked_since"].startswith("2026-11-26T15:00:00")
 
     # Cooldown blocks the action and the buttons alike.
     with pytest.raises(ServiceValidationError, match="Just a moment"):
@@ -259,7 +260,7 @@ async def test_card_is_served_yaml_fallback(
         assert await async_setup_component(hass, DOMAIN, {})
         await hass.async_block_till_done()
     add_js.assert_called_once()
-    assert add_js.call_args[0][1] == f"{CARD_URL}?v=0.10.0"
+    assert add_js.call_args[0][1] == f"{CARD_URL}?v=0.11.0"
     client = await hass_client()
     response = await client.get(CARD_URL)
     assert response.status == 200
@@ -322,7 +323,7 @@ async def test_card_added_to_dashboard_resources(
     assert await async_setup_component(hass, DOMAIN, {})
     await hass.async_block_till_done()
     mine = [i for i in resources.async_items() if i["url"].startswith(CARD_URL)]
-    assert [i["url"] for i in mine] == [f"{CARD_URL}?v=0.10.0"]
+    assert [i["url"] for i in mine] == [f"{CARD_URL}?v=0.11.0"]
     assert len(resources.items) == len(mine) + sum(
         1 for i in existing if not i["url"].startswith(CARD_URL)
     )

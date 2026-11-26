@@ -256,6 +256,11 @@ class TinyPressConfigFlow(ConfigFlow, domain=DOMAIN):
         return TinyPressOptionsFlow()
 
 
+def _user_from(data: dict[str, Any]) -> str:
+    user = data.get("ha_user") or "none"
+    return "" if user == "none" else str(user)
+
+
 def _kid_schema(profile: Profile | None) -> vol.Schema:
     p = profile or Profile(id="", kind=KID, name="")
     return vol.Schema(
@@ -265,6 +270,24 @@ def _kid_schema(profile: Profile | None) -> vol.Schema:
                 SelectSelectorConfig(
                     options=[g.lower() for g in GRADES],
                     translation_key="grade",
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Required(
+                "math_grade", default=(p.math_grade or p.grade).lower()
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=[g.lower() for g in GRADES],
+                    translation_key="grade",
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Required(
+                "maze_difficulty", default=p.maze_difficulty or "follow"
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=["follow", *[d.value for d in Difficulty]],
+                    translation_key="kid_maze",
                     mode=SelectSelectorMode.DROPDOWN,
                 )
             ),
@@ -531,6 +554,13 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
             kind=KID,
             name=data[CONF_NAME].strip(),
             grade=grade_label(grade_number(data["grade"])),
+            math_grade=grade_label(grade_number(data.get("math_grade", data["grade"]))),
+            maze_difficulty=(
+                ""
+                if data.get("maze_difficulty", "follow") == "follow"
+                else data["maze_difficulty"]
+            ),
+            ha_user=_user_from(data),
             interests=(data.get("interests") or "").strip(),
             stretch=bool(data.get("stretch")),
             spelling_words=(data.get("spelling_words") or "").strip(),
@@ -543,7 +573,25 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
             kind=ADULT,
             name=data[CONF_NAME].strip(),
             difficulty=data["difficulty"],
+            ha_user=_user_from(data),
         )
+
+    async def _user_field(self, profile: Profile | None) -> dict[Any, Any]:
+        """Link a profile to a Home Assistant user (person) for the card."""
+        users = [
+            u
+            for u in await self.hass.auth.async_get_users()
+            if not u.system_generated and u.is_active
+        ]
+        options = [SelectOptionDict(value="none", label="None")] + [
+            SelectOptionDict(value=u.id, label=u.name or u.id) for u in users
+        ]
+        current = profile.ha_user if profile and profile.ha_user else "none"
+        return {
+            vol.Required("ha_user", default=current): SelectSelector(
+                SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN)
+            )
+        }
 
     async def async_step_add_kid(
         self, user_input: dict[str, Any] | None = None
@@ -559,7 +607,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
         return self.async_show_form(
             step_id="add_kid",
             data_schema=self.add_suggested_values_to_schema(
-                _kid_schema(None), user_input
+                _kid_schema(None).extend(await self._user_field(None)), user_input
             ),
             errors=errors,
         )
@@ -580,7 +628,7 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
         return self.async_show_form(
             step_id="add_adult",
             data_schema=self.add_suggested_values_to_schema(
-                _adult_schema(None), user_input
+                _adult_schema(None).extend(await self._user_field(None)), user_input
             ),
             errors=errors,
         )
@@ -631,7 +679,9 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                 return self._replace(self._kid_from(user_input, self._editing.id))
         return self.async_show_form(
             step_id="edit_kid",
-            data_schema=_kid_schema(self._editing),
+            data_schema=_kid_schema(self._editing).extend(
+                await self._user_field(self._editing)
+            ),
             errors=errors,
             description_placeholders={"name": self._editing.name},
         )
@@ -649,7 +699,9 @@ class TinyPressOptionsFlow(OptionsFlowWithReload):
                 return self._replace(self._adult_from(user_input, self._editing.id))
         return self.async_show_form(
             step_id="edit_adult",
-            data_schema=_adult_schema(self._editing),
+            data_schema=_adult_schema(self._editing).extend(
+                await self._user_field(self._editing)
+            ),
             errors=errors,
             description_placeholders={"name": self._editing.name},
         )

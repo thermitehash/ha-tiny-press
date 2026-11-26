@@ -100,14 +100,20 @@
           "interests": "Interests",
           "stretch": "Stretch",
           "spelling_words": "Spelling words",
-          "spelling_todo": "Spelling list (to-do list)"
+          "spelling_todo": "Spelling list (to-do list)",
+          "math_grade": "Math grade",
+          "maze_difficulty": "Maze difficulty",
+          "ha_user": "Home Assistant user"
         },
         "data_description": {
-          "grade": "The grade they read and do math at.",
+          "grade": "Used by word searches, spelling and stories.",
           "interests": "Free text, for example: dinosaurs, space, horses.",
-          "stretch": "Make puzzles one grade harder.",
+          "stretch": "Make puzzles one grade harder (reading and math).",
           "spelling_words": "Optional. Typed list (commas or new lines), used when no to-do list is chosen or it can't be read.",
-          "spelling_todo": "Optional. A to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words."
+          "spelling_todo": "Optional. A to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words.",
+          "math_grade": "Used by math strips and kid sudoku. Grade 1 is single-digit addition and subtraction.",
+          "maze_difficulty": "This kid's mazes. \"Follow the Maze difficulty select\" uses the device's select; asking for a level (\"print a hard maze\") still wins.",
+          "ha_user": "Optional. When this person is logged in, the Tiny Press card shows only their prints, limits and story, and kid-mode limits always apply to them."
         }
       },
       "edit_kid": {
@@ -118,28 +124,42 @@
           "interests": "[%key:component::tiny_press::options::step::add_kid::data::interests%]",
           "stretch": "[%key:component::tiny_press::options::step::add_kid::data::stretch%]",
           "spelling_words": "[%key:component::tiny_press::options::step::add_kid::data::spelling_words%]",
-          "spelling_todo": "[%key:component::tiny_press::options::step::add_kid::data::spelling_todo%]"
+          "spelling_todo": "[%key:component::tiny_press::options::step::add_kid::data::spelling_todo%]",
+          "math_grade": "Math grade",
+          "maze_difficulty": "Maze difficulty",
+          "ha_user": "Home Assistant user"
         },
         "data_description": {
-          "grade": "[%key:component::tiny_press::options::step::add_kid::data_description::grade%]",
+          "grade": "Used by word searches, spelling and stories.",
           "interests": "[%key:component::tiny_press::options::step::add_kid::data_description::interests%]",
           "stretch": "[%key:component::tiny_press::options::step::add_kid::data_description::stretch%]",
           "spelling_words": "[%key:component::tiny_press::options::step::add_kid::data_description::spelling_words%]",
-          "spelling_todo": "[%key:component::tiny_press::options::step::add_kid::data_description::spelling_todo%]"
+          "spelling_todo": "[%key:component::tiny_press::options::step::add_kid::data_description::spelling_todo%]",
+          "math_grade": "Used by math strips and kid sudoku. Grade 1 is single-digit addition and subtraction.",
+          "maze_difficulty": "This kid's mazes. \"Follow the Maze difficulty select\" uses the device's select; asking for a level (\"print a hard maze\") still wins.",
+          "ha_user": "Optional. When this person is logged in, the Tiny Press card shows only their prints, limits and story, and kid-mode limits always apply to them."
         }
       },
       "add_adult": {
         "title": "Add an adult",
         "data": {
           "name": "[%key:common::config_flow::data::name%]",
-          "difficulty": "Default puzzle difficulty"
+          "difficulty": "Default puzzle difficulty",
+          "ha_user": "Home Assistant user"
+        },
+        "data_description": {
+          "ha_user": "Optional. When this person is logged in, the card prints as them, and their prints never count against kid-mode limits."
         }
       },
       "edit_adult": {
         "title": "Edit {name}",
         "data": {
           "name": "[%key:common::config_flow::data::name%]",
-          "difficulty": "[%key:component::tiny_press::options::step::add_adult::data::difficulty%]"
+          "difficulty": "[%key:component::tiny_press::options::step::add_adult::data::difficulty%]",
+          "ha_user": "Home Assistant user"
+        },
+        "data_description": {
+          "ha_user": "Optional. When this person is logged in, the card prints as them, and their prints never count against kid-mode limits."
         }
       },
       "edit_profile": {
@@ -400,6 +420,14 @@
         "persian": "Nowruz (the spring-equinox new year)",
         "heritage": "Cultural and heritage days, US (Juneteenth, Indigenous Peoples' Day, Día de los Muertos, Kwanzaa)",
         "fun": "Fun days (Valentine's Day, Halloween, New Year's Eve)"
+      }
+    },
+    "kid_maze": {
+      "options": {
+        "follow": "Follow the Maze difficulty select",
+        "easy": "Easy",
+        "medium": "Medium",
+        "hard": "Hard"
       }
     }
   },
