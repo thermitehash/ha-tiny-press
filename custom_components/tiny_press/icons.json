@@ -79,6 +79,9 @@
       },
       "next_chapter": {
         "default": "mdi:book-arrow-right-outline"
+      },
+      "morning_slip": {
+        "default": "mdi:weather-sunset-up"
       }
     },
     "select": {
@@ -120,6 +123,9 @@
     },
     "continue_story": {
       "service": "mdi:book-arrow-right-outline"
+    },
+    "print_morning_slip": {
+      "service": "mdi:weather-sunset-up"
     }
   }
 }

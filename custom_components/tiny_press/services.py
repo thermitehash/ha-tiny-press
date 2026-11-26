@@ -36,13 +36,17 @@ from .const import (
     ATTR_TEXT,
     ATTR_TITLE,
     ATTR_TYPE,
+    CONF_CALENDARS,
+    CONF_MORNING_BOTTOM,
     CONF_PAPER_WIDTH,
+    CONF_TODOS,
     CONF_WEATHER,
     DOMAIN,
     EVENT_RATE_LIMITED,
     PAPER_80MM,
     PAPER_DOTS,
     SETTING_MAZE_DIFFICULTY,
+    SETTING_MORNING_KID_DAY,
     SETTING_STORY_LENGTH,
     SETTING_SUDOKU_DIFFICULTY,
     TEXT_SIZES,
@@ -50,6 +54,7 @@ from .const import (
     PrintType,
 )
 from .coordinator import PrintJob, TinyPressConfigEntry, TinyPressCoordinator
+from .generators import morning, sudoku as sudoku_gen
 from .generators.story import pick_offline
 from .generators.weather import WeatherReport, build_report
 from .limits import KID_TYPES
@@ -138,6 +143,9 @@ CONTINUE_STORY_SCHEMA = vol.Schema(
         vol.Optional("length"): vol.In(STORY_LENGTHS),
         vol.Optional(ATTR_IGNORE_LIMITS, default=False): cv.boolean,
     }
+)
+MORNING_SCHEMA = vol.Schema(
+    {**ENTRY_FIELD, vol.Optional("kid_mode", default=False): cv.boolean}
 )
 PRINT_ANSWERS_SCHEMA = vol.Schema(
     {**ENTRY_FIELD, vol.Optional(ATTR_PRINT_ID): cv.string}
@@ -288,6 +296,10 @@ async def async_build_job(
                         adult.name,
                         recent,
                     )
+        case PrintType.MORNING_SLIP:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="morning_preview"
+            )
         case PrintType.STORY:
             raise ServiceValidationError(
                 translation_domain=DOMAIN, translation_key="story_preview"
@@ -499,6 +511,107 @@ async def async_story(
     return response
 
 
+async def async_morning_slip(
+    hass: HomeAssistant, coordinator: TinyPressCoordinator, *, kid_mode: bool = False
+) -> dict[str, Any]:
+    """Print the morning slip. Never counts toward kid limits; once a day from kid mode."""
+    today = dt_util.now().date()
+    if (
+        kid_mode
+        and coordinator.store.get_setting(SETTING_MORNING_KID_DAY) == today.isoformat()
+    ):
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="morning_once_a_day"
+        )
+    options = coordinator.config_entry.options
+    try:
+        weather = await async_weather_report(hass, coordinator)
+    except ServiceValidationError:
+        weather = None  # no weather entity: the slip just skips the weather
+
+    calendars = [c for c in options.get(CONF_CALENDARS) or [] if hass.states.get(c)]
+    raw_events: dict[str, list[dict[str, Any]]] = {}
+    if calendars:
+        start, end = morning.day_bounds(today, dt_util.get_default_time_zone())
+        try:
+            response = await hass.services.async_call(
+                "calendar",
+                "get_events",
+                {
+                    "entity_id": calendars,
+                    "start_date_time": start.isoformat(),
+                    "end_date_time": end.isoformat(),
+                },
+                blocking=True,
+                return_response=True,
+            )
+            raw_events = {
+                entity: (data or {}).get("events") or []
+                for entity, data in (response or {}).items()
+            }
+        except HomeAssistantError as err:
+            _LOGGER.info("Couldn't read calendars for the morning slip: %s", err)
+    events, more = morning.build_events(raw_events, today, dt_util.as_local)
+
+    raw_todos: dict[str, tuple[str, list[dict[str, Any]]]] = {}
+    for entity in options.get(CONF_TODOS) or []:
+        state = hass.states.get(entity)
+        if state is None:
+            continue
+        try:
+            response = await hass.services.async_call(
+                "todo",
+                "get_items",
+                {"entity_id": entity},
+                blocking=True,
+                return_response=True,
+            )
+        except HomeAssistantError as err:
+            _LOGGER.info("Couldn't read %s for the morning slip: %s", entity, err)
+            continue
+        items = ((response or {}).get(entity) or {}).get("items") or []
+        raw_todos[entity] = (
+            str(state.attributes.get("friendly_name") or entity),
+            items,
+        )
+
+    bottom = options.get(CONF_MORNING_BOTTOM, "joke")
+    joke = None
+    puzzle = None
+    if bottom in ("joke", "fact"):
+        kind = PrintType.JOKE if bottom == "joke" else PrintType.FACT
+        kid = coordinator.kid_profile()
+        if coordinator.use_ai_jokes:
+            joke = await async_ai_joke(
+                hass, coordinator.ai_task_entity, kind.value, kid
+            )
+        if joke is None:
+            joke = await hass.async_add_executor_job(
+                jobs.offline_joke, kind.value, None, coordinator.store.recent(kind)
+            )
+            if joke.index is not None:
+                coordinator.store.remember(kind, joke.index)
+    elif bottom == "puzzle":
+        level = coordinator.adult_profile().difficulty
+        puzzle = await hass.async_add_executor_job(
+            sudoku_gen.generate, 6, level, jobs.new_seed()
+        )
+    slip = morning.MorningSlip(
+        day=today,
+        weather=weather,
+        events=events,
+        more_events=more,
+        todos=morning.build_todos(raw_todos),
+        joke=joke,
+        puzzle=puzzle,
+        calendars_set=bool(calendars),
+    )
+    response = await coordinator.async_print(jobs.morning_job(slip))
+    if kid_mode:
+        coordinator.store.set_setting(SETTING_MORNING_KID_DAY, today.isoformat())
+    return response
+
+
 async def async_print_type(
     hass: HomeAssistant,
     coordinator: TinyPressCoordinator,
@@ -511,6 +624,8 @@ async def async_print_type(
     words: list[str] | str | None = None,
 ) -> dict[str, Any]:
     """Print one type. Shared by the ``print`` action and the buttons."""
+    if kind is PrintType.MORNING_SLIP:
+        return await async_morning_slip(hass, coordinator)
     if kind is PrintType.STORY:
         return await async_story(
             hass, coordinator, profile=profile, ignore_limits=ignore_limits
@@ -678,6 +793,12 @@ def async_setup_services(hass: HomeAssistant) -> None:
             ignore_limits=await _ignore(call, coordinator),
         )
 
+    async def handle_morning(call: ServiceCall) -> ServiceResponse:
+        coordinator = _coordinator(hass, call)
+        return await async_morning_slip(
+            hass, coordinator, kid_mode=call.data["kid_mode"]
+        )
+
     async def handle_print_answers(call: ServiceCall) -> ServiceResponse:
         coordinator = _coordinator(hass, call)
         entry = coordinator.store.find_answer(call.data.get(ATTR_PRINT_ID))
@@ -717,6 +838,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         (SERVICE_PRINT_ANSWERS, handle_print_answers, PRINT_ANSWERS_SCHEMA),
         ("print_story", handle_print_story, PRINT_STORY_SCHEMA),
         ("continue_story", handle_continue_story, CONTINUE_STORY_SCHEMA),
+        ("print_morning_slip", handle_morning, MORNING_SCHEMA),
         (SERVICE_PRINT_TEXT, handle_print_text, PRINT_TEXT_SCHEMA),
         (SERVICE_PRINT_IMAGE, handle_print_image, PRINT_IMAGE_SCHEMA),
     ):

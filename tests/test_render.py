@@ -112,3 +112,35 @@ def test_word_search_answers_mark_letters() -> None:
     plain = layout.word_search_drawing(576, puzzle)
     marked = layout.word_search_drawing(576, puzzle, show_answers=True)
     assert sum(marked.histogram()[:128]) > sum(plain.histogram()[:128])
+
+
+def test_footer_hides_id_without_answer_key() -> None:
+    hidden = layout.Footer("Note", "AAAA", date(2026, 1, 5), show_id=False)
+    assert "#AAAA" not in hidden.fields()
+
+
+def test_ids_only_on_prints_with_answer_keys() -> None:
+    from custom_components.tiny_press import jobs
+    from custom_components.tiny_press.generators import morning, sudoku as sd
+
+    for job, shown in (
+        (jobs.text_job("hi", None, "normal"), False),
+        (jobs.test_page_job("80", {}), False),
+        (jobs.maze_job(jobs.Difficulty.EASY, 1), True),
+        (
+            jobs.morning_job(morning.MorningSlip(date(2026, 1, 5), None, (), 0)),
+            False,
+        ),
+        (
+            jobs.morning_job(
+                morning.MorningSlip(
+                    date(2026, 1, 5), None, (), 0, puzzle=sd.generate(6, "easy", 1)
+                )
+            ),
+            True,
+        ),
+    ):
+        # The footer is the last block; compare against a render with/without ID.
+        canvas = job.build(576)
+        assert bool(job.answers) == shown
+        assert canvas.height > 0

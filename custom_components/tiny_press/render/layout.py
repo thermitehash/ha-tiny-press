@@ -18,6 +18,7 @@ from ..generators.cryptogram import Cryptogram
 from ..generators.jokes import Joke
 from ..generators.math_strip import MathStrip, Problem
 from ..generators.maze import Maze
+from ..generators.morning import MorningSlip
 from ..generators.spelling import SpellingSheet
 from ..generators.story import Story
 from ..generators.sudoku import Sudoku
@@ -44,6 +45,7 @@ class Footer:
     print_id: str
     day: date
     difficulty: str | None = None
+    show_id: bool = True  # only prints with an answer key show their ID
 
     def fields(self) -> tuple[str, ...]:
         """Footer pieces in print order."""
@@ -51,7 +53,7 @@ class Footer:
             self.label,
             self.difficulty.title() if self.difficulty else "",
             self.day.strftime("%b %-d, %Y"),
-            f"#{self.print_id}",
+            f"#{self.print_id}" if self.show_id else "",
         )
 
 
@@ -903,6 +905,109 @@ def story_page(width: int, story: Story, footer: Footer) -> Canvas:
             canvas.space(6)
     if story.credit:
         canvas.text(story.credit, px=18, align="right")
+    canvas.space(6)
+    canvas.footer(*footer.fields())
+    return canvas
+
+
+def _weather_line(width: int, report: WeatherReport) -> Image.Image:
+    """Compact weather: icon, now, high/low and rain chance."""
+    img = Image.new("L", (width, 96), 255)
+    img.paste(weather_icon(report.condition, 88), (MARGIN + 4, 4))
+    draw = ImageDraw.Draw(img)
+    big = font("sans", 30 if width >= 500 else 26, True)
+    small = font("sans", 22 if width >= 500 else 19, False)
+    now = (
+        f"{round(report.temperature)}{report.temp_unit}  "
+        if report.temperature is not None
+        else ""
+    )
+    draw.text(
+        (MARGIN + 104, 8), now + condition_label(report.condition), font=big, fill=0
+    )
+    if report.days:
+        today = report.days[0]
+        parts = [f"High {_deg(today.high, '')}", f"Low {_deg(today.low, '')}"]
+        if today.precip_chance is not None:
+            parts.append(f"Rain {round(today.precip_chance)}%")
+        draw.text((MARGIN + 104, 50), "  ".join(parts), font=small, fill=0)
+    return img
+
+
+def _rows(width: int, rows: list[tuple[str, str]], px: int = 22) -> Image.Image:
+    """Two columns: a fixed label column and wrapped text."""
+    label_face = font("mono", px, True)
+    text_face = font("sans", px + 2, False)
+    label_w = int(max((label_face.getlength(r[0]) for r in rows), default=0)) + 14
+    inner = width - 2 * MARGIN - label_w
+    line_h = int((px + 2) * 1.3)
+    wrapped = [(label, wrap(text, text_face, inner)) for label, text in rows]
+    height = sum(len(lines) * line_h + 4 for _l, lines in wrapped)
+    img = Image.new("L", (width, height + 2), 255)
+    draw = ImageDraw.Draw(img)
+    y = 0
+    for label, lines in wrapped:
+        draw.text((MARGIN, y + 3), label, font=label_face, fill=0)
+        for line in lines:
+            draw.text((MARGIN + label_w, y), line, font=text_face, fill=0)
+            y += line_h
+        y += 4
+    return img
+
+
+def morning_page(width: int, slip: MorningSlip, footer: Footer) -> Canvas:
+    """Lay out the morning slip."""
+    canvas = Canvas(width)
+    canvas.title("Good morning!", px=40)
+    canvas.text(slip.day.strftime("%A, %B %-d"), px=26, align="center")
+    canvas.rule()
+    if slip.weather is not None:
+        canvas.drawing(_weather_line(width, slip.weather))
+        canvas.rule(dashed=True)
+    canvas.text("Today", px=28, bold=True)
+    if slip.events:
+        canvas.drawing(_rows(width, [(e.when, e.title) for e in slip.events]))
+        if slip.more_events:
+            canvas.text(f"+{slip.more_events} more", px=20, align="right")
+    elif slip.calendars_set:
+        canvas.text("Nothing on the calendar today.", px=24)
+    else:
+        canvas.text("Pick calendars in Configure → Settings to see events here.", px=20)
+    for name, items in slip.todos:
+        canvas.rule(dashed=True)
+        canvas.text(name, px=26, bold=True)
+        canvas.drawing(_rows(width, [("[ ]", item) for item in items]))
+    if slip.joke is not None:
+        canvas.rule(dashed=True)
+        if slip.joke.punchline:
+            canvas.text("Joke of the day", px=24, bold=True, align="center")
+            canvas.text(slip.joke.setup, px=26, align="center")
+            canvas.space(6)
+            answer = Canvas(width)
+            answer.text(slip.joke.punchline, px=24, bold=True, align="center")
+            flipped = Image.new("L", (width, answer.height), 255)
+            y = 0
+            for block in answer.blocks:
+                flipped.paste(block, (0, y))
+                y += block.height
+            canvas.drawing(flipped.rotate(180))
+        else:
+            canvas.text("Fun fact", px=24, bold=True, align="center")
+            canvas.text(slip.joke.setup, px=24, align="center")
+            if slip.joke.credit:
+                canvas.text(f"Source: {slip.joke.credit}", px=16, align="center")
+    if slip.puzzle is not None:
+        canvas.rule(dashed=True)
+        canvas.text("Puzzle of the day", px=24, bold=True, align="center")
+        canvas.text(
+            f"Write 1 to {slip.puzzle.size} once in every row, column and box.",
+            px=20,
+            align="center",
+        )
+        grid = sudoku_drawing(int(width * 0.7), slip.puzzle)
+        half = Image.new("L", (width, grid.height), 255)
+        half.paste(grid, ((width - grid.width) // 2, 0))
+        canvas.drawing(half)
     canvas.space(6)
     canvas.footer(*footer.fields())
     return canvas

@@ -11,7 +11,7 @@ A Home Assistant integration that turns an Epson receipt printer into a househol
 - **Home Assistant:** 2026.11.0 or newer
 - **Nothing prints automatically.** Tiny Press ships no schedules or time-based automations.
 
-> **Status: v0.5.0.** Bedtime stories and choose-your-own-adventure chapters. **v0.4.0:** Adult puzzles (sudoku, crossword, cryptogram, puzzle pack) on top of v0.3.0. **v0.3.0:** Kid pack (profiles, maze, word search, math strip, jokes and fun facts), a dashboard card with kid mode, kid-mode print limits, previews and answer keys. See the [roadmap](docs/roadmap.md) for what's next.
+> **Status: v0.6.0.** Morning slip. **v0.5.0:** Bedtime stories and choose-your-own-adventure chapters. **v0.4.0:** Adult puzzles (sudoku, crossword, cryptogram, puzzle pack) on top of v0.3.0. **v0.3.0:** Kid pack (profiles, maze, word search, math strip, jokes and fun facts), a dashboard card with kid mode, kid-mode print limits, previews and answer keys. See the [roadmap](docs/roadmap.md) for what's next.
 
 <!-- Screenshot placeholders -->
 <!-- ![Device page](docs/images/device.png) -->
@@ -41,7 +41,10 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 | Longest single print | 600 mm | Any print longer than this is trimmed and ends with a "trimmed" note, so a runaway print can't empty the roll. |
 | Status check interval | 60 s | How often paper and cover status are read. Status is never read while a job is printing. |
 | AI task entity | none | Optional. Any `ai_task` entity (for example the Anthropic integration's). Writes bedtime stories. Without it, bundled stories print instead. |
-| Weather entity | none | Used by the Weather print. Not needed if you only have one weather entity. |
+| Weather entity | none | Used by the Weather print and the morning slip. Not needed if you only have one weather entity. |
+| Morning slip calendars | none | Today's events from these calendars print on the morning slip |
+| Morning slip to-do lists | none | Optional: unchecked items print as checkboxes |
+| Bottom of the morning slip | joke | Joke, fun fact, small sudoku or nothing |
 | Use AI for jokes and fun facts | off | Off: jokes and facts come from bundled, human-written lists (facts from NOAA, NASA and the National Park Service, with credits). On: the AI is asked first. |
 
 ### Profiles
@@ -92,6 +95,7 @@ Every math strip ends with a harder ★ bonus problem. Kid sudoku (numbers) is 4
 | `button.tiny_press_puzzle_pack` | Prints sudoku, crossword and cryptogram in one go |
 | `button.tiny_press_bedtime_story` | Prints a bedtime story (Story length select) |
 | `button.tiny_press_next_chapter` | Prints the next chapter of the kid's adventure (gentler choice) |
+| `button.tiny_press_morning_slip` | Prints today's date, weather, events, to-dos and a joke, fact or puzzle |
 | `button.tiny_press_weather` | Prints current weather and a forecast of up to 10 days |
 | `button.tiny_press_answers` | Prints the answer key for the newest puzzle |
 | `button.tiny_press_test_page` | Prints the test page |
@@ -173,6 +177,14 @@ data:
   # final: true   # wrap the adventure up
 ```
 
+### `tiny_press.print_morning_slip`
+
+```yaml
+action: tiny_press.print_morning_slip
+```
+
+Prints today's date, weather, calendar events, optional to-dos and the bottom section you chose. It's manual only, and it doesn't count toward kid-mode limits. Kid-mode dashboard cards may print one a day.
+
 ### `tiny_press.preview`
 
 Draws a print without printing it. Returns `image` (a PNG data URI), `seed` and the usual fields. Call `tiny_press.print` with the same `seed` to print exactly what you saw.
@@ -213,7 +225,7 @@ type: custom:tiny-press-card
 title: Rosie's printer
 kid_mode: true          # hold-to-print, no settings or answers, shows limits
 show_preview: false     # true: see the print first, then Shuffle or Print
-buttons: [maze, word_search, math, kid_sudoku, spelling, joke, kid_pack, story, next_chapter, sudoku, crossword, cryptogram, puzzle_pack, weather]
+buttons: [maze, word_search, math, kid_sudoku, spelling, joke, kid_pack, story, next_chapter, sudoku, crossword, cryptogram, puzzle_pack, morning_slip, weather]
 # ignore_limits: true   # for a parents' dashboard
 ```
 

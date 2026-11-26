@@ -15,6 +15,9 @@ CONF_POLL_INTERVAL: Final = "poll_interval"
 CONF_PRINT_TEST_PAGE: Final = "print_test_page"
 CONF_AI_TASK: Final = "ai_task_entity"
 CONF_WEATHER: Final = "weather_entity"
+CONF_CALENDARS: Final = "calendar_entities"
+CONF_TODOS: Final = "todo_entities"
+CONF_MORNING_BOTTOM: Final = "morning_bottom"
 CONF_AI_JOKES: Final = "ai_jokes"  # off: bundled, human-written jokes and facts
 
 DEFAULT_PORT: Final = 9100
@@ -49,6 +52,7 @@ SETTING_KID_PROFILE: Final = "kid_profile"
 SETTING_ADULT_PROFILE: Final = "adult_profile"
 SETTING_SUDOKU_DIFFICULTY: Final = "sudoku_difficulty"
 SETTING_STORY_LENGTH: Final = "story_length"
+SETTING_MORNING_KID_DAY: Final = "morning_kid_day"
 
 
 class PrintType(StrEnum):
@@ -66,6 +70,7 @@ class PrintType(StrEnum):
     CRYPTOGRAM = "cryptogram"
     PUZZLE_PACK = "puzzle_pack"
     STORY = "story"
+    MORNING_SLIP = "morning_slip"
     KID_SUDOKU = "kid_sudoku"
     SPELLING = "spelling"
     SPELLING_SEARCH = "spelling_search"
