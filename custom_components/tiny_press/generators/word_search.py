@@ -186,8 +186,13 @@ def generate(
     interests: str = "",
     size: int | None = None,
     count: int | None = None,
+    theme_words: tuple[str, ...] | list[str] = (),
 ) -> WordSearch:
-    """Build a word search for a grade (``"K"``, ``"1"`` … ``"5"``)."""
+    """Build a word search for a grade (``"K"``, ``"1"`` … ``"5"``).
+
+    ``theme_words`` (a season or holiday) fill up to a third of the words;
+    interests still fill the rest of the themed half.
+    """
     rng = random.Random(seed)
     size = size or size_for_grade(grade)
     count = count or DEFAULT_WORD_COUNT.get(size, size - 2)
@@ -196,10 +201,20 @@ def generate(
     max_len = size
     themed = [w for w in themed if 3 <= len(w) <= max_len]
     graded = [w for w in graded if 3 <= len(w) <= max_len]
+    seasonal = list(
+        dict.fromkeys(
+            w.upper()
+            for w in theme_words
+            if w.isalpha() and w.isascii() and 3 <= len(w) <= max_len
+        )
+    )
     rng.shuffle(themed)
     rng.shuffle(graded)
-    # Up to half the words come from the interests.
-    picks = themed[: count // 2]
+    rng.shuffle(seasonal)
+    # Up to a third from the theme, and up to half from theme plus interests.
+    picks = seasonal[: max(1, count // 3)] if seasonal else []
+    picks += [w for w in themed if w not in picks][: count // 2 - len(picks)]
+    themed = [w for w in themed if w not in picks] + seasonal[len(picks) :]
     candidates = picks + [w for w in graded if w not in picks] + themed[count // 2 :]
     # Longest first places more reliably.
     grid: list[list[str]] = [[""] * size for _ in range(size)]

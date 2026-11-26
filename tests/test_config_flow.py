@@ -154,6 +154,8 @@ async def test_options_settings(
         "add_kid",
         "add_adult",
         "add_feed",
+        "holidays",
+        "add_day",
     ]
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"next_step_id": "settings"}
@@ -179,6 +181,7 @@ async def test_options_settings(
         "todo_entities": [],
         "morning_bottom": "joke",
         "bottom_source": "online",
+        "quote_feed": None,
         "morning_feed": None,
         "quiet_start": None,  # cleared: no quiet hours (the form suggests 9 PM-7 AM)
         "quiet_end": None,

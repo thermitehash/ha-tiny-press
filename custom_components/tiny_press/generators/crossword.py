@@ -108,16 +108,38 @@ def _extent(grid: dict[tuple[int, int], str]) -> tuple[int, int, int, int]:
     return min(rows), min(cols), max(rows), max(cols)
 
 
-def generate(difficulty: str, seed: int) -> Crossword:
-    """Build a criss-cross crossword that fits within 13x13 cells."""
+MAX_THEMED = 4
+
+
+def generate(
+    difficulty: str, seed: int, extra: list[dict[str, str]] | None = None
+) -> Crossword:
+    """Build a criss-cross crossword that fits within 13x13 cells.
+
+    ``extra`` entries (``{"word", "clue"}``, a season or holiday theme) are
+    tried first; up to ``MAX_THEMED`` of them can land in the grid.
+    """
     rng = random.Random(seed)
     want = WORD_COUNT.get(difficulty, 10)
     share = TRICKY_SHARE.get(difficulty, 0.5)
-    bank = [e for e in clue_bank() if 3 <= len(e["word"]) <= MAX_SIDE]
+    themed = [
+        {"word": e["word"].upper(), "clue": e["clue"]}
+        for e in extra or []
+        if e["word"].isalpha() and 3 <= len(e["word"]) <= MAX_SIDE
+    ]
+    rng.shuffle(themed)
+    themed = themed[:MAX_THEMED]
+    theme_words = {e["word"] for e in themed}
+    bank = themed + [
+        e
+        for e in clue_bank()
+        if 3 <= len(e["word"]) <= MAX_SIDE and e["word"] not in theme_words
+    ]
     best: list[tuple[str, int, int, tuple[int, int]]] = []
     for _attempt in range(30):
-        pool = bank[:]
+        pool = bank[len(themed) :]
         rng.shuffle(pool)
+        pool = themed + pool  # themed words get the first chance
         first = max(pool[:12], key=lambda e: len(e["word"]))["word"]
         grid: dict[tuple[int, int], str] = {}
         r0, c0 = BOARD // 2, (BOARD - len(first)) // 2

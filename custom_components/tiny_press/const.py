@@ -21,9 +21,10 @@ CONF_MORNING_BOTTOM: Final = "morning_bottom"
 CONF_FEEDS: Final = "feeds"
 # Where the morning slip's bottom comes from: "online" uses live sources where
 # one exists (today: Wikiquote for the quote), with bundled content as the
-# fallback; "local" uses bundled content only.
+# fallback; "local" uses bundled content only; "feed" takes the quote from a
+# chosen feed (falling back to bundled).
 CONF_BOTTOM_SOURCE: Final = "bottom_source"
-BOTTOM_SOURCES: Final = ("online", "local")
+BOTTOM_SOURCES: Final = ("online", "local", "feed")
 CONF_LIVE_QUOTE: Final = "live_quote"  # v0.9.0 toggle, read when bottom_source is unset
 
 
@@ -36,6 +37,15 @@ def bottom_source(options: Any) -> str:
 
 
 CONF_MORNING_FEED: Final = "morning_feed"
+# Holidays and themes (Configure -> Holidays and themes).
+CONF_THEME: Final = "theme"  # auto | off | a fixed theme (themes.json key)
+CONF_SECULAR_DAYS: Final = "secular_days"  # seasons, science, public, school
+CONF_HOLIDAY_GROUPS: Final = "holiday_groups"  # opt-in faith and cultural groups
+CONF_EXCLUDED_DAYS: Final = "excluded_days"  # single days switched off in a group
+CONF_HOLIDAY_CALENDARS: Final = "holiday_calendars"  # public holidays
+CONF_SCHOOL_DAY: Final = "school_day"  # "YYYY-MM-DD"
+CONF_CUSTOM_DAYS: Final = "custom_days"  # [{id, name, date "MM-DD", banner, art}]
+CONF_QUOTE_FEED: Final = "quote_feed"  # feed ID when bottom_source is "feed"
 # Quiet hours for feed auto-print (one setting for all feeds).
 CONF_QUIET_START: Final = "quiet_start"
 CONF_QUIET_END: Final = "quiet_end"

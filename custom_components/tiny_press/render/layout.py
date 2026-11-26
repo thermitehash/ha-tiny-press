@@ -30,6 +30,7 @@ from ..generators.jokes import Joke
 from ..generators.math_strip import MathStrip, Problem
 from ..generators.maze import Maze
 from ..generators.morning import MorningSlip
+from ..generators.observances import Theme
 from ..generators.spelling import SpellingSheet
 from ..generators.story import Story
 from ..generators.sudoku import Sudoku
@@ -187,12 +188,39 @@ def maze_drawing(width: int, maze: Maze, *, show_solution: bool = False) -> Imag
     return img
 
 
+def ascii_art(width: int, lines: tuple[str, ...], px: int = 20) -> Image.Image:
+    """Monospaced ASCII art, centered, as a drawing."""
+    face = font("mono", px, False)
+    ascent, descent = face.getmetrics()
+    line_h = ascent + descent
+    advance = face.getlength("M")  # monospaced
+    widest = max((len(line) for line in lines), default=0) * advance
+    img = Image.new("L", (width, line_h * len(lines) + 4), 255)
+    draw = ImageDraw.Draw(img)
+    left = max(0, (width - widest) / 2)
+    for i, line in enumerate(lines):
+        # One character at a time, so the font can't join "_|_" or "-|" into
+        # ligatures.
+        for j, ch in enumerate(line):
+            if ch != " ":
+                draw.text((left + j * advance, i * line_h), ch, font=face, fill=0)
+    return img
+
+
 def maze_page(
-    width: int, maze: Maze, footer: Footer, *, answer: bool = False
+    width: int,
+    maze: Maze,
+    footer: Footer,
+    *,
+    answer: bool = False,
+    theme: Theme | None = None,
 ) -> Canvas:
-    """Lay out a maze printout (or its answer key)."""
+    """Lay out a maze printout (or its answer key), themed when given one."""
     canvas = Canvas(width)
-    canvas.title("Maze answer" if answer else "Maze")
+    if theme is not None and theme.art and not answer:
+        canvas.drawing(ascii_art(width, theme.art, px=18))
+    name = f"{theme.name} maze" if theme is not None and not answer else "Maze"
+    canvas.title("Maze answer" if answer else name)
     canvas.text("Start at the dot. Find the star!", px=24, align="center")
     canvas.space(4)
     canvas.drawing(maze_drawing(width, maze, show_solution=answer))
@@ -971,6 +999,14 @@ def morning_page(width: int, slip: MorningSlip, footer: Footer) -> Canvas:
     canvas = Canvas(width)
     canvas.title("Good morning!", px=40)
     canvas.text(slip.day.strftime("%A, %B %-d"), px=26, align="center")
+    if slip.banner is not None:
+        canvas.space(6)
+        if slip.banner.art:
+            canvas.drawing(ascii_art(width, slip.banner.art))
+        canvas.text(slip.banner.name, px=28, bold=True, align="center")
+        canvas.text(slip.banner.banner, px=22, align="center")
+        if slip.also:
+            canvas.text(f"Also today: {', '.join(slip.also)}", px=18, align="center")
     canvas.rule()
     if slip.weather is not None:
         canvas.drawing(_weather_line(width, slip.weather))

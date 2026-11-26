@@ -9,9 +9,9 @@ A Home Assistant integration that turns an Epson receipt printer into a househol
 - **Printer:** Epson TM-m30III (other ESC/POS printers that answer `DLE EOT` on port 9100 should work)
 - **Paper:** 80 mm (576 dots, the default) or 58 mm (420 dots)
 - **Home Assistant:** 2026.11.0 or newer
-- **Nothing prints automatically.** Tiny Press ships no schedules or time-based automations.
+- **Nothing prints on a schedule.** Tiny Press ships no schedules or time-based automations. The only automatic printing is feed auto-print, which is off until you switch it on for a feed.
 
-> **Status: v0.9.0.** Kid prints (maze, word search, math, kid sudoku, spelling, jokes, facts, kid pack), adult puzzles, bedtime stories, the morning slip, weather, sensor history, a dashboard card with kid mode, and kid-mode limits, Assist voice phrases, AI-agent print tools, feed prints and a live quote of the day. See [docs/releases](docs/releases) for each version and the [roadmap](docs/roadmap.md) for what's next.
+> **Status: v0.10.0.** Kid prints (maze, word search, math, kid sudoku, spelling, jokes, facts, kid pack), adult puzzles, bedtime stories, the morning slip, weather, sensor history, a dashboard card with kid mode, and kid-mode limits, Assist voice phrases, AI-agent print tools, feed prints, a live quote of the day, and holidays and themes. See [docs/releases](docs/releases) for each version and the [roadmap](docs/roadmap.md) for what's next.
 
 <!-- Screenshot placeholders -->
 <!-- ![Device page](docs/images/device.png) -->
@@ -46,7 +46,7 @@ If DHCP discovery sees an Epson device that answers receipt-printer status reque
 | Morning slip to-do lists | none | Optional: unchecked items print as checkboxes |
 | Morning slip headlines | none | A feed whose 3 newest headlines print on the morning slip, above its bottom. Leave empty for none |
 | Bottom of the morning slip | joke | Joke, fun fact, quote of the day, vocabulary word, small sudoku or nothing |
-| Bottom of the slip: content source | Online | **Online** uses live sources where one exists, falling back to the bundled content. Today that's Wikiquote's quote of the day for the Quote bottom, credited. **Local** uses bundled content only, with no internet |
+| Bottom of the slip: content source | Online | **Online** uses live sources where one exists (today: Wikiquote's quote of the day for the Quote bottom, credited), falling back to the bundled content. **A feed** takes the quote from the Quote feed (newest item: summary as the quote, title as the author). **Local** uses bundled content only, with no internet |
 | Auto-print quiet hours | 9 PM–7 AM, skip | No feed auto-prints during these hours. Items that arrive then are skipped, or printed when quiet hours end (up to 3 per feed) |
 | Use AI for jokes and fun facts | off | Off: jokes and facts come from bundled, human-written lists (facts from NOAA, NASA and the National Park Service, with credits). On: the AI is asked first. |
 
@@ -62,6 +62,61 @@ Configure → **Add a feed**: a name (used on the print and by voice), the feed'
 - **QR code on auto slips:** optional.
 - **Printer off:** if a slip can't print, it waits for the next check (up to 3).
 - **Limits:** auto slips never count toward kid-mode limits.
+
+### Holidays and themes
+
+Configure → **Holidays and themes**. On a recognized day, the morning slip prints a small piece of ASCII art and a one-line description under the date, on the day itself only, with no countdowns. If several days fall together, the others print as "Also today: …".
+
+**Everyday celebrations** (on by default; untick any):
+
+| Group | Days |
+|---|---|
+| Seasons and solstices | The equinoxes and solstices, named for your hemisphere (the December solstice is the first day of summer south of the equator) |
+| Fun science days | Day of Women and Girls in Science, World Wildlife Day, Pi Day, World Water Day, Earth Day, Arbor Day, Space Day, World Bee Day, World Oceans Day, Asteroid Day, Moon Day, World Animal Day |
+| Public holidays | Today's all-day events on the Holidays integration calendars you pick (Settings → Devices & services → Add → Holidays). A country's public holidays can include religious days, such as Christmas or Good Friday, and these print even with that holiday group off |
+| First day of school | A date you set |
+
+**Holiday groups** (all off by default, all treated the same way). After ticking groups, a second screen lets you untick single days:
+
+| Group | Days |
+|---|---|
+| East Asian festivals | Lunar New Year, Mid-Autumn Festival, Chuseok, Obon |
+| Jewish holidays | Rosh Hashanah, Yom Kippur, Sukkot, Hanukkah, Purim, Passover |
+| Muslim holidays | Start of Ramadan, Eid al-Fitr, Eid al-Adha |
+| Hindu festivals | Makar Sankranti and Pongal, Holi, Dussehra, Diwali, Onam |
+| Sikh holidays | Vaisakhi, Guru Nanak's birthday, Diwali (as Bandi Chhor Divas) |
+| Buddhist holidays | Losar, Vesak, Bodhi Day |
+| Christian holidays | Easter, Orthodox Easter, Christmas |
+| Nowruz | Nowruz, the spring-equinox new year |
+| Cultural and heritage days (US) | Juneteenth, Indigenous Peoples' Day, Día de los Muertos, Kwanzaa |
+| Fun days | Valentine's Day, Halloween, New Year's Eve |
+
+**Family days** (Configure → **Add a family day**): birthdays, name days or local festivals, every year on the same date, with your own banner text and a choice of art. Remove them with Configure → **Remove family days**.
+
+**Puzzle theme:** Auto (today's recognized day, else the season), Off, or a fixed theme such as Space or Ocean. Themes reach:
+- **Word searches:** up to a third of the words come from the theme, and kid interests still mix in.
+- **Crosswords:** up to four themed answers, with clues.
+- **Mazes:** the theme's art and name.
+- **Facts:** on science days, facts come from the matching source, such as NASA facts on Moon Day.
+- **Jokes:** only on science days that have their own, such as Pi Day.
+
+**How the content is written:**
+- **Banners** are short, neutral and factual. They say what each day marks in the same way for every tradition, and never devotionally.
+- **Art** uses festive, everyday imagery (lights, food, nature, celebration), never religious symbols. The same rule applies to every tradition.
+- **No jokes about any religious or cultural observance, ever,** including fun days like Halloween. Themed jokes come only from science days. On a solemn day such as Yom Kippur, no joke prints at all, and a morning slip set to a joke prints a fact.
+- **Shared days:** faith and cultural days rank above fun days. Days of the same rank take turns by date, so no tradition always wins a shared day.
+- **Who wrote it:** all banners, art, word lists, clues and jokes were written for Tiny Press. An independent review checked them for cultural sensitivity and accuracy. An AI review isn't a substitute for people who live these traditions, so corrections are welcome: please open an issue.
+
+**Dates:**
+- **Computed at runtime:**
+  - fixed days and "nth weekday" days (Indigenous Peoples' Day, Arbor Day, Space Day)
+  - Western and Orthodox Easter
+  - the solstices and equinoxes (Meeus' formulas, within minutes)
+- **Bundled table:** moving lunar and lunisolar dates for 2026–2035.
+  - Generated from the python-holidays library's calendars with `script/build_observances.py`.
+  - Islamic dates are calculated, so they can differ by a day where the moon is sighted locally.
+  - Vesak uses Indonesia's date; it varies by country.
+  - Holidays that begin at sundown are shown on their first full day.
 
 ### Profiles
 
@@ -374,7 +429,19 @@ Versioning is SemVer. `manifest.json` is the single source of truth: bump the mi
 
 ## Content sources
 
-Bundled content comes from sources that allow redistribution: fun facts from NOAA, NASA and the National Park Service (U.S. government works, public domain), K–3 words from the Dolch sight-word lists, and cryptogram quotes from public-domain works (Roosevelt, Muir, Lincoln, Shakespeare) as collected by the National Park Service, and vocabulary definitions from Open English WordNet (CC BY 4.0). Jokes and the NYT-style crossword clues were written for Tiny Press. With the bottom's content source set to Online, the morning slip fetches Wikiquote's quote of the day (CC BY-SA 4.0) and prints its credit. Feed prints show each feed's own content and name. See [`data/LICENSE.md`](custom_components/tiny_press/data/LICENSE.md) for every source.
+Bundled content comes from sources that allow redistribution:
+- **Fun facts:** NOAA, NASA and the National Park Service (U.S. government works, public domain).
+- **K–3 words:** the Dolch sight-word lists.
+- **Cryptogram quotes:** public-domain works (Roosevelt, Muir, Lincoln, Shakespeare), as collected by the National Park Service.
+- **Vocabulary definitions:** Open English WordNet (CC BY 4.0).
+- **Holiday dates:** generated with the python-holidays library (MIT).
+- **Written for Tiny Press:** jokes, the NYT-style crossword clues, and the holiday banners, ASCII art and themed word lists.
+
+**Live content:**
+- With the bottom's content source set to Online, the morning slip fetches Wikiquote's quote of the day (CC BY-SA 4.0) and prints its credit.
+- Feed prints show each feed's own content and name.
+
+See [`data/LICENSE.md`](custom_components/tiny_press/data/LICENSE.md) for every source.
 
 ## License
 

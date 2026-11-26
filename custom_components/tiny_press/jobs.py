@@ -28,6 +28,7 @@ from .generators.feeds import Feed
 from .generators.history import HistoryReport
 from .generators.jokes import Joke
 from .generators.morning import MorningSlip
+from .generators.observances import Theme
 from .generators.story import Story
 from .generators.weather import WeatherReport
 from .printer import escpos
@@ -58,9 +59,12 @@ def _grade_label(grade: str) -> str:
 
 
 def maze_job(
-    difficulty: Difficulty, seed: int | None = None, profile: str | None = None
+    difficulty: Difficulty,
+    seed: int | None = None,
+    profile: str | None = None,
+    theme: Theme | None = None,
 ) -> PrintJob:
-    """Build a maze print."""
+    """Build a maze print (with a themed title and art when given a theme)."""
     seed = new_seed() if seed is None else seed
     print_id = _id("maze", seed)
     puzzle = maze.generate(difficulty, seed)
@@ -73,16 +77,23 @@ def maze_job(
         difficulty=difficulty.value,
         profile=profile,
         answers=({"print_id": print_id, "type": PrintType.MAZE, "answer": answer},),
-        build=lambda width: layout.maze_page(width, puzzle, footer),
+        build=lambda width: layout.maze_page(width, puzzle, footer, theme=theme),
     )
 
 
-def word_search_job(profile: Profile, seed: int | None = None) -> PrintJob:
-    """Build a word search for a kid profile."""
+def word_search_job(
+    profile: Profile, seed: int | None = None, theme: Theme | None = None
+) -> PrintJob:
+    """Build a word search for a kid profile (some words from the theme)."""
     seed = new_seed() if seed is None else seed
     print_id = _id("word_search", seed)
     grade = profile.puzzle_grade
-    puzzle = word_search.generate(grade, seed, interests=profile.interests)
+    puzzle = word_search.generate(
+        grade,
+        seed,
+        interests=profile.interests,
+        theme_words=theme.words if theme else (),
+    )
     footer = layout.Footer("Word search", print_id, _today(), _grade_label(grade))
     answer = {**puzzle.answer(), "seed": seed, "grade": grade}
     return PrintJob(
@@ -145,14 +156,17 @@ def joke_job(joke: Joke, profile: Profile) -> PrintJob:
 
 
 def kid_pack_job(
-    profile: Profile, maze_difficulty: Difficulty, seed: int | None = None
+    profile: Profile,
+    maze_difficulty: Difficulty,
+    seed: int | None = None,
+    theme: Theme | None = None,
 ) -> PrintJob:
     """Maze + word search + math strip in one job (one cut)."""
     seed = new_seed() if seed is None else seed
     rng = random.Random(f"kid-pack-{seed}")
     parts = [
-        maze_job(maze_difficulty, rng.randrange(2**31), profile.name),
-        word_search_job(profile, rng.randrange(2**31)),
+        maze_job(maze_difficulty, rng.randrange(2**31), profile.name, theme),
+        word_search_job(profile, rng.randrange(2**31), theme),
         math_job(profile, rng.randrange(2**31)),
     ]
 
@@ -481,12 +495,16 @@ def sudoku_job(
 
 
 def crossword_job(
-    difficulty: Difficulty, seed: int | None = None, profile: str | None = None
+    difficulty: Difficulty,
+    seed: int | None = None,
+    profile: str | None = None,
+    theme: Theme | None = None,
 ) -> PrintJob:
-    """Build a criss-cross crossword."""
+    """Build a criss-cross crossword (a few themed entries when given a theme)."""
     seed = new_seed() if seed is None else seed
     print_id = _id("crossword", seed)
-    puzzle = crossword.generate(difficulty.value, seed)
+    extra = [{"word": w, "clue": c} for w, c in theme.clues.items()] if theme else None
+    puzzle = crossword.generate(difficulty.value, seed, extra)
     footer = layout.Footer("Crossword", print_id, _today(), difficulty)
     answer = {**puzzle.answer(), "seed": seed, "difficulty": difficulty.value}
     return PrintJob(
@@ -537,13 +555,15 @@ def puzzle_pack_job(
     seed: int | None = None,
     profile: str | None = None,
     recent: list[int] | None = None,
+    *,
+    theme: Theme | None = None,
 ) -> PrintJob:
     """Sudoku + crossword + cryptogram in one job (one cut)."""
     seed = new_seed() if seed is None else seed
     rng = random.Random(f"puzzle-pack-{seed}")
     parts = [
         sudoku_job(sudoku_difficulty, rng.randrange(2**31), profile),
-        crossword_job(difficulty, rng.randrange(2**31), profile),
+        crossword_job(difficulty, rng.randrange(2**31), profile, theme),
         cryptogram_job(difficulty, rng.randrange(2**31), profile, recent),
     ]
 

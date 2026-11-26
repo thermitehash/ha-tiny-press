@@ -50,7 +50,10 @@
           "remove_profile": "Remove profiles",
           "add_feed": "Add a feed",
           "edit_feed": "Edit a feed (auto-print)",
-          "remove_feed": "Remove feeds"
+          "remove_feed": "Remove feeds",
+          "holidays": "Holidays and themes",
+          "add_day": "Add a family day",
+          "remove_day": "Remove family days"
         }
       },
       "settings": {
@@ -68,7 +71,8 @@
           "quiet_start": "Auto-print quiet hours start",
           "quiet_end": "Auto-print quiet hours end",
           "quiet_mode": "During quiet hours",
-          "bottom_source": "Bottom of the slip: content source"
+          "bottom_source": "Bottom of the slip: content source",
+          "quote_feed": "Quote feed"
         },
         "data_description": {
           "max_length_mm": "Any print longer than this is trimmed, so a runaway print can't empty the roll.",
@@ -83,7 +87,8 @@
           "quiet_start": "No feed auto-prints during quiet hours. Clear both times to allow printing at any hour.",
           "quiet_end": "Quiet hours can span midnight, such as 9 PM to 7 AM.",
           "quiet_mode": "Skip new feed items, or print up to 3 per feed when quiet hours end.",
-          "bottom_source": "Online uses live sources where one exists (today: Wikiquote's quote of the day for the Quote bottom, credited on the print), and falls back to the bundled content. Local uses only the bundled content, with no internet. Joke and fact AI is a separate setting above."
+          "bottom_source": "Online uses live sources where one exists (today: Wikiquote's quote of the day for the Quote bottom, credited on the print), falling back to the bundled content. A feed takes the quote from the Quote feed below. Local uses only the bundled content, with no internet. Joke and fact AI is a separate setting above.",
+          "quote_feed": "Used when the content source is \"A feed\": the newest item's summary is the quote and its title the author."
         }
       },
       "add_kid": {
@@ -205,6 +210,52 @@
           "auto_print": "Off by default.",
           "check_minutes": "How often to look for new items (5–1440 minutes).",
           "auto_qr": "A small QR code that opens the item on a phone."
+        }
+      },
+      "holidays": {
+        "title": "Holidays and themes",
+        "description": "Recognized days get a banner with ASCII art on the morning slip, on the day itself only. Faith and cultural holidays come in groups, all off by default, and are treated the same way.",
+        "data": {
+          "theme": "Puzzle theme",
+          "secular_days": "Everyday celebrations",
+          "holiday_calendars": "Public holiday calendars",
+          "school_day": "First day of school",
+          "holiday_groups": "Holiday groups"
+        },
+        "data_description": {
+          "theme": "Auto themes word searches, crosswords, mazes, jokes and facts for today's holiday, or else the season (which follows your hemisphere). Kid interests still mix in.",
+          "secular_days": "On by default: seasons and solstices, fun science days, public holidays, and the first day of school.",
+          "holiday_calendars": "Calendars from the Holidays integration (Settings → Devices & services → Add → Holidays). Today's all-day events print as banners. Note: a country's public holidays can include religious days (for example Christmas or Good Friday), which print even if that holiday group is off.",
+          "school_day": "Prints a back-to-school banner on this date.",
+          "holiday_groups": "Tick the groups your household celebrates or wants to learn about. Next, you can untick single days."
+        }
+      },
+      "holiday_days": {
+        "title": "Holidays to include",
+        "description": "Untick any day you don't want recognized.",
+        "data": {
+          "days": "Days"
+        }
+      },
+      "add_day": {
+        "title": "Add a family day",
+        "description": "A day that comes around every year, such as a birthday, name day or local festival.",
+        "data": {
+          "name": "Name",
+          "date": "Date",
+          "banner": "Banner text",
+          "art": "ASCII art"
+        },
+        "data_description": {
+          "date": "Only the month and day are used; it repeats every year.",
+          "banner": "Optional. Empty prints \"Today is (name)!\".",
+          "art": "Pick a piece of art for the banner, or none."
+        }
+      },
+      "remove_day": {
+        "title": "Remove family days",
+        "data": {
+          "days": "Days to remove"
         }
       }
     },
@@ -329,7 +380,26 @@
     "bottom_source": {
       "options": {
         "online": "Online, with bundled content as the fallback",
-        "local": "Local: bundled content only"
+        "local": "Local: bundled content only",
+        "feed": "A feed (pick the quote feed below), with bundled content as the fallback"
+      }
+    },
+    "holiday_group": {
+      "options": {
+        "seasons": "Seasons and solstices",
+        "science": "Fun science days",
+        "public": "Public holidays (from a Holidays calendar)",
+        "school": "First day of school",
+        "east_asian": "East Asian festivals (Lunar New Year, Mid-Autumn, Chuseok, Obon)",
+        "jewish": "Jewish holidays (Rosh Hashanah, Yom Kippur, Sukkot, Hanukkah, Purim, Passover)",
+        "muslim": "Muslim holidays (start of Ramadan, Eid al-Fitr, Eid al-Adha)",
+        "hindu": "Hindu festivals (Makar Sankranti and Pongal, Holi, Dussehra, Diwali, Onam)",
+        "sikh": "Sikh holidays (Vaisakhi, Guru Nanak's birthday, Diwali as Bandi Chhor Divas)",
+        "buddhist": "Buddhist holidays (Losar, Vesak, Bodhi Day)",
+        "christian": "Christian holidays (Easter, Orthodox Easter, Christmas)",
+        "persian": "Nowruz (the spring-equinox new year)",
+        "heritage": "Cultural and heritage days, US (Juneteenth, Indigenous Peoples' Day, Día de los Muertos, Kwanzaa)",
+        "fun": "Fun days (Valentine's Day, Halloween, New Year's Eve)"
       }
     }
   },
