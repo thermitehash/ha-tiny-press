@@ -9,7 +9,22 @@ from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN, HISTORY_SIZE, RECENT_JOKES, STORAGE_VERSION
 
-SAVE_DELAY = 10
+# Writes are batched for a moment; Home Assistant also writes any pending
+# save when it shuts down, so counts survive restarts and upgrades.
+SAVE_DELAY = 2
+
+
+class _KeepingStore(Store[dict[str, Any]]):
+    """A Store that keeps the saved data when its format version changes.
+
+    Without this, a future STORAGE_VERSION bump would fail to load (and an
+    upgrade would lose print counts, paper used and puzzle history).
+    """
+
+    async def _async_migrate_func(
+        self, old_major_version: int, old_minor_version: int, old_data: dict
+    ) -> dict[str, Any]:
+        return old_data
 
 
 class TinyPressStore:
@@ -17,7 +32,7 @@ class TinyPressStore:
 
     def __init__(self, hass: HomeAssistant, entry_id: str) -> None:
         """Create the store."""
-        self._store: Store[dict[str, Any]] = Store(
+        self._store: Store[dict[str, Any]] = _KeepingStore(
             hass, STORAGE_VERSION, f"{DOMAIN}.{entry_id}"
         )
         self.data: dict[str, Any] = self._empty()

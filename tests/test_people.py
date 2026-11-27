@@ -218,3 +218,66 @@ async def test_set_daily_limit_in_options(
     )
     await hass.async_block_till_done()
     assert loaded_entry.options["profiles"][0]["daily_limit"] == 0
+
+
+async def test_print_counts_survive_restarts(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    printer: FakePrinter,
+    freezer: FrozenDateTimeFactory,
+    hass_storage: dict[str, Any],
+) -> None:
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    from custom_components.tiny_press.store import TinyPressStore
+
+    freezer.move_to("2026-11-26 15:00:00+00:00")
+    hass.config_entries.async_update_entry(
+        config_entry,
+        options={
+            "limits_enabled": True,
+            "limit_cooldown_s": 0,
+            "limit_per_hour": 0,
+            "limit_per_day": 5,
+            "profiles": [{"id": "rosie", "kind": "kid", "name": "Rosie"}],
+        },
+    )
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+    for _ in range(2):
+        await _print(hass, type="joke", profile="rosie")
+
+    # Written within seconds, so even an unclean stop keeps the count.
+    freezer.tick(3)
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    key = f"tiny_press.{config_entry.entry_id}"
+    saved = hass_storage[key]["data"]["limits"]["kids"]["rosie"]["prints"]
+    assert len(saved) == 2
+
+    # A reload (as after an options change or an upgrade) keeps it.
+    assert await hass.config_entries.async_reload(config_entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass.states.get(LEFT).attributes["kids"]["rosie"]["prints_left"] == 3
+
+    # A future storage format change keeps the data too.
+    hass_storage[key]["version"] = 0
+    store = TinyPressStore(hass, config_entry.entry_id)
+    await store.async_load()
+    assert len(store.data["limits"]["kids"]["rosie"]["prints"]) == 2
+
+
+async def test_old_shared_counts_are_kept_today(
+    hass: HomeAssistant, loaded_entry: MockConfigEntry
+) -> None:
+    from homeassistant.util import dt as dt_util
+
+    from custom_components.tiny_press.limits import RateLimiter
+
+    store = loaded_entry.runtime_data.store
+    today = dt_util.now().date().isoformat()
+    stamp = dt_util.utcnow().isoformat()
+    store.data["limits"] = {"day": today, "prints": [stamp], "paper_mm": 12.0}
+    limiter = RateLimiter(store, {"limits_enabled": True})
+    limiter.status("")
+    assert store.data["limits"]["kids"][""] == {"prints": [stamp], "paper_mm": 12.0}

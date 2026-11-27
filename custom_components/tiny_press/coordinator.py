@@ -170,8 +170,9 @@ class TinyPressCoordinator(DataUpdateCoordinator[PrinterState]):
             update_interval=timedelta(seconds=interval),
         )
         self.store = store
-        # AI crossword clues per (kid, words), so a preview and its print match.
-        self.spelling_clues: dict[tuple[str, tuple[str, ...]], dict[str, str]] = {}
+        # AI crossword clues per (kid, word): written ahead when a spelling list
+        # changes, so a print doesn't wait, and a preview and its print match.
+        self.spelling_clues: dict[tuple[str, str], str] = {}
         self.queue = PrintQueue(
             PrinterTransport(entry.data[CONF_HOST], entry.data[CONF_PORT])
         )

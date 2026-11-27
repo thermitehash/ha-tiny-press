@@ -180,7 +180,8 @@ async def test_prints_through_action(
         return_response=True,
     )
     assert preview["image"].startswith("data:image/png")
-    for button in ("kid_sudoku", "spelling", "spelling_search"):
+    for button in ("kid_sudoku", "spelling"):
+        assert hass.states.get(f"button.tiny_press_{button}")
         await hass.services.async_call(
             "button",
             "press",

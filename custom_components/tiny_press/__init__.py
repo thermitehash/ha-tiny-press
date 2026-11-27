@@ -14,6 +14,7 @@ from .feed_watch import FeedWatcher
 from .generators.data import preload
 from .repairs import async_clear_offline_issue
 from .services import async_setup_services
+from .spelling_watch import SpellingWatcher
 from .store import TinyPressStore
 from .voice import async_setup_voice_service
 
@@ -49,6 +50,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: TinyPressConfigEntry) ->
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     # Auto-print for feeds that have it on (does nothing otherwise).
     entry.async_on_unload(FeedWatcher(hass, coordinator).async_start())
+    # Spelling-crossword clues written ahead (only with an AI task).
+    entry.async_on_unload(SpellingWatcher(hass, coordinator).async_start())
     return True
 
 

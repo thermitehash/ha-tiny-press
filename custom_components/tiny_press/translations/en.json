@@ -109,7 +109,7 @@
           "grade": "Used by word searches, spelling and stories.",
           "interests": "Free text, for example: dinosaurs, space, horses.",
           "stretch": "Make puzzles one grade harder (reading and math).",
-          "spelling_todo": "The only source of spelling words: a to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words. Without a list, or with every word checked off, the Spelling tiles are greyed out on the card.",
+          "spelling_todo": "The only source of spelling words: a to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words. Without a list, or with every word checked off, the Spelling tile is greyed out on the card.",
           "math_grade": "Used by math strips and kid sudoku. Grade 1 is single-digit addition and subtraction.",
           "maze_difficulty": "This kid's mazes. \"Follow the Maze difficulty select\" uses the device's select; asking for a level (\"print a hard maze\") still wins.",
           "ha_user": "Optional. When this person is logged in, the Tiny Press card shows only their prints, limits and story, and kid-mode limits always apply to them.",
@@ -133,7 +133,7 @@
           "grade": "Used by word searches, spelling and stories.",
           "interests": "Free text, for example: dinosaurs, space, horses.",
           "stretch": "Make puzzles one grade harder (reading and math).",
-          "spelling_todo": "The only source of spelling words: a to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words. Without a list, or with every word checked off, the Spelling tiles are greyed out on the card.",
+          "spelling_todo": "The only source of spelling words: a to-do list with one word per item. Check a word off once it's learned; the spelling prints use the unchecked words. Without a list, or with every word checked off, the Spelling tile is greyed out on the card.",
           "math_grade": "Used by math strips and kid sudoku. Grade 1 is single-digit addition and subtraction.",
           "maze_difficulty": "This kid's mazes. \"Follow the Maze difficulty select\" uses the device's select; asking for a level (\"print a hard maze\") still wins.",
           "ha_user": "Optional. When this person is logged in, the Tiny Press card shows only their prints, limits and story, and kid-mode limits always apply to them.",
@@ -308,6 +308,7 @@
         "spelling": "Spelling practice",
         "spelling_search": "Spelling word search",
         "spelling_crossword": "Spelling crossword",
+        "spelling_pack": "Spelling pack (all four)",
         "sudoku": "Sudoku (9x9)",
         "crossword": "Crossword",
         "cryptogram": "Cryptogram",
@@ -380,6 +381,7 @@
         "spelling": "Spelling practice",
         "spelling_search": "Spelling word search",
         "spelling_crossword": "Spelling crossword",
+        "spelling_pack": "Spelling pack (all four)",
         "joke": "Joke",
         "fact": "Fun fact",
         "story": "Bedtime story",
@@ -524,13 +526,7 @@
         "name": "Kid sudoku"
       },
       "spelling": {
-        "name": "Spelling practice"
-      },
-      "spelling_search": {
-        "name": "Spelling word search"
-      },
-      "spelling_crossword": {
-        "name": "Spelling crossword"
+        "name": "Spelling"
       },
       "sudoku": {
         "name": "Sudoku"

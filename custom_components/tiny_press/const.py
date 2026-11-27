@@ -110,6 +110,7 @@ class PrintType(StrEnum):
     SPELLING = "spelling"
     SPELLING_SEARCH = "spelling_search"
     SPELLING_CROSSWORD = "spelling_crossword"
+    SPELLING_PACK = "spelling_pack"
     TEST_PAGE = "test_page"
 
 

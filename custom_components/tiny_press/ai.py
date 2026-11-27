@@ -154,7 +154,12 @@ def clue_ok(word: str, clue: str | None) -> bool:
 
 
 async def async_ai_spelling_clues(
-    hass: HomeAssistant, entity_id: str | None, words: list[str], profile: Profile
+    hass: HomeAssistant,
+    entity_id: str | None,
+    words: list[str],
+    profile: Profile,
+    *,
+    wait_s: float = AI_TIMEOUT,
 ) -> dict[str, str]:
     """Ask the AI for one kid-friendly crossword clue per spelling word.
 
@@ -187,7 +192,12 @@ async def async_ai_spelling_clues(
         for key, word in fields.items()
     }
     data = await async_generate(
-        hass, entity_id, "Tiny Press spelling crossword", instructions, structure
+        hass,
+        entity_id,
+        "Tiny Press spelling crossword",
+        instructions,
+        structure,
+        wait_s=wait_s,
     )
     if data is None:
         return {}

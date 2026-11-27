@@ -21,6 +21,7 @@ print:
             - spelling
             - spelling_search
             - spelling_crossword
+            - spelling_pack
             - sudoku
             - crossword
             - cryptogram
@@ -110,6 +111,7 @@ preview:
             - spelling
             - spelling_search
             - spelling_crossword
+            - spelling_pack
             - sudoku
             - crossword
             - cryptogram
@@ -298,6 +300,7 @@ voice_print:
             - spelling
             - spelling_search
             - spelling_crossword
+            - spelling_pack
             - joke
             - fact
             - story

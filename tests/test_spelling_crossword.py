@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from typing import Any
 
+from freezegun.api import FrozenDateTimeFactory
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+)
 
 from custom_components.tiny_press.ai import clue_ok
 from custom_components.tiny_press.const import DOMAIN, PAPER_DOTS
@@ -155,12 +159,6 @@ async def test_offline_clues_are_scrambles(
     assert printed["ai_clues"] == 0
     clues = _clues(config_entry.runtime_data.store)
     assert all(c.startswith("Unscramble: ") for c in clues.values())
-    await hass.services.async_call(
-        "button",
-        "press",
-        {"entity_id": "button.tiny_press_spelling_crossword"},
-        blocking=True,
-    )
 
 
 async def test_failed_ai_is_asked_again(
@@ -182,3 +180,87 @@ async def test_needs_a_spelling_list(
     await _setup(hass, config_entry)
     with pytest.raises(ServiceValidationError, match="no spelling words"):
         await _call(hass, "print", type="spelling_crossword")
+
+
+async def test_clues_are_written_ahead(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    printer: FakePrinter,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    words = ["because", "friend"]
+    _todo(hass, words)
+    calls = _ai(hass, lambda structure: {k: f"A clue for {k}" for k in structure})
+    hass.states.async_set("todo.rosie_spelling", "2")
+    await _setup(hass, config_entry, ai_task_entity="ai_task.claude")
+    # At startup, once the lists settle, the clues are written.
+    freezer.tick(timedelta(seconds=11))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert len(calls) == 1
+    # The print then finds them ready: no wait on the AI.
+    printed = await _call(hass, "print", type="spelling_crossword")
+    assert printed["ai_clues"] == 2 and len(calls) == 1
+    # A new word on the list gets its clue ahead too (only the new word).
+    words.append("said")
+    hass.states.async_set("todo.rosie_spelling", "3")
+    freezer.tick(timedelta(seconds=11))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert len(calls) == 2
+    assert list(calls[1]["structure"]) == ["clue_1"]
+    assert "'said'" in calls[1]["instructions"]
+
+
+async def test_spelling_pack_prints_all_four(
+    hass: HomeAssistant, config_entry: MockConfigEntry, printer: FakePrinter
+) -> None:
+    from homeassistant.helpers import entity_registry as er
+
+    _todo(hass, [*WORDS, "animal", "between", "house", "little"])
+    # Old single-print buttons from before the pack are removed on setup.
+    registry = er.async_get(hass)
+    for key in ("spelling_search", "spelling_crossword"):
+        registry.async_get_or_create(
+            "button",
+            DOMAIN,
+            f"{config_entry.entry_id}_{key}",
+            config_entry=config_entry,
+        )
+    await _setup(
+        hass,
+        config_entry,
+        limits_enabled=True,
+        limit_cooldown_s=0,
+        limit_per_day=5,
+    )
+    assert hass.states.get("button.tiny_press_spelling")
+    for key in ("spelling_search", "spelling_crossword"):
+        assert not registry.async_get_entity_id(
+            "button", DOMAIN, f"{config_entry.entry_id}_{key}"
+        )
+
+    printed = await _call(hass, "print", type="spelling_pack", seed=11)
+    assert printed["type"] == "spelling_pack" and printed["words"] == 10
+    assert printed["length_mm"] < 600  # fits the default longest print
+    store = config_entry.runtime_data.store
+    kinds = [h["type"] for h in store.history[:3]]
+    assert sorted(kinds) == ["spelling", "spelling_crossword", "spelling_search"]
+    # The same ten words in every part.
+    sheet = next(h for h in store.history if h["type"] == "spelling")["answer"]
+    search = next(h for h in store.history if h["type"] == "spelling_search")
+    cross = next(h for h in store.history if h["type"] == "spelling_crossword")
+    words = {w.upper() for w in sheet["words"]}
+    assert len(words) == 10
+    assert {p[0] for p in search["answer"]["placements"]} == words
+    in_grid = {e[1] for e in cross["answer"]["entries"]}
+    assert in_grid | {w.upper() for w in cross["answer"]["also"]} == words
+    # One print against the kid's limit.
+    left = hass.states.get("sensor.tiny_press_kid_prints_left_today")
+    assert left.state == "4"
+    # The Spelling button prints the pack too.
+    await hass.services.async_call(
+        "button", "press", {"entity_id": "button.tiny_press_spelling"}, blocking=True
+    )
+    await hass.async_block_till_done()
+    assert store.data["last_print"]["type"] == "spelling_pack"
