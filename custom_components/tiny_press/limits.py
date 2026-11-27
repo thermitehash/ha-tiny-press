@@ -120,9 +120,16 @@ class RateLimiter:
         """Today's counts for one kid (each kid has their own)."""
         day = dt_util.as_local(now).date().isoformat()
         data = self.store.data.setdefault("limits", {})
-        if data.get("day") != day or "kids" not in data:
-            data.clear()  # a new day (or counts from before per-kid limits)
+        if data.get("day") != day:
+            data.clear()  # a new day starts fresh
             data.update({"day": day, "kids": {}})
+        elif "kids" not in data:
+            # Today's counts from before per-kid limits: keep them (shared).
+            old = {
+                "prints": data.pop("prints", []),
+                "paper_mm": data.pop("paper_mm", 0.0),
+            }
+            data["kids"] = {"": old}
         return data["kids"].setdefault(kid or "", {"prints": [], "paper_mm": 0.0})
 
     def status(

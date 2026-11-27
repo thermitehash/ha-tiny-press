@@ -28,6 +28,11 @@ const PRINTS = {
   morning_slip: { label: "Morning slip", icon: "mdi:weather-sunset-up", service: "print_morning_slip" },
   weather: { label: "Weather", icon: "mdi:weather-partly-cloudy" },
 };
+// Rough seconds each print takes before it's done, used to pace the progress
+// fill on a pressed tile until this browser has timed a real one.
+const EXPECTED_S = { story: 45, next_chapter: 45, spelling_crossword: 8, morning_slip: 6, weather: 5 };
+const DURATIONS_KEY = "tiny-press-card-durations";
+
 const SPELLING_TILES = ["spelling", "spelling_search", "spelling_crossword"];
 const DEFAULT_BUTTONS = [
   "maze", "word_search", "math", "kid_sudoku", "spelling", "spelling_search", "spelling_crossword",
@@ -278,15 +283,57 @@ class TinyPressCard extends HTMLElement {
     }, 6000);
   }
 
-  async _run(fn, doneText, working) {
+  // How long a print type usually takes here (seconds), for the progress fill.
+  _expected(type) {
+    try {
+      const seen = JSON.parse(localStorage.getItem(DURATIONS_KEY) || "{}")[type];
+      if (seen > 0) return seen;
+    } catch (_err) {
+      // Storage blocked (private window): use the rough guess.
+    }
+    return EXPECTED_S[type] || 4;
+  }
+
+  _remember(type, seconds) {
+    try {
+      const all = JSON.parse(localStorage.getItem(DURATIONS_KEY) || "{}");
+      // Lean toward recent prints, but don't jump on one slow one.
+      all[type] = all[type] ? Math.round((all[type] * 2 + seconds) / 3 * 10) / 10 : seconds;
+      localStorage.setItem(DURATIONS_KEY, JSON.stringify(all));
+    } catch (_err) {
+      // Not saved: next time uses the guess again.
+    }
+  }
+
+  // The tile being printed fills in while it works, then flashes full.
+  _progressHtml(t) {
+    const p = this._state.progress;
+    if (!p || p.type !== t) return "";
+    if (p.done) return `<span class="progress done"></span>`;
+    const elapsed = (Date.now() - p.started) / 1000;
+    return `<span class="progress" style="--dur:${p.expected}s;animation-delay:-${elapsed.toFixed(2)}s"></span>`;
+  }
+
+  async _run(fn, doneText, working, type) {
     if (this._state.busy) return;
     this._state.busy = true;
     this._state.working = working;
+    if (type) this._state.progress = { type, started: Date.now(), expected: this._expected(type) };
     this._render();
     try {
       const result = await fn();
+      if (type && this._state.progress?.type === type) {
+        this._remember(type, (Date.now() - this._state.progress.started) / 1000);
+        this._state.progress = { type, done: true };
+        clearTimeout(this._progressTimer);
+        this._progressTimer = setTimeout(() => {
+          this._state.progress = null;
+          this._render();
+        }, 700);
+      }
       if (doneText) this._flash(typeof doneText === "function" ? doneText(result) : doneText, "ok");
     } catch (err) {
+      if (type) this._state.progress = null;
       this._flash(err?.message || "Something went wrong. Please try again.", "bad");
     } finally {
       this._state.busy = false;
@@ -327,7 +374,8 @@ class TinyPressCard extends HTMLElement {
         return res?.response;
       },
       (r) => (r?.print_id ? `Printing ${label.toLowerCase()} #${r.print_id}` : `Printing ${label.toLowerCase()}`),
-      `Getting the ${label.toLowerCase()} ready…`
+      `Getting the ${label.toLowerCase()} ready…`,
+      type
     );
   }
 
@@ -339,7 +387,7 @@ class TinyPressCard extends HTMLElement {
       const res = await this._call("preview", data, true);
       this._state.preview = res?.response;
       this._state.previewType = type;
-    });
+    }, undefined, undefined, type);
   }
 
   _history(index) {
@@ -643,8 +691,9 @@ class TinyPressCard extends HTMLElement {
           <div class="grid ${kid ? "kid" : ""}">
             ${buttons
               .map(
-                (t) => `<button class="tile ${kid && !this._config.show_preview ? "hold" : ""}" data-print="${t}" ${disabled || this._tileDisabled(t) ? "disabled" : ""}>
+                (t) => `<button class="tile ${kid && !this._config.show_preview ? "hold" : ""} ${this._state.progress?.type === t ? "working" : ""}" data-print="${t}" ${disabled || this._tileDisabled(t) ? "disabled" : ""}>
                   <span class="fill"></span>
+                  ${this._progressHtml(t)}
                   <ha-icon icon="${PRINTS[t].icon}"></ha-icon>
                   <span class="label">${this._tileLabel(t)}</span>
                 </button>`
@@ -747,7 +796,7 @@ const STYLES = `
   .grid.kid .tile { min-height: 110px; font-size: 1.05rem; }
   .tile ha-icon { --mdc-icon-size: 34px; color: var(--primary-color); position: relative; }
   .grid.kid .tile ha-icon { --mdc-icon-size: 44px; }
-  .tile span:not(.fill), .primary span:not(.fill) { position: relative; }
+  .primary span:not(.fill) { position: relative; }
   .tile:disabled, .primary:disabled { opacity: 0.45; cursor: default; }
   .tile .label { max-width: 100%; }
   .tile .label small { display: block; font-size: 0.75rem; opacity: 0.8; margin-top: 2px;
@@ -764,6 +813,13 @@ const STYLES = `
   .tile:not(:disabled):active { transform: scale(0.97); }
   .fill { position: absolute; inset: 0; width: 0; background: color-mix(in srgb, var(--primary-color) 35%, transparent); }
   .holding .fill { width: 100%; transition: width var(--hold-ms, 800ms) linear; }
+  .progress { position: absolute; inset: 0 auto 0 0; width: 0;
+    background: color-mix(in srgb, var(--success-color, #43a047) 45%, transparent);
+    animation: tp-progress var(--dur, 4s) cubic-bezier(0.2, 0.7, 0.3, 1) forwards; }
+  .progress.done { animation: none; width: 100%; }
+  @keyframes tp-progress { to { width: 95%; } }
+  .tile.working:disabled { opacity: 1; }
+  .tile span:not(.fill):not(.progress) { position: relative; }
   .notice { padding: 8px 12px; border-radius: 10px; font-size: 0.9rem; text-align: center;
     background: color-mix(in srgb, var(--secondary-text-color) 10%, transparent); color: var(--primary-text-color); }
   .notice.ok { background: color-mix(in srgb, var(--success-color, #43a047) 16%, transparent); }
