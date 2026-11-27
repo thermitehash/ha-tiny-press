@@ -6,7 +6,7 @@
  * Nothing prints unless someone presses a button.
  */
 
-const CARD_VERSION = "0.12.1";
+const CARD_VERSION = "0.13.0";
 
 const PRINTS = {
   maze: { label: "Maze", icon: "mdi:map-marker-path" },
@@ -16,7 +16,8 @@ const PRINTS = {
   fact: { label: "Fun fact", icon: "mdi:lightbulb-on-outline" },
   kid_pack: { label: "Kid pack", icon: "mdi:package-variant-closed" },
   kid_sudoku: { label: "Kid sudoku", icon: "mdi:grid" },
-  spelling: { label: "Spelling", icon: "mdi:alphabetical-variant" },
+  // One Spelling tile prints all four practices (the spelling pack).
+  spelling: { label: "Spelling", icon: "mdi:alphabetical-variant", type: "spelling_pack" },
   spelling_search: { label: "Spelling search", icon: "mdi:text-box-search-outline" },
   spelling_crossword: { label: "Spelling crossword", icon: "mdi:alpha-s-box-outline" },
   sudoku: { label: "Sudoku", icon: "mdi:grid", adult: true },
@@ -30,13 +31,12 @@ const PRINTS = {
 };
 // Rough seconds each print takes before it's done, used to pace the progress
 // fill on a pressed tile until this browser has timed a real one.
-const EXPECTED_S = { story: 45, next_chapter: 45, spelling_crossword: 8, morning_slip: 6, weather: 5 };
+const EXPECTED_S = { story: 45, next_chapter: 45, spelling: 10, spelling_crossword: 8, morning_slip: 6, weather: 5 };
 const DURATIONS_KEY = "tiny-press-card-durations";
 
 const SPELLING_TILES = ["spelling", "spelling_search", "spelling_crossword"];
 const DEFAULT_BUTTONS = [
-  "maze", "word_search", "math", "kid_sudoku", "spelling", "spelling_search", "spelling_crossword",
-  "joke", "kid_pack",
+  "maze", "word_search", "math", "kid_sudoku", "spelling", "joke", "kid_pack",
   "story", "next_chapter", "sudoku", "crossword", "cryptogram", "puzzle_pack",
   "morning_slip", "weather",
 ];
@@ -342,7 +342,7 @@ class TinyPressCard extends HTMLElement {
   }
 
   _printData(type, seed) {
-    const data = { type };
+    const data = { type: PRINTS[type]?.type || type };
     if (seed !== undefined) data.seed = seed;
     return this._who(data);
   }
@@ -381,7 +381,7 @@ class TinyPressCard extends HTMLElement {
 
   _preview(type) {
     this._run(async () => {
-      const data = { type };
+      const data = { type: PRINTS[type]?.type || type };
       const p = this._asProfile();
       if (p) data.profile = p.id;
       const res = await this._call("preview", data, true);

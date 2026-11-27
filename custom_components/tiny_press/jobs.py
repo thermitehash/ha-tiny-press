@@ -538,6 +538,47 @@ def spelling_crossword_job(
     )
 
 
+def spelling_pack_job(
+    profile: Profile,
+    words: list[str],
+    clues: dict[str, str],
+    seed: int | None = None,
+) -> PrintJob:
+    """All four spelling practices for the same words, in one job (one cut).
+
+    Unscramble and missing letters (the spelling sheet), a word search and a
+    crossword, all using up to ``CROSSWORD_WORDS`` words picked for this seed.
+    """
+    seed = new_seed() if seed is None else seed
+    rng = random.Random(f"spelling-pack-{seed}")
+    picked = spelling.pick_words(words, seed)[: spelling.CROSSWORD_WORDS]
+    parts = [
+        spelling_job(profile, picked, rng.randrange(2**31)),
+        spelling_search_job(profile, picked, rng.randrange(2**31)),
+        spelling_crossword_job(profile, picked, clues, rng.randrange(2**31)),
+    ]
+
+    def build(width: int) -> Canvas:
+        canvas = Canvas(width)
+        for i, part in enumerate(parts):
+            if i:
+                canvas.space(10)
+                canvas.rule(dashed=True, thickness=3, pad=16)
+                canvas.space(10)
+            canvas.extend(part.build(width))
+        return canvas
+
+    return PrintJob(
+        type=PrintType.SPELLING_PACK,
+        label="Spelling pack",
+        print_id=_id("spelling_pack", seed),
+        profile=profile.name,
+        answers=tuple(a for part in parts for a in part.answers),
+        response={**parts[2].response, "words": len(picked)},
+        build=build,
+    )
+
+
 def sudoku_job(
     difficulty: Difficulty, seed: int | None = None, profile: str | None = None
 ) -> PrintJob:

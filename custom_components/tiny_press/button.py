@@ -10,6 +10,7 @@ from homeassistant.components.button import ButtonEntity, ButtonEntityDescriptio
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
@@ -37,13 +38,8 @@ BUTTONS: tuple[TinyPressButtonDescription, ...] = (
     TinyPressButtonDescription(key="joke", print_type=PrintType.JOKE),
     TinyPressButtonDescription(key="kid_pack", print_type=PrintType.KID_PACK),
     TinyPressButtonDescription(key="kid_sudoku", print_type=PrintType.KID_SUDOKU),
-    TinyPressButtonDescription(key="spelling", print_type=PrintType.SPELLING),
-    TinyPressButtonDescription(
-        key="spelling_search", print_type=PrintType.SPELLING_SEARCH
-    ),
-    TinyPressButtonDescription(
-        key="spelling_crossword", print_type=PrintType.SPELLING_CROSSWORD
-    ),
+    # One Spelling button prints all four practices (the spelling pack).
+    TinyPressButtonDescription(key="spelling", print_type=PrintType.SPELLING_PACK),
     TinyPressButtonDescription(key="sudoku", print_type=PrintType.SUDOKU),
     TinyPressButtonDescription(key="crossword", print_type=PrintType.CROSSWORD),
     TinyPressButtonDescription(key="cryptogram", print_type=PrintType.CRYPTOGRAM),
@@ -61,12 +57,23 @@ BUTTONS: tuple[TinyPressButtonDescription, ...] = (
 )
 
 
+RETIRED = ("spelling_search", "spelling_crossword")
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: TinyPressConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Add the buttons."""
+    # The single spelling-search and spelling-crossword buttons became part
+    # of the Spelling button: remove their old entities.
+    registry = er.async_get(hass)
+    for key in RETIRED:
+        if entity_id := registry.async_get_entity_id(
+            "button", DOMAIN, f"{entry.entry_id}_{key}"
+        ):
+            registry.async_remove(entity_id)
     async_add_entities(
         TinyPressButton(entry.runtime_data, description) for description in BUTTONS
     )

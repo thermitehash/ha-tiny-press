@@ -31,7 +31,7 @@ blueprint:
     turned_on:
       name: Phrases to use
       description: Untick a group to turn its phrases off.
-      default: [maze, word_search, math, kid_pack, kid_sudoku, spelling, spelling_search, spelling_crossword, joke, fact, story, story_topic, next_chapter, sudoku, crossword, cryptogram, puzzle_pack, morning_slip, weather, feed, note]
+      default: [maze, word_search, math, kid_pack, kid_sudoku, spelling, spelling_sheet, spelling_search, spelling_crossword, joke, fact, story, story_topic, next_chapter, sudoku, crossword, cryptogram, puzzle_pack, morning_slip, weather, feed, note]
       selector:
         select:
           multiple: true
@@ -41,7 +41,8 @@ blueprint:
             - {label: Math sheet, value: math}
             - {label: Kid pack, value: kid_pack}
             - {label: Kid sudoku, value: kid_sudoku}
-            - {label: Spelling practice, value: spelling}
+            - {label: Spelling pack (all four), value: spelling}
+            - {label: Spelling sheet only, value: spelling_sheet}
             - {label: Spelling word search, value: spelling_search}
             - {label: Spelling crossword, value: spelling_crossword}
             - {label: Joke (read aloud too), value: joke}
@@ -93,10 +94,18 @@ blueprint:
             - "print a (kid|kids) sudoku for {name}"
           selector: {text: {multiple: true}}
         spelling_phrases:
-          name: Spelling practice
+          name: Spelling pack (all four)
           default:
             - "print spelling [practice|words]"
             - "print spelling [practice|words] for {name}"
+            - "print a spelling pack"
+            - "print a spelling pack for {name}"
+          selector: {text: {multiple: true}}
+        spelling_sheet_phrases:
+          name: Spelling sheet only
+          default:
+            - "print a spelling (sheet|worksheet)"
+            - "print a spelling (sheet|worksheet) for {name}"
           selector: {text: {multiple: true}}
         spelling_search_phrases:
           name: Spelling word search
@@ -202,7 +211,8 @@ triggers:
   - {trigger: conversation, id: math, command: !input math_phrases, enabled: "{{ 'math' in turned_on }}"}
   - {trigger: conversation, id: kid_pack, command: !input kid_pack_phrases, enabled: "{{ 'kid_pack' in turned_on }}"}
   - {trigger: conversation, id: kid_sudoku, command: !input kid_sudoku_phrases, enabled: "{{ 'kid_sudoku' in turned_on }}"}
-  - {trigger: conversation, id: spelling, command: !input spelling_phrases, enabled: "{{ 'spelling' in turned_on }}"}
+  - {trigger: conversation, id: spelling_pack, command: !input spelling_phrases, enabled: "{{ 'spelling' in turned_on }}"}
+  - {trigger: conversation, id: spelling, command: !input spelling_sheet_phrases, enabled: "{{ 'spelling_sheet' in turned_on }}"}
   - {trigger: conversation, id: spelling_search, command: !input spelling_search_phrases, enabled: "{{ 'spelling_search' in turned_on }}"}
   - {trigger: conversation, id: spelling_crossword, command: !input spelling_crossword_phrases, enabled: "{{ 'spelling_crossword' in turned_on }}"}
   - {trigger: conversation, id: joke, command: !input joke_phrases, enabled: "{{ 'joke' in turned_on }}"}

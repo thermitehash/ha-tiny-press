@@ -48,6 +48,7 @@ KID_TYPES = frozenset(
         PrintType.SPELLING,
         PrintType.SPELLING_SEARCH,
         PrintType.SPELLING_CROSSWORD,
+        PrintType.SPELLING_PACK,
         PrintType.STORY,
     }
 )

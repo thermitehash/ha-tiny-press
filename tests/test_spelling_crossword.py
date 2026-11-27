@@ -159,12 +159,6 @@ async def test_offline_clues_are_scrambles(
     assert printed["ai_clues"] == 0
     clues = _clues(config_entry.runtime_data.store)
     assert all(c.startswith("Unscramble: ") for c in clues.values())
-    await hass.services.async_call(
-        "button",
-        "press",
-        {"entity_id": "button.tiny_press_spelling_crossword"},
-        blocking=True,
-    )
 
 
 async def test_failed_ai_is_asked_again(
@@ -216,3 +210,57 @@ async def test_clues_are_written_ahead(
     assert len(calls) == 2
     assert list(calls[1]["structure"]) == ["clue_1"]
     assert "'said'" in calls[1]["instructions"]
+
+
+async def test_spelling_pack_prints_all_four(
+    hass: HomeAssistant, config_entry: MockConfigEntry, printer: FakePrinter
+) -> None:
+    from homeassistant.helpers import entity_registry as er
+
+    _todo(hass, [*WORDS, "animal", "between", "house", "little"])
+    # Old single-print buttons from before the pack are removed on setup.
+    registry = er.async_get(hass)
+    for key in ("spelling_search", "spelling_crossword"):
+        registry.async_get_or_create(
+            "button",
+            DOMAIN,
+            f"{config_entry.entry_id}_{key}",
+            config_entry=config_entry,
+        )
+    await _setup(
+        hass,
+        config_entry,
+        limits_enabled=True,
+        limit_cooldown_s=0,
+        limit_per_day=5,
+    )
+    assert hass.states.get("button.tiny_press_spelling")
+    for key in ("spelling_search", "spelling_crossword"):
+        assert not registry.async_get_entity_id(
+            "button", DOMAIN, f"{config_entry.entry_id}_{key}"
+        )
+
+    printed = await _call(hass, "print", type="spelling_pack", seed=11)
+    assert printed["type"] == "spelling_pack" and printed["words"] == 10
+    assert printed["length_mm"] < 600  # fits the default longest print
+    store = config_entry.runtime_data.store
+    kinds = [h["type"] for h in store.history[:3]]
+    assert sorted(kinds) == ["spelling", "spelling_crossword", "spelling_search"]
+    # The same ten words in every part.
+    sheet = next(h for h in store.history if h["type"] == "spelling")["answer"]
+    search = next(h for h in store.history if h["type"] == "spelling_search")
+    cross = next(h for h in store.history if h["type"] == "spelling_crossword")
+    words = {w.upper() for w in sheet["words"]}
+    assert len(words) == 10
+    assert {p[0] for p in search["answer"]["placements"]} == words
+    in_grid = {e[1] for e in cross["answer"]["entries"]}
+    assert in_grid | {w.upper() for w in cross["answer"]["also"]} == words
+    # One print against the kid's limit.
+    left = hass.states.get("sensor.tiny_press_kid_prints_left_today")
+    assert left.state == "4"
+    # The Spelling button prints the pack too.
+    await hass.services.async_call(
+        "button", "press", {"entity_id": "button.tiny_press_spelling"}, blocking=True
+    )
+    await hass.async_block_till_done()
+    assert store.data["last_print"]["type"] == "spelling_pack"

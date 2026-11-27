@@ -383,6 +383,7 @@ async def async_build_job(
             PrintType.SPELLING
             | PrintType.SPELLING_SEARCH
             | PrintType.SPELLING_CROSSWORD
+            | PrintType.SPELLING_PACK
         ):
             kid = coordinator.kid_profile(profile)
             todo_words = None
@@ -396,11 +397,16 @@ async def async_build_job(
                     translation_key="no_spelling_words",
                     translation_placeholders={"profile": kid.name},
                 ) from err
-            if kind is PrintType.SPELLING_CROSSWORD:
+            if kind in (PrintType.SPELLING_CROSSWORD, PrintType.SPELLING_PACK):
                 seed = jobs.new_seed() if seed is None else seed
                 picked = spelling.pick_words(found, seed)[: spelling.CROSSWORD_WORDS]
                 clues = await async_spelling_clues(hass, coordinator, kid, picked)
-                return partial(jobs.spelling_crossword_job, kid, picked, clues, seed)
+                build_crossword = (
+                    jobs.spelling_pack_job
+                    if kind is PrintType.SPELLING_PACK
+                    else jobs.spelling_crossword_job
+                )
+                return partial(build_crossword, kid, picked, clues, seed)
             build = (
                 jobs.spelling_job
                 if kind is PrintType.SPELLING
