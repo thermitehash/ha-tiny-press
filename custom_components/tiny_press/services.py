@@ -509,7 +509,9 @@ async def async_weather_report(
     )
 
 
-MAX_CLUE_SETS = 20
+MAX_CLUES = 500  # cached AI clues, all kids together
+CLUE_BATCH = 15  # words per AI request
+CLUE_WAIT = 20.0  # at print time, don't keep a kid waiting longer per request
 
 
 async def async_spelling_clues(
@@ -517,25 +519,38 @@ async def async_spelling_clues(
     coordinator: TinyPressCoordinator,
     kid: Profile,
     words: list[str],
+    *,
+    wait_s: float = CLUE_WAIT,
+    retry: bool = False,
 ) -> dict[str, str]:
-    """AI-written clues for a spelling crossword ({} without an AI task).
+    """AI-written clues for spelling words ({} without an AI task).
 
-    Kept per kid and word list, so a preview and its print get the same
-    clues and the AI isn't asked again for the same list.
+    Clues are kept per kid and word, so only new words go to the AI. The
+    spelling watcher writes them ahead whenever a list changes, so a print
+    normally finds them all ready. A word whose AI clue failed the checks
+    prints as a scramble; only the watcher (``retry``) asks about it again,
+    so a print never waits on it twice.
     """
     if not coordinator.ai_task_entity:
         return {}
-    key = (kid.id, tuple(sorted(words)))
-    if key not in coordinator.spelling_clues:
+    cache = coordinator.spelling_clues
+    missing = [
+        w
+        for w in dict.fromkeys(words)
+        if (kid.id, w) not in cache or (retry and not cache[(kid.id, w)])
+    ]
+    for start in range(0, len(missing), CLUE_BATCH):
+        batch = missing[start : start + CLUE_BATCH]
         clues = await async_ai_spelling_clues(
-            hass, coordinator.ai_task_entity, words, kid
+            hass, coordinator.ai_task_entity, batch, kid, wait_s=wait_s
         )
         if not clues:
-            return {}  # try the AI again next time
-        if len(coordinator.spelling_clues) >= MAX_CLUE_SETS:
-            coordinator.spelling_clues.pop(next(iter(coordinator.spelling_clues)))
-        coordinator.spelling_clues[key] = clues
-    return coordinator.spelling_clues[key]
+            break  # the AI isn't answering: don't wait again for the rest
+        for word in batch:  # "" marks a clue that failed the checks
+            if len(cache) >= MAX_CLUES:
+                cache.pop(next(iter(cache)))
+            cache[(kid.id, word)] = clues.get(word, "")
+    return {w: c for w in words if (c := cache.get((kid.id, w)))}
 
 
 async def async_todo_words(

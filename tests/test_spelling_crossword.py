@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from typing import Any
 
+from freezegun.api import FrozenDateTimeFactory
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+)
 
 from custom_components.tiny_press.ai import clue_ok
 from custom_components.tiny_press.const import DOMAIN, PAPER_DOTS
@@ -182,3 +186,33 @@ async def test_needs_a_spelling_list(
     await _setup(hass, config_entry)
     with pytest.raises(ServiceValidationError, match="no spelling words"):
         await _call(hass, "print", type="spelling_crossword")
+
+
+async def test_clues_are_written_ahead(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    printer: FakePrinter,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    words = ["because", "friend"]
+    _todo(hass, words)
+    calls = _ai(hass, lambda structure: {k: f"A clue for {k}" for k in structure})
+    hass.states.async_set("todo.rosie_spelling", "2")
+    await _setup(hass, config_entry, ai_task_entity="ai_task.claude")
+    # At startup, once the lists settle, the clues are written.
+    freezer.tick(timedelta(seconds=11))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert len(calls) == 1
+    # The print then finds them ready: no wait on the AI.
+    printed = await _call(hass, "print", type="spelling_crossword")
+    assert printed["ai_clues"] == 2 and len(calls) == 1
+    # A new word on the list gets its clue ahead too (only the new word).
+    words.append("said")
+    hass.states.async_set("todo.rosie_spelling", "3")
+    freezer.tick(timedelta(seconds=11))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert len(calls) == 2
+    assert list(calls[1]["structure"]) == ["clue_1"]
+    assert "'said'" in calls[1]["instructions"]

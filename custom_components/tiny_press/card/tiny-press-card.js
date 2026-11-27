@@ -6,7 +6,7 @@
  * Nothing prints unless someone presses a button.
  */
 
-const CARD_VERSION = "0.12.0";
+const CARD_VERSION = "0.12.1";
 
 const PRINTS = {
   maze: { label: "Maze", icon: "mdi:map-marker-path" },
@@ -278,9 +278,10 @@ class TinyPressCard extends HTMLElement {
     }, 6000);
   }
 
-  async _run(fn, doneText) {
+  async _run(fn, doneText, working) {
     if (this._state.busy) return;
     this._state.busy = true;
+    this._state.working = working;
     this._render();
     try {
       const result = await fn();
@@ -325,7 +326,8 @@ class TinyPressCard extends HTMLElement {
         this._state.preview = null;
         return res?.response;
       },
-      (r) => (r?.print_id ? `Printing ${label.toLowerCase()} #${r.print_id}` : `Printing ${label.toLowerCase()}`)
+      (r) => (r?.print_id ? `Printing ${label.toLowerCase()} #${r.print_id}` : `Printing ${label.toLowerCase()}`),
+      `Getting the ${label.toLowerCase()} ready…`
     );
   }
 
@@ -651,7 +653,7 @@ class TinyPressCard extends HTMLElement {
           </div>`}
         ${this._state.preview ? "" : this._historyHtml()}
         ${this._state.preview ? "" : this._feedsHtml()}
-        ${this._state.busy ? `<div class="notice">Working on it…</div>` : ""}
+        ${this._state.busy ? `<div class="notice">${esc(this._state.working || "Working on it…")}</div>` : ""}
         ${this._state.message ? `<div class="notice ${this._state.tone}">${esc(this._state.message)}</div>` : ""}
         ${this._lastPrintHtml()}`;
 
